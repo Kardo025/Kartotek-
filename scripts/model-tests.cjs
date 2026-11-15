@@ -445,6 +445,12 @@ async function cliTests() {
       await assert.rejects(() => run(createCli({ profile: 'claude-code', command: 'definitely-not-a-real-client-xyz', workDir: work }), {}), (e) => e.code === 'cli-missing');
       assert.strictEqual(resolveExecutable('definitely-not-a-real-client-xyz'), null);
       assert.ok(resolveExecutable(process.execPath));
+      // the native Claude Code installer puts claude.exe in %USERPROFILE%\.local\bin, often without adding it to PATH
+      const home = path.join(work, 'fake-home'), bin = path.join(home, '.local', 'bin');
+      fs.mkdirSync(bin, { recursive: true });
+      fs.writeFileSync(path.join(bin, 'fakeclient.exe'), '');
+      const found = resolveExecutable('fakeclient', { PATH: '', USERPROFILE: home, PATHEXT: '.EXE' });
+      assert.strictEqual(found && path.resolve(found).toLowerCase(), path.join(bin, 'fakeclient.exe').toLowerCase());
     });
     await t(ok, 'command-line clients get no images', async () => {
       const a = createCli({ profile: 'claude-code', workDir: work, spawnImpl: viaNode(claudeJs) });

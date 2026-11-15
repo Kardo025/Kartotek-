@@ -340,3 +340,28 @@ The C3 "done when" is met on your data. Still unverified: the Electron window it
 - Prices for OpenAI, Gemini and OpenRouter models are not shipped (they change often); until you add them under Prices, those calls show "price unknown" and do not count towards the budget.
 - Codex's `--output-schema` limits were not checked against a real Codex (its docs do not state them); a mismatch would show as one repair call or a "schema" error.
 - The per-feature slot override ("advanced", ARCHITECTURE.md 5.3) is not built.
+
+
+## 2026-11-15 · Task E1, follow-up: real connection tests on this PC (branch `task/e1-model-layer`)
+
+### What changed
+- With your OK I installed **Ollama 0.40.16** (`winget install Ollama.Ollama`, user scope, installer hash checked by winget) and pulled **`llama3.2`** (2.0 GB), and installed the standalone **Claude Code 2.1.325** with Anthropic's official installer (`claude.ai/install.ps1`, read before running; it checks the SHA-256 of the download) into `%USERPROFILE%\.local\bin\claude.exe`.
+- That installer does **not** add `%USERPROFILE%\.local\bin` to PATH, so Kartotek's default command `claude` would have said "Not found". `desktop/models/cli.js` now also looks in that folder after PATH (one new test with a fake home folder).
+
+### Real tests (through Kartotek's own model service, a temporary profile, no keys)
+| Provider | Result |
+| --- | --- |
+| **Local endpoint: Ollama, `llama3.2`** | **passes**: model list loaded (`llama3.2:latest`), reply "Kartotek connection works." (matches, structured output valid, no repair), 106 input / 12 output tokens, cost $0 (free-local), 39.7 s for the first call (the model loads into memory), usage logged as `ollama · llama3.2` |
+| **Command-line: Claude Code** | the client starts and Kartotek reads its stream correctly, but the answer is the typed error **auth: "Not logged in · Please run /login"**. Sign-in is yours to do (it opens your browser). |
+| **API key: Anthropic** | not run: a key must be pasted by you, and it is billed separately from the Claude subscription (console.anthropic.com). |
+
+`npm test`: every suite passes (command-line adapter 6/6 with the new check).
+
+### How you can finish the check
+1. Open a new terminal, run `%USERPROFILE%\.local\bin\claude.exe` (or `claude` after adding that folder to your user PATH), sign in, then quit with `/exit`.
+2. `npm start`, Settings, Models: Add a provider, "Claude Code (your subscription)", Add, Test connection.
+3. Add "Ollama on this PC", model `llama3.2`, Test connection (Ollama runs in the tray after a restart too).
+4. Optional: "Anthropic API key", paste the key, Test connection with `claude-haiku-5-5`.
+
+### Open points
+- None new. The E1 "done when" is met for the local endpoint; Claude Code needs your one-time sign-in; the API key is optional.

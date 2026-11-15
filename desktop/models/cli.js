@@ -17,7 +17,13 @@ const PROFILES = {
   custom: { label: 'Command-line client', command: '', parser: 'text', structured: 'json-mode', costKind: 'subscription-estimate' },
 };
 
-// Finds an executable on PATH (Windows: with PATHEXT). A path with a folder part is checked as it is.
+// Folders the official installers use that they do not always add to PATH (Claude Code's native installer: %USERPROFILE%\.local\bin).
+function knownDirs(e) {
+  const home = e.USERPROFILE || e.HOME || os.homedir();
+  return home ? [path.join(home, '.local', 'bin')] : [];
+}
+
+// Finds an executable on PATH (Windows: with PATHEXT), then in the known install folders. A path with a folder part is checked as it is.
 function resolveExecutable(command, env) {
   if (!command) return null;
   const e = env || process.env;
@@ -29,7 +35,7 @@ function resolveExecutable(command, env) {
     return null;
   };
   if (/[\\/]/.test(command)) return withExt(path.resolve(command));
-  for (const dir of String(e.PATH || e.Path || '').split(path.delimiter).filter(Boolean)) {
+  for (const dir of String(e.PATH || e.Path || '').split(path.delimiter).filter(Boolean).concat(knownDirs(e))) {
     const hit = withExt(path.join(dir, command));
     if (hit) return hit;
   }
