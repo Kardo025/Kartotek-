@@ -81,3 +81,10 @@
 .df-backups-head h3 { margin: 0; font-size: 15px; font-weight: 650; color: var(--k-text); }
 .df-actions { white-space: nowrap; text-align: right; }
 .df-actions .k-btn + .k-btn { margin-left: 6px; }
+
+/* Planned pages and the Mock exam picker (task D1) */
+.pl-text { display: flex; gap: 10px; align-items: flex-start; margin: 0; color: var(--k-text-2); font-size: 14px; line-height: 1.5; }
+.pl-icon { flex: none; margin-top: 2px; color: var(--k-muted); }
+.pl-choices { display: grid; gap: 8px; max-width: 420px; }
+.pl-choice { justify-content: flex-start; gap: 12px; height: auto; padding: 12px 14px; text-align: left; }
+.pl-choice-t { display: grid; gap: 2px; flex: 1; }

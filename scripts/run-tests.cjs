@@ -95,5 +95,6 @@ function runDesktopTests() {
   try { runDesktopTests(); } catch (err) { console.log('FAIL  desktop helper test: ' + err.message); code = 1; }
   try { (await require('./content-tests.cjs').run()).forEach((l) => console.log(l)); } catch (err) { console.log('FAIL  content tests: ' + (err && err.stack || err)); code = 1; }
   try { (await require('./data-tests.cjs').run()).forEach((l) => console.log(l)); } catch (err) { console.log('FAIL  data tests: ' + (err && err.stack || err)); code = 1; }
+  try { const k = await require('./nav-tests.cjs').run(); console.log('Navigation tests: ' + k + '/' + k + ' passed'); } catch (err) { console.log('FAIL  navigation tests: ' + (err && err.stack || err)); code = 1; }
   process.exit(code);
 })();
