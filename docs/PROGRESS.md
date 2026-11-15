@@ -352,7 +352,7 @@ The C3 "done when" is met on your data. Still unverified: the Electron window it
 | Provider | Result |
 | --- | --- |
 | **Local endpoint: Ollama, `llama3.2`** | **passes**: model list loaded (`llama3.2:latest`), reply "Kartotek connection works." (matches, structured output valid, no repair), 106 input / 12 output tokens, cost $0 (free-local), 39.7 s for the first call (the model loads into memory), usage logged as `ollama · llama3.2` |
-| **Command-line: Claude Code** | the client starts and Kartotek reads its stream correctly, but the answer is the typed error **auth: "Not logged in · Please run /login"**. Sign-in is yours to do (it opens your browser). |
+| **Command-line: Claude Code** | first run: the typed error **auth: "Not logged in"** (correct). After your sign-in: **passes**: reply "Kartotek connection works." (matches, native structured output, no repair) with claude-haiku-5-5, 3.4 s, 302 output tokens, billed to your subscription (API equivalent about $0.007, shown as an estimate) |
 | **API key: Anthropic** | not run: a key must be pasted by you, and it is billed separately from the Claude subscription (console.anthropic.com). |
 
 `npm test`: every suite passes (command-line adapter 6/6 with the new check).
@@ -364,4 +364,4 @@ The C3 "done when" is met on your data. Still unverified: the Electron window it
 4. Optional: "Anthropic API key", paste the key, Test connection with `claude-haiku-5-5`.
 
 ### Open points
-- None new. The E1 "done when" is met for the local endpoint; Claude Code needs your one-time sign-in; the API key is optional.
+- None new. The E1 "done when" is met for the command-line client and the local endpoint; the API-key path is proven against the stand-in only, until you add a key.
