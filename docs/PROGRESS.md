@@ -276,3 +276,36 @@ The C3 "done when" is met on your data. Still unverified: the Electron window it
 - The CI run for this branch's commit will repeat the smoke test on the Windows runner.
 - Still open from C4: publish the draft release `Kartotek 0.1.0` (the empty `v0.1.0` release that was published by hand has no installer).
 - D2 fills the Euro apply entry; the Planning home page and Content problems entry from the architecture are not part of D1.
+
+## 2026-11-15 · Task D2: Euro apply from Planning, and the Planning home page (branch `task/d2-euro-apply-planning`)
+
+### What changed
+- Before starting: merged `task/d1-navigation` into `main` (your prompt is the OK), then branched.
+- **Planning, Euro apply** opens your separate Euro apply app in its own window, as designed in `docs\ARCHITECTURE.md` section 8: no preload, no Node, its own session, navigation limited to `127.0.0.1:5178`, other links to the browser. Its folder is a **setting** (a folder picker on that page and in Settings; the choice is validated before it is saved). Without a folder the page is a short setup row. If the server is not running the page offers **Start Euro apply**, which runs Euro apply's own `tools\serve.ps1` hidden and opens the window when it answers.
+- **Planning, Home** (new first entry of Planning): one combined timeline: your exam dates and study pace per exam, the dated rows and **open steps** of the Application page, and the programme deadlines from Euro apply (read only). Each row says which app owns it and opens the screen it comes from. A TU Delft item that both apps know is **one row owned by Euro apply** (your decision), marked "also on the Application page", with a link to each; a deadline several universities share (a common exam sitting) is one row naming them. Window: 30 days, 90 days (default), all upcoming; Euro apply rows can be switched off.
+- **If Euro apply cannot be read** the page still shows Kartotek's own rows and a "What is missing" panel with the reason (folder not set, file unreadable, unknown format, or desktop-only in the browser build) and a button to set up or try again.
+- Nothing is written into the Euro apply folder and none of its code is copied; Kartotek runs only its launcher.
+
+### The Euro apply files and fields Kartotek relies on (what must not change there)
+**One file: `data\universities.json`**, read directly from disk (not through its server), read only. Kartotek reads nothing else in that folder (not `profile.json`, `countries.json`, `rankings.json`, `weights.json`, `inbox\`, the app code).
+- Top level: `schema` (a string starting `euroapply.universities/`, major version `1`; any other version is reported, not used), `updated` (date shown as "data from"), `universities` (a list).
+- Each university: `id`, `name`, `programs` (list), `timeline` (list). Its row source is the name.
+- Each programme: `id`, `name`, `status` (a programme counts as "still in play" unless `status` is `Rejected`; a university with no such programme is left out), `timeline` (list, optional).
+- Each timeline item, at university level and at programme level: `date` (`YYYY-MM-DD`, optionally `THH:MM` with an offset; the day is the first 10 characters, the time as written; an item without a usable date is skipped), `label`, `kind` (`open`, `deadline`, `exam`, `result`, `payment`, `other`), `est` (true shows "estimated"), `checked` (`YYYY-MM-DD`), `url` (only `https:` links are kept), `note`, and `id` (university level; programme-level items have none).
+- Not read although the architecture table listed them: city, country, priority and the status list.
+- Behaviour that matters: a half-written file is retried once after 500 ms (Euro apply saves through its own server); Kartotek also needs `tools\serve.ps1` (to start it), `app\node_modules` (a note only) and the server on `http://127.0.0.1:5178/` (strict port).
+- TU Delft items are matched to the Application page by the university's `id` or `name` containing "delft", the same calendar day and one meaningful word in common (title and note).
+
+### Verification
+| Check | Result |
+| --- | --- |
+| `npm test` | engine 53/53, content, data, navigation 14/14, **16 new tests** for the Euro apply connection and the timeline (folder check, a projection that never leaks other fields, unknown or newer schema, a half-written file, the launcher against a stand-in, nothing written, loose step dates, owners, folding, merging, windows, missing data) |
+| Your real Euro apply folder through Kartotek's own code | read ok (schema `euroapply.universities/1`, updated 2026-11-07, 19 universities); 90 days: 18 rows (8 Kartotek, 10 Euro apply, 1 shown once for both apps); all upcoming: 68 rows, 10 TU Delft items shown once for both apps; the folder is **unchanged** after the whole run (sizes, times and the file's SHA-256 compared before and after, `node_modules` excluded) |
+| `npm run smoke`, real Electron window | passes: Home without Euro apply (own rows, "what is missing"), the setup row, a configured stand-in folder (its deadline on Home with owner and link), Open makes a separate window that is sealed (no bridge, no Node) and cannot be navigated away |
+| Real Start on your PC | Euro apply was not running; **Start Euro apply** ran its launcher, the server answered and the window opened (Euro apply's map with your targets). I stopped the server I started afterwards (port 5178 closed again) |
+
+### Open points
+- The launcher is started as a plain hidden child, not "detached": found by testing that a detached child gets no console on Windows and the launcher's own `Start-Process` silently does nothing.
+- The test script that started your Euro apply hung while closing; I stopped it and the server it started. Your Euro apply server was not running before and is not running now.
+- The overdue open steps of the Application page (those whose loose date is already past, such as "Nov-Dec 2026") are shown at today's date, marked "past due".
+- Still open from earlier: publishing the C4 draft release; the real GitHub no-reply email; D1 and D2 are not pushed.

@@ -6,6 +6,7 @@
 //   study, etut, cards            Review, Study, Cards for all decks         cents-study, cents-etut, cents-cards, tud-...  scoped to one exam
 //   mock-all                      Mock exam when the scope is All (a picker)   cents-mock, tud-mock                          one exam's mock exams
 //   lesson                        End-of-lesson test (not exam-scoped)
+//   home                          Planning home (combined timeline)
 //   cents, tud                    exam overviews                               tud-apply   TU Delft application plan
 //   stats, euroapply              Planning                                     mindmaps, career, settings, algo   always visible
 
@@ -23,8 +24,8 @@ export const STUDY_ITEMS = [
   { key: "lesson", label: "End-of-lesson test", base: "lesson", suffix: null, scoped: false },
 ];
 
-// Planning mode entries (tab ids). The overview of each exam, its application page, Euro apply and Stats.
-export const PLANNING_IDS = ["cents", "tud", "tud-apply", "euroapply", "stats"];
+// Planning mode entries (tab ids). The home page (combined timeline), the overview of each exam, its application page, Euro apply and Stats.
+export const PLANNING_IDS = ["home", "cents", "tud", "tud-apply", "euroapply", "stats"];
 export const ALWAYS_IDS = ["mindmaps", "career"];
 export const SYSTEM_IDS = ["settings", "algo"];
 

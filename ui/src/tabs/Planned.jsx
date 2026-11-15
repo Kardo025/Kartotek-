@@ -1,7 +1,7 @@
-// Short pages of the new navigation (task D1): Career and Euro apply are announced, not built yet; the Mock exam picker is what
+// Short pages of the new navigation (task D1): Career is announced, not built yet; the Mock exam picker is what
 // "Mock exam" shows while the scope is All, because a mock exam always belongs to one exam.
 import React from "react";
-import { Briefcase, GlobeHemisphereWest, Timer, ArrowRight } from "@phosphor-icons/react";
+import { Briefcase, Timer, ArrowRight } from "@phosphor-icons/react";
 import { PageHead, Panel, Btn } from "./kit.jsx";
 import { EXAMS } from "../nav.js";
 
@@ -13,17 +13,6 @@ export function Career() {
       <PageHead title="Career" sub={<p className="k-sub">Planned.</p>} />
       <Panel title="Not built yet" id="career-planned">
         <p className="k-small pl-text"><Briefcase size={18} aria-hidden="true" className="pl-icon" />A place for career planning is on the list. It is not defined yet, and nothing is stored here.</p>
-      </Panel>
-    </div>
-  );
-}
-
-export function EuroApply() {
-  return (
-    <div className="k-page">
-      <PageHead title="Euro apply" sub={<p className="k-sub">Coming with the Planning home page.</p>} />
-      <Panel title="Planned" id="euroapply-planned">
-        <p className="k-small pl-text"><GlobeHemisphereWest size={18} aria-hidden="true" className="pl-icon" />Euro apply stays a separate app. A later update opens it from here and shows its programme deadlines next to your exam dates. Nothing is connected yet.</p>
       </Panel>
     </div>
   );

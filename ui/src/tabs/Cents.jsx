@@ -95,6 +95,14 @@ export function makePrep(exam) {
 }
 export default makePrep("cents");
 
+// Exam date and study pace of an exam for the Planning home: the same numbers as the Plan panel of its overview
+export function examSummary(exam) {
+  const S = App().S, c = selState(exam);
+  const sel = K().EXAMS[exam].sections.filter((s) => c.sel.indexOf(s.id) >= 0);
+  const pc = P().pace(S, exam, sel, Date.now());
+  return { id: exam, label: UI[exam].title, examTs: pc.examTs, days: pc.days, left: pc.left, perDay: pc.perDay, topicsPerDay: pc.topicsPerDay, status: pc.status };
+}
+
 function PlanPanel({ exam, sel }) {
   const A = App(), S = A.S, x = selState(exam), pc = P().pace(S, exam, sel, Date.now());
   const lim = (S.settings.exam_new_limits || {})[exam];

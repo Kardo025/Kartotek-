@@ -21,6 +21,15 @@ contextBridge.exposeInMainWorld('kartotek', Object.freeze({
       return () => ipcRenderer.removeListener('content:changed', handler);
     },
   }),
+  // Euro apply (task D2): its folder setting, a read-only projection of its universities file, and opening it in its own window
+  euroapply: Object.freeze({
+    status: () => ipcRenderer.invoke('euroapply:status'),
+    chooseFolder: () => ipcRenderer.invoke('euroapply:chooseFolder'),
+    clearFolder: () => ipcRenderer.invoke('euroapply:clearFolder'),
+    read: () => ipcRenderer.invoke('euroapply:read'),
+    open: () => ipcRenderer.invoke('euroapply:open'),
+    start: () => ipcRenderer.invoke('euroapply:start'),
+  }),
   // Learner data in files (task C3). Every call resolves to { ok, value } or { ok: false, error }.
   data: Object.freeze({
     load: () => ipcRenderer.invoke('data:load'),
