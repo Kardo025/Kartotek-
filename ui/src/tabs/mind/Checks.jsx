@@ -1,6 +1,7 @@
 // Checks: retrieval without the map. Only independent attempts (map and source hidden, no answer shown, hint H0–H1)
 // go to your reviews; correct → Good, partly → Hard, not correct → Again. Everything else is kept without touching memory.
 import React, { useState } from "react";
+import ModelHint from "../ModelHint.jsx";
 import { Target, Lightbulb, PaperPlaneRight, Play, Trash } from "@phosphor-icons/react";
 import { Panel, Btn, Tag, Lvl, TableWrap } from "../kit.jsx";
 import { Md } from "../study/common.jsx";
@@ -171,7 +172,7 @@ export function Runner({ doc, attempt, onClose }) {
                 <Btn onClick={() => grade("partial")}>Partly</Btn>
                 <Btn onClick={() => grade("incorrect")}>Not correct</Btn>
                 <Btn onClick={() => grade("uncertain")}>Not sure</Btn>
-                {attempt.outcome_by !== "pending" && <Btn onClick={askClaude}>Ask Claude to grade</Btn>}
+                {attempt.outcome_by !== "pending" && <><Btn onClick={askClaude}>Ask Claude to grade</Btn><ModelHint what="grading this check" /></>}
               </div>
             ) : (
               <Result attempt={attempt} />

@@ -198,7 +198,7 @@ function NewWithClaude() {
         <label className="k-field"><span className="k-field-label">Scope (optional)</span><input value={f.scope} onChange={(e) => setF({ ...f, scope: e.target.value })} placeholder="e.g. slides 1–24 only" /></label>
         <label className="k-field"><span className="k-field-label">Your goal (optional)</span><input value={f.goal} onChange={(e) => setF({ ...f, goal: e.target.value })} placeholder="e.g. the midterm on 12 Nov" /></label>
       </div>
-      <div className="k-row-btns">{f.title.trim() && f.files.trim() ? <AskPair prompt={prompt} label="Write with Claude" primary /> : <span className="k-small k-muted">Give a title and the file path(s).</span>}</div>
+      <div className="k-row-btns">{f.title.trim() && f.files.trim() ? <AskPair what="writing a study" prompt={prompt} label="Write with Claude" primary /> : <span className="k-small k-muted">Give a title and the file path(s).</span>}</div>
     </details>
   );
 }

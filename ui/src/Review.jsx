@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { ArrowCounterClockwise, Lightbulb, Eye, CheckCircle, Warning, FilePdf, ChatCircleText, Minus, Check, Checks } from "@phosphor-icons/react";
 import { Count, EASE as E, DUR, STAGGER } from "./motion.jsx";
+import ModelHint from "./tabs/ModelHint.jsx";
 
 const EASE = E.out;
 // Each rating is told apart by icon, label and key as well as colour (design-philosophy.md 3)
@@ -34,6 +35,7 @@ function SourceRow({ card, S }) {
       {src && src.bookHref && <a className="k-btn sm" href={src.bookHref} target="_blank" rel="noopener"><FilePdf size={14} aria-hidden="true" />Book page</a>}
       {src && src.localHref && <a className="k-btn sm" href={src.localHref} title="The page extract on this computer">Extract p. {src.extractPage}</a>}
       <a className="k-btn sm" href={claudeLink(prompt)} title="Opens Claude Code with this card and its source pages; press Enter there to ask."><ChatCircleText size={14} aria-hidden="true" />Ask Claude</a>
+      <ModelHint what="answering questions about this card" />
     </div>
   );
 }

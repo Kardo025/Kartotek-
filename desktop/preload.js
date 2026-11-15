@@ -51,4 +51,37 @@ contextBridge.exposeInMainWorld('kartotek', Object.freeze({
       return () => ipcRenderer.removeListener('data:flush-request', handler);
     },
   }),
+  // The model layer (task E1). Keys go in and never come back. Errors: { ok: false, error, code, advice }.
+  models: Object.freeze({
+    config: () => ipcRenderer.invoke('models:config'),
+    status: () => ipcRenderer.invoke('models:status'),
+    saveProvider: (provider, key) => ipcRenderer.invoke('models:saveProvider', provider, key),
+    setKey: (id, key) => ipcRenderer.invoke('models:setKey', id, key),
+    clearKey: (id) => ipcRenderer.invoke('models:clearKey', id),
+    removeProvider: (id) => ipcRenderer.invoke('models:removeProvider', id),
+    setSlot: (slot, id, model) => ipcRenderer.invoke('models:setSlot', slot, id, model),
+    setBudget: (usd) => ipcRenderer.invoke('models:setBudget', usd),
+    allowOverBudget: () => ipcRenderer.invoke('models:allowOverBudget'),
+    setPrice: (model, price) => ipcRenderer.invoke('models:setPrice', model, price),
+    listModels: (id) => ipcRenderer.invoke('models:listModels', id),
+    usage: (month) => ipcRenderer.invoke('models:usage', month),
+    // Starts a call; onEvent gets { type: 'text' | 'status', ... } while it runs. Resolves to { ok, value: result }.
+    run: (callId, request, onEvent) => withEvents(callId, onEvent, () => ipcRenderer.invoke('models:run', callId, request)),
+    test: (callId, id, model, onEvent) => withEvents(callId, onEvent, () => ipcRenderer.invoke('models:test', callId, id, model)),
+    cancel: (callId) => ipcRenderer.invoke('models:cancel', callId),
+  }),
+  prompts: Object.freeze({
+    list: () => ipcRenderer.invoke('prompts:list'),
+    get: (id) => ipcRenderer.invoke('prompts:get', id),
+    saveOverride: (id, text) => ipcRenderer.invoke('prompts:saveOverride', id, text),
+    resetOverride: (id) => ipcRenderer.invoke('prompts:resetOverride', id),
+    render: (id, vars) => ipcRenderer.invoke('prompts:render', id, vars),
+  }),
 }));
+
+// Routes 'models:event' messages of one call to its listener while the call runs
+function withEvents(callId, onEvent, start) {
+  const handler = (e, msg) => { if (msg && msg.callId === callId && typeof onEvent === 'function') { try { onEvent(msg.event); } catch (x) { /* listener error */ } } };
+  ipcRenderer.on('models:event', handler);
+  return start().finally(() => ipcRenderer.removeListener('models:event', handler));
+}

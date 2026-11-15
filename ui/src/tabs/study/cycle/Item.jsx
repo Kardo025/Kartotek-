@@ -304,7 +304,7 @@ function ExplainPanel({ et, item, attempt }) {
         <textarea className="k-input" rows={12} value={prompt} onChange={(e) => setText(e.target.value)} />
       </details>
       <div className="cy-actions" onClick={(e) => { if (e.target.closest("a")) { attempt.explain_requested = Date.now(); EU().commit(et); } }}>
-        <AskPair prompt={prompt} label="Open in Claude Code" primary />
+        <AskPair prompt={prompt} label="Open in Claude Code" primary what="explaining this attempt" />
       </div>
     </section>
   );
@@ -317,7 +317,7 @@ function FollowPanel({ et, item, attempt }) {
       <h3 className="st-h3">Practice this again</h3>
       <p className="k-small k-muted">Claude Code writes 1–2 new questions for the same criteria from the same source pages. After it builds, reload Kartotek: they appear in Applying as follow-up practice. Because they come right after feedback, they never count as independent recall.</p>
       <div className="cy-actions" onClick={(e) => { if (e.target.closest("a")) { attempt.followup_requested = Date.now(); EU().commit(et); } }}>
-        <AskPair prompt={prompt} label="Open in Claude Code" primary />
+        <AskPair prompt={prompt} label="Open in Claude Code" primary what="writing follow-up questions" />
       </div>
     </section>
   );
