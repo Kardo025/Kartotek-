@@ -183,5 +183,26 @@
     };
   }
 
-  global.KPrep = { LABEL: LABEL, itemCards: itemCards, itemStatus: itemStatus, covered: covered, sectionRows: sectionRows, upNext: upNext, pace: pace, examDate: examDate, placementResult: placementResult, placementLessons: placementLessons, cardSource: cardSource };
+  // The values of the "ask-card" prompt (task E2): the card, where it comes from, and the source text that is stored with its study
+  // (the objective's source units and lesson text). The page files themselves are PDFs on this computer and are not read in the app
+  // yet, so the prompt says what the model cannot see.
+  function cardAskInputs(S, card, question) {
+    var src = cardSource(S, card), dk = S.decks[card.deck_id] || {};
+    var cardLines = ['Front: ' + card.front, 'Back: ' + card.back];
+    if (card.explanation) cardLines.push('Explanation on the card: ' + card.explanation);
+    var srcLines = [];
+    if (src) srcLines.push('Source of this card: ' + src.label + (src.printedPage != null ? ', printed page ' + src.printedPage : '') + (src.book ? ' (' + src.book + ')' : '') + '.');
+    var et = dk.etut_id && S.etuts && S.etuts[dk.etut_id];
+    if (et && et.package && global.KCycle) {
+      var kid = Object.keys(et.card_map || {}).filter(function (k) { return et.card_map[k] === card.card_id; })[0];
+      if (kid) {
+        srcLines.push('Study: ' + et.package.title + '.');
+        global.KCycle.topicSources(et.package, kid).forEach(function (l) { srcLines.push(l); });
+      }
+    }
+    if (!srcLines.length) srcLines.push('No source information is stored for this card.');
+    return { card: cardLines.join('\n'), sources: srcLines.join('\n'), question: (question || '').trim() || 'Explain why the answer is right and what mistake to avoid.', _src: src };
+  }
+
+  global.KPrep = { cardAskInputs: cardAskInputs, LABEL: LABEL, itemCards: itemCards, itemStatus: itemStatus, covered: covered, sectionRows: sectionRows, upNext: upNext, pace: pace, examDate: examDate, placementResult: placementResult, placementLessons: placementLessons, cardSource: cardSource };
 })(typeof window !== 'undefined' ? window : globalThis);

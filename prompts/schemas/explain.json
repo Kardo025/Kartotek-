@@ -1,0 +1,12 @@
+{
+  "type": "object",
+  "properties": {
+    "explanation_md": { "type": "string" },
+    "item_status": { "type": "string", "enum": ["consistent", "disputed"] },
+    "item_note": { "type": "string" },
+    "refs": { "type": "array", "items": { "type": "string" } },
+    "next_steps": { "type": "array", "items": { "type": "string" } }
+  },
+  "required": ["explanation_md", "item_status", "item_note", "refs", "next_steps"],
+  "additionalProperties": false
+}

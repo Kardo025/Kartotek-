@@ -1,10 +1,12 @@
 // One question of Study v2: answer → (optional help in practice) → commit → feedback → self-check → DSR line → Explain / follow-up / report.
 // In the final test the feedback waits for the end of the block (held = true).
 import React, { useState } from "react";
-import { Lightbulb, ListNumbers, Eye, BookOpenText, ChatCircleText, ArrowsClockwise, Flag, ArrowRight, CheckCircle, XCircle, MinusCircle, Circle } from "@phosphor-icons/react";
+import { Lightbulb, ListNumbers, Eye, BookOpenText, ChatCircleText, ArrowsClockwise, Flag, ArrowRight, CheckCircle, XCircle, MinusCircle, Circle, Robot } from "@phosphor-icons/react";
 import { Btn } from "../../kit.jsx";
 import { Md, Html, Chip, Scale, Blocks } from "../common.jsx";
 import { AskPair } from "../../Cents.jsx";
+import ModelHint from "../../ModelHint.jsx";
+import { useModelReady, useModelCall, CallStatus, CopyPromptBtn, RequestPreview, byLine } from "../../../model-call.jsx";
 import { A, KC, KE, EU, extrasOf, save, sendAttempt, refsText, criterionText, LETTERS, CONF, RATINGS } from "./lib.js";
 
 export function ItemHead({ item, attempt, index, total, pkg }) {
@@ -16,7 +18,7 @@ export function ItemHead({ item, attempt, index, total, pkg }) {
       <Chip tone="accent">{K.FORMAT_LABEL[item.format] || item.format}</Chip>
       {item.origin && <Chip title={item.source_ref || ""}>{K.ORIGIN_LABEL[item.origin]}{item.source_ref ? " · " + item.source_ref : ""}</Chip>}
       {item.performance && item.performance !== "recall" && <Chip>{item.performance}</Chip>}
-      {item.followup_of && <Chip tone="accent">Follow-up</Chip>}
+      {item.followup_of && <Chip tone="accent" title={item.made_by ? "Written by " + byLine(item.made_by) : ""}>Follow-up practice</Chip>}
       {conn && <Chip tone="accent" title={"Brings together: " + conn.join(" · ")}>Connects {conn.length} topics</Chip>}
       {item.validation && item.validation !== "verified" && <span className="k-lvl" data-l="warn" title={item.validation_note || ""}>{item.validation === "disputed" ? "Disputed question" : "Key not verified"} · never counts</span>}
       {attempt && attempt.warmup && <Chip>Warm-up</Chip>}
@@ -43,6 +45,7 @@ export default function Item({ et, item, attempt, held, onNext, nextLabel, part 
   const [f, setF] = useState({ choice: [], text: "", working: "", number: "", conf: null, produced: "" });
   const [marks, setMarks] = useState({});
   const [kp, setKp] = useState([]);
+  const [proposal, setProposal] = useState(null);   // a model's proposed grading of a typed answer, until the learner confirms it
   const [panel, setPanel] = useState(null);
   const committed = !!attempt.committed_at;
   const practice = attempt.mode === "practice";
@@ -60,7 +63,7 @@ export default function Item({ et, item, attempt, held, onNext, nextLabel, part 
     if (attempt.grading === "auto") sendAttempt(et, attempt, item); else EU().commit(et);
     App.render();
   };
-  const ex = extrasOf(et), explanation = ex && ex.explanations[attempt.id];
+  const ex = extrasOf(et), explanations = K.explanationsOf(attempt, ex);
 
   return (
     <article className="k-panel cy-item" data-held={held ? "1" : undefined}>
@@ -129,17 +132,19 @@ export default function Item({ et, item, attempt, held, onNext, nextLabel, part 
       {committed && held && <p className="k-small k-muted cy-held">Answer saved. Feedback comes after the last question of this block.</p>}
 
       {committed && !held && (
-        <Feedback et={et} item={item} attempt={attempt} marks={marks} setMarks={setMarks} kp={kp} setKp={setKp} />
+        <Feedback et={et} item={item} attempt={attempt} marks={marks} setMarks={setMarks} kp={kp} setKp={setKp} proposal={proposal} setProposal={setProposal} />
       )}
 
-      {committed && !held && explanation && (
-        <section className="cy-expl">
-          <h3 className="st-h3">Explanation from Claude Code</h3>
-          {explanation.item_status === "disputed" && <p className="k-lvl" data-l="warn">Claude found a problem with this question{explanation.item_note ? ": " + explanation.item_note : ""}</p>}
+      {committed && !held && explanations.map((explanation, i) => (
+        <section key={explanation.n + "-" + i} className="cy-expl">
+          <h3 className="st-h3">{explanation.from_file ? "Explanation from Claude Code" : "Explanation" + (explanations.length > 1 ? " " + (i + 1) : "")}</h3>
+          {explanation.item_status === "disputed" && <p className="k-lvl" data-l="warn">The explanation found a problem with this question{explanation.item_note ? ": " + explanation.item_note : ""}</p>}
           <Md src={explanation.md} />
           {(explanation.refs || []).length > 0 && <p className="k-small k-muted">Sources: {explanation.refs.join(" · ")}</p>}
+          {(explanation.next_steps || []).length > 0 && <ul className="k-small k-muted">{explanation.next_steps.map((s, j) => <li key={j}>{s}</li>)}</ul>}
+          {!explanation.from_file && explanation.by && <p className="k-small k-muted mc-by">Written by {byLine(explanation.by)}. Reading it does not count as recall.</p>}
         </section>
-      )}
+      ))}
 
       {committed && !held && (
         <div className="cy-actions cy-after">
@@ -187,7 +192,7 @@ function DsrLine({ attempt }) {
   return <p className="cy-dsr"><MinusCircle size={15} aria-hidden="true" />Kept as evidence, not sent to reviews: {d.reason}.</p>;
 }
 
-function Feedback({ et, item, attempt, marks, setMarks, kp, setKp }) {
+function Feedback({ et, item, attempt, marks, setMarks, kp, setKp, proposal, setProposal }) {
   const K = KC(), App = A(), r = attempt.result || {}, fmt = item.format, pkg = et.package;
   if (fmt === "mcq_single" || fmt === "mcq_multi") {
     const set = r.set || { ok: [], missed: [], wrong: [], left: [] };
@@ -248,10 +253,32 @@ function Feedback({ et, item, attempt, marks, setMarks, kp, setKp }) {
       </div>
     );
   }
-  // typed: criterion self-check
+  return <TypedFeedback et={et} item={item} attempt={attempt} marks={marks} setMarks={setMarks} proposal={proposal} setProposal={setProposal} />;
+}
+
+// A written answer: the learner checks it against each criterion. A model may propose the marks (with the words it relied on);
+// nothing is graded until the learner confirms or changes them. Eligibility for the scheduler is decided by KCycle.eligibility, as before.
+function TypedFeedback({ et, item, attempt, marks, setMarks, proposal, setProposal }) {
+  const K = KC(), App = A(), r = attempt.result || {};
+  const mr = useModelReady("strong"), call = useModelCall();
   const crit = (item.rubric && item.rubric.criteria) || [];
-  const graded = attempt.grading === "self" || attempt.grading === "uncertain" || attempt.grading === "claude";
+  const graded = attempt.grading === "self" || attempt.grading === "model" || attempt.grading === "uncertain" || attempt.grading === "claude";
   const allMarked = crit.every((c) => marks[c.id]);
+  const mg = attempt.model_grading;
+  const proposedOf = (id) => (proposal && proposal.rows.filter((x) => x.id === id)[0]) || (graded && mg && (mg.rows || []).filter((x) => x.id === id)[0]) || null;
+  const LABEL = { met: "Met", not: "Not met", unsure: "Not sure" };
+  const suggest = async () => {
+    const res = await call.run("typed-grading", K.gradingInputs(item, attempt), { feature: "typed-grading", maxOutputTokens: 3000 });
+    if (!res.ok) return;
+    const p = K.checkGradingProposal(item, attempt, res.json);
+    setProposal({ ...p, meta: res.meta, prompt: res.prompt });
+    setMarks(p.marks);
+  };
+  const confirm = () => {
+    if (proposal) K.confirmModelGrading(attempt, item, proposal, marks, { now: Date.now(), meta: proposal.meta, prompt: proposal.prompt });
+    else K.setCriteria(attempt, item, marks);
+    sendAttempt(et, attempt, item); App.render();
+  };
   return (
     <div className="cy-fb">
       <div className="cy-compare">
@@ -262,20 +289,40 @@ function Feedback({ et, item, attempt, marks, setMarks, kp, setKp }) {
       {item.rubric && (item.rubric.contradictions || []).length > 0 && <p className="k-small k-muted">An answer that says this is not accepted, whatever else it gets right: {item.rubric.contradictions.map((c) => "“" + c + "”").join(" · ")}</p>}
       <div className="cy-crit">
         <p className="k-small k-muted">Check your answer against each criterion. Grade the meaning, not the wording. If you cannot tell, choose Not sure: the answer then stays uncertain and does not count either way.</p>
+        {!graded && (
+          <div className="cy-actions">
+            {mr.ready && <Btn size="sm" disabled={call.busy} onClick={suggest}><Robot size={15} aria-hidden="true" />{proposal ? "Suggest again" : "Suggest a grading"}</Btn>}
+            {!mr.ready && <><CopyPromptBtn promptId="typed-grading" vars={K.gradingInputs(item, attempt)} label="Copy grading prompt" /><ModelHint what="proposing a grading" /></>}
+            {mr.ready && <span className="k-small k-muted">A model reads your answer and proposes a mark with the words it relied on. You confirm or change every mark.</span>}
+          </div>
+        )}
+        {!graded && <CallStatus call={call} />}
+        {!graded && proposal && proposal.summary && <p className="k-small">{proposal.summary}</p>}
+        {!graded && proposal && proposal.notes.length > 0 && <p className="k-small k-muted">{proposal.notes.join(" · ")}</p>}
         {crit.map((c) => {
           const v = graded ? (r.criteria || {})[c.id] : marks[c.id];
+          const pr = proposedOf(c.id);
           return (
-            <div key={c.id} className="cy-crit-row">
-              <span className="cy-crit-text">{c.text}{c.required === false ? <span className="k-muted"> (optional)</span> : null}</span>
-              <div className="cy-crit-btns" role="radiogroup" aria-label={c.text}>
-                {[["met", "Met"], ["not", "Not met"], ["unsure", "Not sure"]].map(([k, l]) => (
-                  <button key={k} type="button" role="radio" aria-checked={v === k} disabled={graded} className="cy-crit-btn" data-k={k} onClick={() => setMarks((m) => ({ ...m, [c.id]: k }))}>{l}</button>
-                ))}
+            <React.Fragment key={c.id}>
+              <div className="cy-crit-row">
+                <span className="cy-crit-text">{c.text}{c.required === false ? <span className="k-muted"> (optional)</span> : null}</span>
+                <div className="cy-crit-btns" role="radiogroup" aria-label={c.text}>
+                  {[["met", "Met"], ["not", "Not met"], ["unsure", "Not sure"]].map(([k, l]) => (
+                    <button key={k} type="button" role="radio" aria-checked={v === k} disabled={graded} className="cy-crit-btn" data-k={k} onClick={() => setMarks((m) => ({ ...m, [c.id]: k }))}>{l}</button>
+                  ))}
+                </div>
               </div>
-            </div>
+              {pr && (
+                <div className="mc-prop k-small">
+                  <span className="k-muted">The model proposed <b>{LABEL[pr.mark]}</b>{graded && v !== pr.mark ? "; you chose " + LABEL[v] : ""}.{pr.reason ? " " + pr.reason : ""}</span>
+                  {pr.quote && <blockquote className="mc-quote">{pr.quote}</blockquote>}
+                </div>
+              )}
+            </React.Fragment>
           );
         })}
-        {!graded && <Btn size="sm" kind="primary" disabled={!allMarked} onClick={() => { K.setCriteria(attempt, item, marks); sendAttempt(et, attempt, item); App.render(); }}>Save my check</Btn>}
+        {!graded && <Btn size="sm" kind="primary" disabled={!allMarked || call.busy} onClick={confirm}>{proposal ? "Confirm this grading" : "Save my check"}</Btn>}
+        {graded && mg && <p className="k-small k-muted mc-by">A model proposed this grading: {byLine(mg.by)}. {mg.changed && mg.changed.length ? "You changed " + mg.changed.length + " mark" + (mg.changed.length > 1 ? "s" : "") + ", so it is recorded as your own check." : "You confirmed it as proposed."}</p>}
         {graded && <p className="cy-verdict" data-ok={r.correct ? "1" : r.correct === false ? "0" : "u"}>{r.correct ? <CheckCircle size={18} weight="fill" aria-hidden="true" /> : r.correct === false ? <XCircle size={18} weight="fill" aria-hidden="true" /> : <Circle size={18} aria-hidden="true" />}{r.correct ? "Every required criterion met" : r.correct === false ? "Not every required criterion met" : "Uncertain"}</p>}
       </div>
       <DsrLine attempt={attempt} />
@@ -283,7 +330,48 @@ function Feedback({ et, item, attempt, marks, setMarks, kp, setKp }) {
   );
 }
 
-function ExplainPanel({ et, item, attempt }) {
+// Explain: a set-up model answers in the app and the answer is saved on the attempt; otherwise the Claude Code request and Copy prompt
+function ExplainPanel(props) {
+  const mr = useModelReady("fast");
+  return mr.ready ? <ExplainInApp {...props} /> : <ExplainLegacy {...props} />;
+}
+
+function ExplainInApp({ et, item, attempt }) {
+  const K = KC(), App = A(), call = useModelCall();
+  const [depth, setDepth] = useState("standard");
+  const [note, setNote] = useState("");
+  const vars = () => K.explainInputs(et, attempt, item, depth, { note: note.trim() });
+  const ask = async () => {
+    const r = await call.run("explain", vars(), { feature: "explain", maxOutputTokens: depth === "deep" ? 8000 : 4000 });
+    if (!r.ok) return;
+    const s = K.saveExplanation(attempt, r.json, { depth, note: note.trim(), now: Date.now(), meta: r.meta, prompt: r.prompt });
+    if (!s.ok) { call.fail(s.error); return; }
+    attempt.explain_requested = Date.now();
+    EU().commit(et);
+    setNote("");
+    App.render();
+  };
+  return (
+    <section className="cy-panel">
+      <h3 className="st-h3">Explain this attempt</h3>
+      <p className="k-small k-muted">Kartotek sends your attempt (the question, your answer and working, the key or criteria, the help you used) and the source text stored with this study to your model. The explanation is saved with this attempt. Reading it does not count as recall.</p>
+      <div className="cy-row">
+        <Scale label="Depth" opts={[{ v: "short", label: "Short" }, { v: "standard", label: "Standard" }, { v: "deep", label: "Deep" }]} value={depth} onPick={setDepth} />
+      </div>
+      <label className="k-field"><span className="k-field-label">Your question (optional)</span>
+        <input className="k-input" value={note} onChange={(e) => setNote(e.target.value)} placeholder="e.g. why is option C wrong?" />
+      </label>
+      <div className="cy-actions">
+        <Btn kind="primary" size="sm" disabled={call.busy} onClick={ask}><ChatCircleText size={15} aria-hidden="true" />{(attempt.explanations || []).length ? "Explain again" : "Explain"}</Btn>
+        <CopyPromptBtn promptId="explain" vars={vars()} />
+      </div>
+      <CallStatus call={call} />
+      <RequestPreview promptId="explain" vars={vars()} />
+    </section>
+  );
+}
+
+function ExplainLegacy({ et, item, attempt }) {
   const K = KC();
   const [depth, setDepth] = useState("standard");
   const [note, setNote] = useState("");
@@ -310,7 +398,58 @@ function ExplainPanel({ et, item, attempt }) {
   );
 }
 
-function FollowPanel({ et, item, attempt }) {
+// Practice this again: a set-up model writes 1–2 items, KCycle.validateExtra checks them, they are kept in the learner data
+function FollowPanel(props) {
+  const mr = useModelReady("fast");
+  return mr.ready ? <FollowInApp {...props} /> : <FollowLegacy {...props} />;
+}
+
+function FollowInApp({ et, item, attempt }) {
+  const K = KC(), App = A(), call = useModelCall();
+  const [problems, setProblems] = useState(null);
+  const made = (attempt.followup_items || []).map((q) => ((et.progress.followups || {})[q])).filter(Boolean);
+  const vars = () => K.followupInputs(et, attempt, item, { count: 2 });
+  const ask = async () => {
+    setProblems(null);
+    let probs = [];
+    // One automatic second try that tells the model which checks failed
+    for (let n = 0; n < 2; n++) {
+      const r = await call.run("followup-items", K.followupInputs(et, attempt, item, { count: 2, problems: probs }), { feature: "followup-items", maxOutputTokens: 6000 });
+      if (!r.ok) return;
+      const b = K.buildFollowups(et, attempt, item, r.json, { now: Date.now(), meta: r.meta, prompt: r.prompt });
+      if (!b.problems.length) {
+        K.storeFollowups(et, attempt, b.items);
+        EU().commit(et);
+        App.toast(b.items.length + " follow-up question" + (b.items.length > 1 ? "s" : "") + " added to Applying.");
+        App.render();
+        return;
+      }
+      probs = b.problems;
+    }
+    setProblems(probs);
+  };
+  return (
+    <section className="cy-panel">
+      <h3 className="st-h3">Practice this again</h3>
+      <p className="k-small k-muted">Your model writes 1–2 new questions for the same criteria from the source text stored with this study. They are checked, kept with your data and shown in Applying as follow-up practice. Because they come right after feedback, they never count as independent recall and are never sent to your reviews.</p>
+      <div className="cy-actions">
+        <Btn kind="primary" size="sm" disabled={call.busy} onClick={ask}><ArrowsClockwise size={15} aria-hidden="true" />{made.length ? "Write more" : "Write follow-up questions"}</Btn>
+        <CopyPromptBtn promptId="followup-items" vars={vars()} />
+      </div>
+      <CallStatus call={call} />
+      {problems && <div className="k-lvl" data-l="warn" role="alert">The model's questions did not pass the study's checks, even on a second try, so none were kept: {problems.slice(0, 4).join("; ")}.</div>}
+      {made.length > 0 && (
+        <>
+          <p className="k-small k-muted">Written for this attempt ({made.length}). Find them in Applying for this topic:</p>
+          <ul className="mc-fu-list k-small">{made.map((it) => <li key={it.q_id}><Md src={it.stem} as="span" /> <span className="k-muted">· {K.FORMAT_LABEL[it.format]} · written by {byLine(it.made_by)}</span></li>)}</ul>
+        </>
+      )}
+      <RequestPreview promptId="followup-items" vars={vars()} />
+    </section>
+  );
+}
+
+function FollowLegacy({ et, item, attempt }) {
   const prompt = KC().followupPrompt(et, attempt, item);
   return (
     <section className="cy-panel">
@@ -328,7 +467,7 @@ function ReportPanel({ et, item, attempt, close }) {
   return (
     <section className="cy-panel">
       <h3 className="st-h3">Report a problem with this question</h3>
-      <p className="k-small k-muted">Use this if the stem, the options, the key or the solution look wrong or ambiguous. The attempt is then never counted against you and is not sent to your reviews; Explain will ask Claude to audit the question first.</p>
+      <p className="k-small k-muted">Use this if the stem, the options, the key or the solution look wrong or ambiguous. The attempt is then never counted against you and is not sent to your reviews; Explain will audit the question first.</p>
       <textarea className="k-input" rows={2} value={note} onChange={(e) => setNote(e.target.value)} placeholder="What looks wrong?" />
       <div className="cy-actions">
         <Btn size="sm" kind="primary" onClick={() => {

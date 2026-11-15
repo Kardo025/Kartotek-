@@ -133,6 +133,8 @@ function countAttempts(state) {
 }
 const counts = (s) => ({ cards: Object.keys(s.cards).length, reviews: s.reviews.length, attempts: countAttempts(s), studies: Object.keys(s.etuts).length });
 const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+// Study progress without the two empty lists that task E2 added (migrate() fills them in; nothing else changes)
+const noE2 = (p) => { const c = JSON.parse(JSON.stringify(p)); ['followups', 'feynman_feedback'].forEach((k) => { if (c && c[k] && !Object.keys(c[k]).length) delete c[k]; }); return c; };
 
 async function reloadScenario() {
   const sampleSet = content.loadContent({ contentDir: null, samplesDir: samples });
@@ -203,7 +205,7 @@ async function reloadScenario() {
   const progBefore = clone(w2.App.S.etuts['sample-cycle-v2'].progress);
   await w2.KHost.reload();
   w2.App.importContent();
-  assert.ok(same(w2.App.S.etuts['sample-cycle-v2'].progress, progBefore), 'progress changed when the study version changed');
+  assert.ok(same(noE2(w2.App.S.etuts['sample-cycle-v2'].progress), noE2(progBefore)), 'progress changed when the study version changed');
   assert.strictEqual(w2.App.S.etuts['sample-cycle-v2'].package.title, 'Sample changed');
   assert.strictEqual(countAttempts(w2.App.S), before.attempts, 'attempts changed');
 
@@ -218,7 +220,7 @@ async function reloadScenario() {
   await w2.KHost.reload();
   w2.App.importContent();
   assert.ok(w2.App.S.etuts['sample-cycle-v2'].package, 'the study did not come back');
-  assert.ok(same(w2.App.S.etuts['sample-cycle-v2'].progress, progBefore));
+  assert.ok(same(noE2(w2.App.S.etuts['sample-cycle-v2'].progress), noE2(progBefore)));
   const end = counts(w2.App.S);
   assert.deepStrictEqual(end.attempts, before.attempts);
   assert.strictEqual(end.reviews, before.reviews);

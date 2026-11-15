@@ -4,8 +4,10 @@
 import React, { useEffect, useRef, useState } from "react";
 import { motion } from "motion/react";
 import { SPRING, DUR, EASE as E } from "../../motion.jsx";
-import { CaretLeft, ArrowRight, ArrowsIn, ArrowsOut, ShieldCheck, Graph, NotePencil, ListChecks, Play, Clock, Hourglass, Lock, Check } from "@phosphor-icons/react";
+import { CaretLeft, ArrowRight, ArrowsIn, ArrowsOut, ShieldCheck, Graph, NotePencil, ListChecks, Play, Clock, Hourglass, Lock, Check, Robot } from "@phosphor-icons/react";
 import { EASE, Btn } from "../kit.jsx";
+import ModelHint from "../ModelHint.jsx";
+import { useModelReady, useModelCall, CallStatus, CopyPromptBtn, RequestPreview, byLine } from "../../model-call.jsx";
 import { Md, Html, Chip, Blocks, Scale } from "./common.jsx";
 import { QuestionsList } from "./QList.jsx";
 import Item from "./cycle/Item.jsx";
@@ -346,9 +348,9 @@ function Feynman({ et, part, k }) {
       <div className="cy-actions">
         <Btn size="sm" kind="primary" disabled={!text.trim() || (list.length && list[list.length - 1].text === text)} onClick={add}>Save as version {list.length + 1}</Btn>
         <Btn size="sm" aria-pressed={!!satisfied} onClick={() => { pr.satisfied[kid] = satisfied ? null : Date.now(); save(et); }}>{satisfied ? "Marked: I'm satisfied" : "I'm satisfied"}</Btn>
-        <Btn size="sm" disabled title="The Feynman feedback assistant is not built yet (Study Rules v2: future integration).">Get feedback</Btn>
       </div>
-      <p className="k-small k-muted">Feedback on explanations will come from a separate assistant later; until then your versions are kept. "I'm satisfied" is your readiness, not a score.</p>
+      <FeynmanFeedback et={et} k={k} last={list.length ? list[list.length - 1] : null} unsaved={!list.length || list[list.length - 1].text !== text} />
+      <p className="k-small k-muted">Feedback is a reading of your own words against what a complete explanation covers: it never rewrites your explanation and gives no score. "I'm satisfied" is your readiness and your decision.</p>
       {crit.length > 0 && (
         <details className="k-small">
           <summary>What a complete explanation covers</summary>
@@ -368,6 +370,69 @@ function Feynman({ et, part, k }) {
         </details>
       )}
     </section>
+  );
+}
+
+// Feynman "Get feedback" (task E2): a set-up model reads the latest saved version against the topic's criteria and quotes the
+// learner's own sentences. The answer is checked (a quote that is not in the text is dropped), kept per version, and never changes the
+// version, "I'm satisfied", or anything the scheduler sees.
+const FB_LABEL = { covered: "Covered", partly: "Partly", missing: "Missing", unclear: "Unclear" };
+function FeedbackBlock({ rec, pkg }) {
+  return (
+    <div className="mc-fb">
+      <p className="k-small k-muted">Feedback on version {rec.n} · {when(rec.at)} · {byLine(rec.by)}</p>
+      <div className="mc-rows">
+        {rec.criteria.map((c) => (
+          <div key={c.id} className="mc-row">
+            <div className="mc-row-head"><span className="mc-status" data-s={c.status}>{FB_LABEL[c.status]}</span><span>{criterionText(pkg, c.id)}</span></div>
+            {c.quote && <blockquote className="mc-quote">“{c.quote}”</blockquote>}
+            {c.comment && <p className="k-small">{c.comment}</p>}
+          </div>
+        ))}
+      </div>
+      {(rec.misstatements || []).length > 0 && (
+        <div className="k-small"><b>Sentences to check against the source</b>
+          {rec.misstatements.map((m, i) => <div key={i}><blockquote className="mc-quote">“{m.quote}”</blockquote><p>{m.comment}</p></div>)}
+        </div>
+      )}
+      {(rec.questions || []).length > 0 && <div className="k-small"><b>Questions to think about</b><ul>{rec.questions.map((q, i) => <li key={i}>{q}</li>)}</ul></div>}
+      {rec.overall && <p className="k-small">{rec.overall}</p>}
+    </div>
+  );
+}
+
+function FeynmanFeedback({ et, k, last, unsaved }) {
+  const K = KC(), pkg = et.package, kid = k.kazanim_id;
+  const mr = useModelReady("strong"), call = useModelCall();
+  const recs = ((et.progress.feynman_feedback || {})[kid]) || [];
+  const mine = last ? recs.filter((r) => r.n === last.n) : [];
+  const latest = mine[mine.length - 1] || null;
+  const earlier = recs.filter((r) => r !== latest).reverse();
+  const inputs = last ? K.feynmanInputs(et, k, last) : null;
+  const ask = async () => {
+    const r = await call.run("feynman-feedback", inputs, { feature: "feynman-feedback", maxOutputTokens: 5000 });
+    if (!r.ok) return;
+    const rec = K.checkFeynmanFeedback(last.text, inputs._ids, r.json);
+    if (!rec) { call.fail("The feedback could not be read."); return; }
+    K.saveFeynmanFeedback(et, kid, last.n, rec, { now: Date.now(), meta: r.meta, prompt: r.prompt });
+    save(et);
+  };
+  return (
+    <div className="mc-feynman">
+      <div className="cy-actions">
+        {mr.ready
+          ? <Btn size="sm" disabled={call.busy || !last || unsaved} onClick={ask} title={!last ? "Save a version first." : unsaved ? "Save this version first, so the feedback belongs to a version you can see." : "Reads your latest saved version against the criteria."}><Robot size={15} aria-hidden="true" />{latest ? "Get feedback again" : "Get feedback"}</Btn>
+          : <ModelHint what="feedback on your explanation" />}
+        {inputs && <CopyPromptBtn promptId="feynman-feedback" vars={inputs} />}
+        {mr.ready && (!last || unsaved) && <span className="k-small k-muted">{!last ? "Save a version first." : "Save this version first: feedback is about a saved version."}</span>}
+      </div>
+      <CallStatus call={call} />
+      {latest && <FeedbackBlock rec={latest} pkg={pkg} />}
+      {earlier.length > 0 && (
+        <details className="k-small"><summary>Earlier feedback ({earlier.length})</summary>{earlier.map((r, i) => <FeedbackBlock key={i} rec={r} pkg={pkg} />)}</details>
+      )}
+      {inputs && mr.ready && <RequestPreview promptId="feynman-feedback" vars={inputs} />}
+    </div>
   );
 }
 

@@ -256,6 +256,114 @@ async function main() {
       } finally { sse.close(); fs.rmSync(cliDir, { recursive: true, force: true }); }
     }
 
+    // Model calls while studying (E2): a stand-in model answers by the schema it is asked for. Grading proposal of a typed answer,
+    // Explain, Practice this again, Feynman feedback and Ask about this card each make a call, show their answer and store it where
+    // it belongs; the scheduler's inputs do not change; the usage log has the features and no learner text.
+    {
+      const answers = (body) => {
+        if (body.includes('explanation_md')) return { explanation_md: 'The gate opens only when **both** switches are on.', item_status: 'consistent', item_note: '', refs: ['S1 ¶1'], next_steps: ['Reread the rule'] };
+        if (body.includes('numeric_value')) return { items: [{ format: 'mcq_single', stem: 'A is on and B is on. What is the gate state?', options: [{ id: 'a', md: 'Open', note: 'Correct.' }, { id: 'b', md: 'Closed', note: 'Both are on.' }, { id: 'c', md: 'Unknown', note: 'The rule decides.' }], key: ['a'], numeric_value: 0, numeric_tol: 0, numeric_unit: '', rubric_criteria: [], model_answer: '', accept: [], contradictions: [], solution: 'Both on: open.', hints: [], units: ['U1'], difference: 'Both switches on.' }] };
+        if (body.includes('not_met')) return { criteria: [{ id: 'C-2', mark: 'met', quote: 'closed', reason: 'It says closed.' }, { id: 'C-3', mark: 'met', quote: 'B is off', reason: 'Gives the reason.' }], summary: 'Both there.' };
+        if (body.includes('misstatements')) return { criteria: [{ id: 'C-1', status: 'covered', quote: 'both switches', comment: 'Names the condition.' }], misstatements: [], questions: ['What if A is off?'], overall: 'A start.' };
+        return { answer_md: 'Because of the rule.', common_mistake: 'Mixing and/or.', refs: ['S1 ¶1'], practice_question: 'What if B is off?', practice_answer: 'Closed.', limits: '' };
+      };
+      let nCalls = 0;
+      const srv = require('http').createServer((q, r) => {
+        let body = '';
+        q.on('data', (d) => { body += d; });
+        q.on('end', () => {
+          if (q.url.endsWith('/models')) { r.setHeader('Content-Type', 'application/json'); r.end(JSON.stringify({ data: [{ id: 'stand-in' }] })); return; }
+          nCalls++;
+          r.setHeader('Content-Type', 'text/event-stream');
+          r.write('data: ' + JSON.stringify({ choices: [{ delta: { content: JSON.stringify(answers(body)) }, finish_reason: 'stop' }] }) + '\n\n');
+          r.write('data: ' + JSON.stringify({ choices: [], usage: { prompt_tokens: 500, completion_tokens: 120 } }) + '\n\n');
+          r.end('data: [DONE]\n\n');
+        });
+      });
+      await new Promise((res) => srv.listen(0, '127.0.0.1', res));
+      const SID = 'c2-first';
+      try {
+        await page.evaluate(async (b) => {
+          const M = window.kartotek.models;
+          await M.saveProvider({ id: 'e2', kind: 'openai-compatible', preset: 'custom', baseUrl: b, label: 'E2 stand-in' });
+          await M.setSlot('strong', 'e2', 'stand-in'); await M.setSlot('fast', 'e2', 'stand-in');
+        }, 'http://127.0.0.1:' + srv.address().port + '/v1');
+        await page.reload(); // the buttons read the model status when the window starts
+        await page.waitForSelector('main', { timeout: 15000 });
+        await page.waitForFunction(() => window.App && window.App.S && window.App.store.mode === 'file', null, { timeout: 15000 });
+        await page.evaluate((id) => window.App.goStudy(id), SID);
+        await page.waitForTimeout(800);
+        await page.evaluate((id) => {
+          const App = window.App, et = App.S.etuts[id], K = window.KCycle;
+          if (!et.progress.started_at) et.progress.started_at = Date.now();
+          K.goto(et, 0, 0, 'apply', Date.now());
+          const idx = K.itemIndex(et.package, App.studyExtras && App.studyExtras[et.etut_id]);
+          const a = K.startAttempt(et, idx.i1, 'practice', Date.now());
+          K.commit(et, a, { text: 'The gate is closed, because B is off.', confidence: 'sure' }, idx.i1, Date.now());
+          App.EtutUI.commit(et); App.render();
+        }, SID);
+        const snap = () => page.evaluate((id) => { const S = window.App.S, a = S.etuts[id].progress.attempts.slice(-1)[0]; return { reviews: S.reviews.length, result: JSON.stringify(a.result), conf: a.confidence, hints: a.hints }; }, SID);
+        const before = await snap();
+        // a typed answer: the model proposes, the learner confirms
+        await page.click('button:has-text("Suggest a grading")', { timeout: 10000 });
+        await page.waitForSelector('.mc-prop', { timeout: 20000 }).catch(() => problems.push('E2: no grading proposal was shown'));
+        const prop = await page.$$eval('.mc-prop', (e) => e.map((x) => x.innerText)).catch(() => []);
+        if (prop.length !== 2 || !prop.every((t) => /The model proposed Met/.test(t))) problems.push('E2: the proposal rows are wrong: ' + JSON.stringify(prop));
+        await page.click('button:has-text("Confirm this grading")');
+        await page.waitForTimeout(600);
+        const g = await page.evaluate((id) => { const a = window.App.S.etuts[id].progress.attempts.slice(-1)[0]; return { grading: a.grading, model: a.model_grading && a.model_grading.by && a.model_grading.by.model, provider: a.model_grading && a.model_grading.by && a.model_grading.by.provider, correct: a.result && a.result.correct }; }, SID);
+        if (g.grading !== 'model' || g.model !== 'stand-in' || g.provider !== 'E2 stand-in' || g.correct !== true) problems.push('E2: the confirmed grading is not recorded as "model": ' + JSON.stringify(g));
+        const afterGrade = await snap();
+        // Explain: saved on the attempt; nothing the scheduler reads changes
+        await page.click('main button:has-text("Explain")');
+        await page.click('.cy-panel button:has-text("Explain")');
+        await page.waitForSelector('.cy-expl', { timeout: 20000 }).catch(() => problems.push('E2: Explain showed no explanation'));
+        const expl = await page.$eval('.cy-expl', (e) => e.innerText).catch(() => '');
+        if (!/both switches are on/.test(expl) || !/E2 stand-in/.test(expl) || !/does not count as recall/.test(expl)) problems.push('E2: the explanation is incomplete: ' + expl);
+        const afterExplain = await snap();
+        if (JSON.stringify(afterExplain) !== JSON.stringify(afterGrade)) problems.push('E2: Explain changed what the scheduler reads: ' + JSON.stringify([afterGrade, afterExplain]));
+        // Practice this again: checked items kept with the data, not sent
+        await page.click('main button:has-text("Practice this again")');
+        await page.click('button:has-text("Write follow-up questions")');
+        await page.waitForSelector('.mc-fu-list', { timeout: 20000 }).catch(() => problems.push('E2: no follow-up question was listed'));
+        const fu = await page.evaluate((id) => { const p = window.App.S.etuts[id].progress; return Object.keys(p.followups || {}).map((q) => ({ of: p.followups[q].followup_of, v: p.followups[q].validation })); }, SID);
+        if (fu.length !== 1 || fu[0].v !== 'unverified' || !fu[0].of) problems.push('E2: the follow-up item is not stored as expected: ' + JSON.stringify(fu));
+        const afterFollow = await snap();
+        if (afterFollow.reviews !== afterExplain.reviews) problems.push('E2: a follow-up question reached the review log');
+        // Feynman feedback
+        await page.evaluate((id) => { const App = window.App, et = App.S.etuts[id]; window.KCycle.goto(et, 0, 0, 'work', Date.now()); App.EtutUI.commit(et); App.render(); }, SID);
+        await page.waitForSelector('.cy-feynman textarea', { timeout: 8000 });
+        await page.fill('.cy-feynman textarea', 'The gate opens only when both switches are on. I am not sure what the display does.');
+        await page.click('.cy-feynman button:has-text("Save as version")');
+        await page.waitForTimeout(300);
+        const fyBefore = await page.evaluate((id) => JSON.stringify([window.App.S.etuts[id].progress.feynman, window.App.S.etuts[id].progress.satisfied]), SID);
+        await page.click('.mc-feynman button:has-text("Get feedback")');
+        await page.waitForSelector('.mc-fb', { timeout: 20000 }).catch(() => problems.push('E2: no Feynman feedback was shown'));
+        const fb = await page.$eval('.mc-fb', (e) => e.innerText).catch(() => '');
+        if (!/both switches/.test(fb) || !/Covered/.test(fb)) problems.push('E2: Feynman feedback has no quote or status: ' + fb);
+        const fyAfter = await page.evaluate((id) => JSON.stringify([window.App.S.etuts[id].progress.feynman, window.App.S.etuts[id].progress.satisfied]), SID);
+        if (fyBefore !== fyAfter) problems.push('E2: Feynman feedback changed my versions or "I\'m satisfied"');
+        // Ask about this card on Review
+        await page.evaluate(() => window.App.switchTab('study'));
+        await page.waitForTimeout(800);
+        await page.keyboard.press('Space');
+        await page.click('button:has-text("Ask about this card")', { timeout: 10000 });
+        await page.fill('.mc-ask input', 'Why is it closed?');
+        await page.click('.mc-ask button:has-text("Ask")');
+        await page.waitForSelector('.mc-answer', { timeout: 20000 }).catch(() => problems.push('E2: no answer about the card was shown'));
+        // the calls were logged by feature, without any text
+        const usageText = fs.readdirSync(path.join(profile, 'models', 'usage')).map((f) => fs.readFileSync(path.join(profile, 'models', 'usage', f), 'utf8')).join('');
+        for (const f of ['typed-grading', 'explain', 'followup-items', 'feynman-feedback', 'ask-card']) if (!usageText.includes('"feature":"' + f + '"')) problems.push('E2: the usage log has no ' + f + ' call');
+        if (/gate is closed|both switches|Why is it closed/i.test(usageText)) problems.push('E2: the usage log holds learner text');
+        if (nCalls !== 5) problems.push('E2: expected 5 model calls, the stand-in saw ' + nCalls);
+        void before;
+        console.log('Model calls while studying: grading proposal (recorded as "model"), Explain, follow-up item, Feynman feedback and a card question each answered by the stand-in; ' + nCalls + ' calls, none changed what the scheduler reads');
+      } finally {
+        srv.close();
+        await page.evaluate(async () => { const M = window.kartotek.models; await M.setSlot('fast', '', ''); await M.removeProvider('e2'); }).catch(() => {});
+      }
+    }
+
     // Planning home and Euro apply without a folder (D2): Kartotek's own rows, what is missing, and a setup row instead of the app
     await clickMode('planning');
     await page.click('.k-nav-item[data-tab="home"]');

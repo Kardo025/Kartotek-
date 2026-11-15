@@ -80,6 +80,8 @@ Studies, tests, mock exams and mind-map readings are written by Claude Code from
 
 **Settings, Models** connects Kartotek to a model: an API key (Anthropic, OpenAI, Google Gemini, OpenRouter), your existing Claude Code or Codex subscription through the command-line client installed on your PC, or a local model such as Ollama. Each provider has a **Test connection** button that makes one small call and shows the reply, the time and the cost. Three task slots (strong, fast, vision) choose which model does what; **Usage and budget** shows calls, tokens and estimated cost per day, feature and model, with a monthly budget warning. Keys are encrypted with Windows' protection for your account and never appear in your data, backups or exports. Without a model everything works as before. Calls go only to the provider you set up; with no provider, the app sends nothing anywhere.
 
+With a model set up, the study screens use it directly: **Explain** after an answer, **Practice this again** (one or two new checked questions, kept with your data and never sent to your reviews), **Get feedback** on your own explanation (it quotes your sentences and never rewrites them), a **grading proposal** for written answers that you confirm or change, and **Ask about this card** on the Review screen. What each request says to the model is a prompt file you can read and edit in **Settings, Models, Prompts**; every button also has **Copy prompt** for pasting into any chat. The model sees the card or question, your text and the source text stored with the study, not the page files.
+
 ## Licences
 
 - Code: MIT, see `LICENSE`.

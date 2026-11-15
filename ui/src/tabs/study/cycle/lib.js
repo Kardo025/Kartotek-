@@ -4,7 +4,11 @@ export const KC = () => window.KCycle;
 export const KE = () => window.KEtut;
 export const EU = () => window.App.EtutUI;
 
-export function extrasOf(et) { return ((A().studyExtras || {})[et.etut_id]) || null; }
+// Extras from files (Claude Code) plus the follow-up items kept in the learner data (task E2)
+export function extrasOf(et) {
+  const base = ((A().studyExtras || {})[et.etut_id]) || null;
+  return KC().withFollowups ? KC().withFollowups(et, base) : base;
+}
 export function itemsOf(et) { return KC().itemIndex(et.package, extrasOf(et)); }
 export function partOf(et, pi) { return et.package.parts[pi == null ? et.progress.part : pi]; }
 

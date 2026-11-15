@@ -97,6 +97,7 @@ function runDesktopTests() {
   try { (await require('./data-tests.cjs').run()).forEach((l) => console.log(l)); } catch (err) { console.log('FAIL  data tests: ' + (err && err.stack || err)); code = 1; }
   try { const k = await require('./nav-tests.cjs').run(); console.log('Navigation tests: ' + k + '/' + k + ' passed'); } catch (err) { console.log('FAIL  navigation tests: ' + (err && err.stack || err)); code = 1; }
   try { (await require('./model-tests.cjs').run()).forEach((l) => console.log(l)); } catch (err) { console.log('FAIL  model layer tests: ' + (err && err.stack || err)); code = 1; }
+  try { (await require('./study-model-tests.cjs').run()).forEach((l) => console.log(l)); } catch (err) { console.log('FAIL  study model tests: ' + (err && err.stack || err)); code = 1; }
   try { const k = await require('./euro-tests.cjs').run(); console.log('Euro apply connection and Planning timeline tests: ' + k + '/' + k + ' passed'); } catch (err) { console.log('FAIL  euro apply tests: ' + (err && err.stack || err)); code = 1; }
   process.exit(code);
 })();
