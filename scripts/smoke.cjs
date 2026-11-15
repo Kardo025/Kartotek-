@@ -49,6 +49,7 @@ async function launchApp(env) {
       }
       throw new Error('the packaged app opened no window');
     },
+    windows: () => browser.contexts().flatMap((c) => c.pages()),
     close: async () => {
       try { await browser.close(); } catch (e) { /* already closed */ }
       if (process.platform === 'win32') spawnSync('taskkill', ['/pid', String(child.pid), '/T', '/F'], { stdio: 'ignore' }); else child.kill();
@@ -73,7 +74,20 @@ async function main() {
   fs.mkdirSync(path.join(contentDir, 'mindmaps', 'ph-map', 'views'), { recursive: true });
   fs.writeFileSync(path.join(contentDir, 'mindmaps', 'ph-map', 'views', 'p.png'), png);
   fs.writeFileSync(path.join(contentDir, 'secret.png'), png);
+  // A stand-in Euro apply folder (task D2): the one file Kartotek reads, a launcher file and the packages folder it checks for
+  const euroDir = fs.mkdtempSync(path.join(os.tmpdir(), 'kartotek-smoke-euro-'));
+  fs.mkdirSync(path.join(euroDir, 'data'), { recursive: true });
+  fs.mkdirSync(path.join(euroDir, 'tools'), { recursive: true });
+  fs.mkdirSync(path.join(euroDir, 'app', 'node_modules'), { recursive: true });
+  fs.writeFileSync(path.join(euroDir, 'tools', 'serve.ps1'), '# fixture\n');
+  const inDays = (n) => { const d = new Date(Date.now() + n * 864e5); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); };
+  fs.writeFileSync(path.join(euroDir, 'data', 'universities.json'), JSON.stringify({
+    schema: 'euroapply.universities/1', updated: '2026-11-01', statusValues: ['Planned'],
+    universities: [{ id: 'smoke-uni', name: 'Smoke University', city: 'X', country: 'NL', priority: 'normal', programs: [{ id: 'p1', name: 'Smoke programme', status: 'Planned', timeline: [] }],
+      timeline: [{ id: 't1', date: inDays(20), label: 'Smoke registration deadline', kind: 'deadline', est: false, checked: '2026-11-01', url: 'https://example.org/x', note: '' }] }],
+  }));
   const env = Object.assign({}, process.env, { KARTOTEK_USER_DATA: profile, KARTOTEK_CONTENT: contentDir, ELECTRON_RUN_AS_NODE: '' });
+  delete env.KARTOTEK_EUROAPPLY; // not set on purpose: the first run checks the setup row
   delete env.ELECTRON_RUN_AS_NODE;
   let app = await launchApp(env);
   const problems = [];
@@ -132,7 +146,7 @@ async function main() {
       await clickMode('study');
     }
     await clickMode('planning');
-    entries += await visit('Planning mode', ['CEnT-S', 'TU Delft AE Prep', 'Application', 'Euro apply', 'Stats'].concat(SHARED));
+    entries += await visit('Planning mode', ['Home', 'CEnT-S', 'TU Delft AE Prep', 'Application', 'Euro apply', 'Stats'].concat(SHARED));
     const oldTabs = ['study', 'etut', 'lesson', 'cards', 'mindmaps', 'stats', 'algo', 'settings', 'cents', 'tud', 'tud-apply']
       .concat(['cents', 'tud'].flatMap((x) => ['study', 'etut', 'cards', 'mock'].map((t) => x + '-' + t)));
     for (const id of oldTabs) {
@@ -183,6 +197,22 @@ async function main() {
     const direct = await page.evaluate(() => { const r = window.KTests.runAll(); return { pass: r.filter((x) => x.pass).length, total: r.length }; });
     if (!shown || !/^(\d+)\/\1 tests passed$/.test(shown)) problems.push('Algorithm tab shows: ' + shown);
     if (direct.pass !== direct.total) problems.push('KTests: ' + direct.pass + '/' + direct.total);
+    // Planning home and Euro apply without a folder (D2): Kartotek's own rows, what is missing, and a setup row instead of the app
+    await clickMode('planning');
+    await page.click('.k-nav-item[data-tab="home"]');
+    await page.waitForSelector('#home-timeline', { timeout: 8000 }).catch(() => problems.push('the Planning home page did not open'));
+    await page.waitForTimeout(600);
+    const homeNone = await page.evaluate(() => ({ missing: (document.getElementById('home-missing') || {}).innerText || '', undated: (document.getElementById('home-undated') || {}).innerText || '' }));
+    if (!/Euro apply deadlines/.test(homeNone.missing)) problems.push('Home: missing Euro apply data is not reported: ' + JSON.stringify(homeNone.missing));
+    if (!/no exam date/.test(homeNone.undated)) problems.push('Home: Kartotek\'s own rows are missing without Euro apply: ' + JSON.stringify(homeNone.undated));
+    await page.click('.k-nav-item[data-tab="euroapply"]');
+    await page.waitForSelector('#euro-setup', { timeout: 5000 }).catch(() => problems.push('Euro apply: no setup row without a folder'));
+    // the folder is saved in the profile's settings file (the folder picker writes the same key)
+    const settingsFile = path.join(profile, 'settings.json');
+    let saved = {};
+    try { saved = JSON.parse(fs.readFileSync(settingsFile, 'utf8')); } catch (e) { /* none yet */ }
+    fs.writeFileSync(settingsFile, JSON.stringify(Object.assign(saved, { euroApplyFolder: euroDir })));
+
     // A change is saved to the files and is there after a restart; no first-run panel the second time
     await page.evaluate(async () => { window.App.S.settings.daily_review_limit = 137; window.App.store.commit({ meta: true }); await window.App.store.flushNow(); });
     await app.close();
@@ -194,11 +224,47 @@ async function main() {
     const after = await page2.evaluate(() => ({ limit: window.App.S.settings.daily_review_limit, first: !!document.getElementById('first-run') }));
     if (after.limit !== 137) problems.push('a saved change was not there after a restart: ' + JSON.stringify(after));
     if (after.first) problems.push('the first-run panel appeared again after a restart');
+
+    // Euro apply configured (D2): its deadline is on Home, read only; the page offers Start, then Open, and Open makes a window of its own
+    await page2.click('.k-mode button[data-mode="planning"]');
+    await page2.click('.k-nav-item[data-tab="home"]');
+    await page2.waitForFunction(() => /Smoke registration deadline/.test((document.getElementById('home-timeline') || {}).innerText || ''), null, { timeout: 10000 })
+      .catch(() => problems.push('Home: the Euro apply deadline is not on the timeline'));
+    const home = await page2.evaluate(() => ({ text: (document.getElementById('home-timeline') || {}).innerText || '', missing: (document.getElementById('home-missing') || {}).innerText || '' }));
+    if (!/Euro apply/.test(home.text) || !/Open in Euro apply/.test(home.text) || !/Euro apply data from/.test(home.text)) problems.push('Home: the Euro apply row does not say which app owns it or link to it');
+    if (/Euro apply deadlines/.test(home.missing)) problems.push('Home: Euro apply is reported missing although its folder is set');
+    await page2.click('.k-nav-item[data-tab="euroapply"]');
+    await page2.waitForSelector('#euro-ready', { timeout: 8000 }).catch(() => problems.push('Euro apply: the page does not recognise the folder'));
+    const fake = require('http').createServer((q, r) => { r.setHeader('Content-Type', 'text/html'); r.end('<title>Euro apply fixture</title><h1>fixture</h1>'); });
+    let ownPort = true;
+    await new Promise((res) => { fake.once('error', () => { ownPort = false; res(); }); fake.listen(5178, '127.0.0.1', res); });
+    try {
+      await page2.click('.k-nav-item[data-tab="cents"]');
+      await page2.click('.k-nav-item[data-tab="euroapply"]'); // reads the status again
+      await page2.waitForSelector('#euro-open', { timeout: 8000 }).catch(() => problems.push('Euro apply: "Open Euro apply" is not offered although the server answers'));
+      await page2.click('#euro-open').catch(() => {});
+      let euroPage = null;
+      for (let i = 0; i < 30 && !euroPage; i++) {
+        euroPage = app.windows().find((w) => /^http:\/\/127\.0\.0\.1:5178\//.test(w.url()));
+        if (!euroPage) await sleep(300);
+      }
+      if (!euroPage) problems.push('Euro apply did not open in a window of its own');
+      else {
+        const sealed = await euroPage.evaluate(() => ({ bridge: typeof window.kartotek, node: typeof require, process: typeof process })).catch(() => ({}));
+        if (sealed.bridge !== 'undefined' || sealed.node !== 'undefined' || sealed.process !== 'undefined') problems.push('the Euro apply window is not sealed: ' + JSON.stringify(sealed));
+        await euroPage.evaluate(() => { window.location.href = 'app://kartotek/index.html'; }).catch(() => {}); // must stay on Euro apply's own address
+        await sleep(600);
+        if (!/^http:\/\/127\.0\.0\.1:5178\//.test(euroPage.url())) problems.push('the Euro apply window navigated away: ' + euroPage.url());
+        await euroPage.close().catch(() => {});
+      }
+    } finally { fake.close(); }
+    if (!ownPort) console.log('Note: port 5178 was in use (a real Euro apply is running), so that server was opened instead of the stand-in.');
     console.log('Window: ' + (info && info.ok ? 'Electron ' + info.value.electron + ' (' + info.value.platform + ')' : '?') + '; sidebar entries: ' + labels.length + '; Algorithm tab: ' + shown + '; KTests: ' + direct.pass + '/' + direct.total);
   } finally {
     await app.close();
     fs.rmSync(profile, { recursive: true, force: true });
     fs.rmSync(contentDir, { recursive: true, force: true });
+    fs.rmSync(euroDir, { recursive: true, force: true });
   }
   const unexpected = errors.filter((e) => !EXPECTED.test(e));
   const expected = errors.length - unexpected.length;

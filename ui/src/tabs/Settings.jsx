@@ -7,6 +7,7 @@ import {
 import { PageHead, Panel, Btn, Field, Lvl, TableWrap, EASE } from "./kit.jsx";
 import { ArmBtn, CommitInput, useNativeChange } from "./manage-kit.jsx";
 import ContentPanel from "./ContentPanel.jsx";
+import { EuroSettingsPanel } from "./EuroApply.jsx";
 import { DesktopData, isFileMode } from "./DataFiles.jsx";
 import "./cards.css";
 import "./settings.css";
@@ -410,6 +411,7 @@ export default function SettingsTab() {
       <Params App={App} S={S} />
       <Personalisation App={App} S={S} />
       <ContentPanel />
+      <EuroSettingsPanel />
       <DataPanel App={App} S={S} />
     </div>
   );

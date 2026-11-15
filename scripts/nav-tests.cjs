@@ -21,7 +21,7 @@ async function run() {
   t(() => assert.deepStrictEqual(nav.locate('cents-mock'), { mode: 'study', scope: 'cents', item: 'mock' }));
   t(() => assert.deepStrictEqual(nav.locate('lesson'), { mode: 'study', scope: undefined, item: 'lesson' }));
   // Planning mode: overviews, application, Euro apply, Stats
-  t(() => ['cents', 'tud', 'tud-apply', 'euroapply', 'stats'].forEach((id) => assert.strictEqual(nav.locate(id).mode, 'planning')));
+  t(() => ['home', 'cents', 'tud', 'tud-apply', 'euroapply', 'stats'].forEach((id) => assert.strictEqual(nav.locate(id).mode, 'planning')));
   // Visible in both modes: Mind maps, Career, Settings, Algorithm
   t(() => ['mindmaps', 'career', 'settings', 'algo'].forEach((id) => assert.strictEqual(nav.locate(id).mode, null)));
 
@@ -53,7 +53,7 @@ async function run() {
     assert.ok(study.includes('mindmaps') && study.includes('career') && study.includes('settings') && study.includes('algo'));
     assert.ok(!study.includes('stats') && !study.includes('cents') && !study.includes('tud-apply'));
     const plan = nav.visibleTabs('planning', 'tud');
-    assert.deepStrictEqual(plan.slice(0, 5), ['cents', 'tud', 'tud-apply', 'euroapply', 'stats']);
+    assert.deepStrictEqual(plan.slice(0, 6), ['home', 'cents', 'tud', 'tud-apply', 'euroapply', 'stats']);
     assert.ok(plan.includes('mindmaps') && plan.includes('settings') && plan.includes('algo') && plan.includes('career'));
   });
   // every old tab is reachable from some visible list (in some mode and scope), so every existing screen stays reachable

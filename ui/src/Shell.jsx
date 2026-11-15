@@ -2,7 +2,7 @@ import React, { useEffect, useReducer, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Cards, BookOpenText, Exam, Stack, GraduationCap, AirplaneTilt, ChartBar, Function as FnIcon, GearSix, Sun, Moon, Monitor, Timer, Graph, ClipboardText,
-  Briefcase, GlobeHemisphereWest, CalendarCheck,
+  Briefcase, GlobeHemisphereWest, CalendarCheck, House,
 } from "@phosphor-icons/react";
 import { Count, TabEnter, SPRING } from "./motion.jsx";
 import Welcome, { welcomeSeen, markWelcomeSeen } from "./Welcome.jsx";
@@ -20,6 +20,7 @@ const MODE_DEFS = [
 ];
 const STUDY_ICONS = { review: Cards, study: BookOpenText, cards: Stack, mock: Timer, lesson: Exam };
 const PLANNING_ITEMS = [
+  { id: "home", label: "Home", Icon: House },
   { id: "cents", label: "CEnT-S", Icon: GraduationCap },
   { id: "tud", label: "TU Delft AE Prep", Icon: AirplaneTilt },
   { id: "tud-apply", label: "Application", Icon: ClipboardText },
@@ -179,7 +180,7 @@ export default function Shell() {
     setModeMem(m); App.setPref("kartotek-mode", m);
     let target = App.pref("kartotek-last-" + m);
     const there = target && locate(target);
-    if (!there || there.mode !== m) target = m === "planning" ? "cents" : studyTab("review", scope);
+    if (!there || there.mode !== m) target = m === "planning" ? "home" : studyTab("review", scope);
     else if (m === "study" && there.scope !== undefined) target = studyTab(there.item, scope); // a remembered Study tab follows the scope
     go(target);
   };
@@ -259,10 +260,12 @@ export default function Shell() {
             </>
           ) : (
             <>
-              <div className="k-nav-group" id="k-nav-exams">Exams</div>
-              {PLANNING_ITEMS.slice(0, 3).map(item)}
+              {PLANNING_ITEMS.slice(0, 1).map(item)}
               <div className="k-divider" role="separator" />
-              {PLANNING_ITEMS.slice(3).map(item)}
+              <div className="k-nav-group" id="k-nav-exams">Exams</div>
+              {PLANNING_ITEMS.slice(1, 4).map(item)}
+              <div className="k-divider" role="separator" />
+              {PLANNING_ITEMS.slice(4).map(item)}
             </>
           )}
           <div className="k-divider" role="separator" />
@@ -316,6 +319,7 @@ export default function Shell() {
         <section id="tab-mock-all" role="region" aria-label="Mock exam" className="k-react" hidden={tab !== "mock-all"}>{W("mock-all", booted && tab === "mock-all" ? React.createElement(REACT_TABS["mock-all"]) : null)}</section>
         <section id="tab-career" role="region" aria-label="Career" className="k-react" hidden={tab !== "career"}>{W("career", booted && tab === "career" ? React.createElement(REACT_TABS.career) : null)}</section>
         <section id="tab-euroapply" role="region" aria-label="Euro apply" className="k-react" hidden={tab !== "euroapply"}>{W("euroapply", booted && tab === "euroapply" ? React.createElement(REACT_TABS.euroapply) : null)}</section>
+        <section id="tab-home" role="region" aria-label="Home" className="k-react" hidden={tab !== "home"}>{W("home", booted && tab === "home" ? React.createElement(REACT_TABS.home) : null)}</section>
         <section id="tab-stats" role="region" aria-label="Stats" className={REACT_TABS.stats ? "k-react" : "k-legacy"}>{W("stats", booted && tab === "stats" && REACT_TABS.stats ? React.createElement(REACT_TABS.stats) : null)}</section>
         <section id="tab-settings" role="region" aria-label="Settings" className={REACT_TABS.settings ? "k-react" : "k-legacy"}>{W("settings", booted && tab === "settings" && REACT_TABS.settings ? React.createElement(REACT_TABS.settings) : null)}</section>
         <section id="tab-algo" role="region" aria-label="Algorithm" className={REACT_TABS.algo ? "k-react" : "k-legacy"}>{W("algo", booted && tab === "algo" && REACT_TABS.algo ? React.createElement(REACT_TABS.algo) : null)}</section>

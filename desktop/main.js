@@ -1,7 +1,8 @@
 'use strict';
 // Kartotek desktop shell (task C1). Loads the existing engine and UI from src\ through the app://kartotek/ protocol.
 // Content is read from the content folder at run time (task C2, desktop/content.js); learner data lives in files in the profile's
-// data folder with dated backups (task C3, desktop/data.js).
+// data folder with dated backups (task C3, desktop/data.js). Euro apply (the owner's separate app) opens in its own window and one of
+// its data files is read, read only (task D2, desktop/euroapply.js).
 // Security settings follow ARCHITECTURE.md section 2.4.
 const { app, BrowserWindow, Menu, dialog, ipcMain, protocol, session, shell } = require('electron');
 const fs = require('fs');
@@ -9,6 +10,7 @@ const path = require('path');
 const { resolveAppPath, headersFor, externalUrlAllowed } = require('./serve');
 const content = require('./content');
 const data = require('./data');
+const euro = require('./euroapply');
 
 const ROOT = path.join(__dirname, '..');
 const SRC = path.join(ROOT, 'src');
@@ -33,6 +35,7 @@ if (!app.requestSingleInstanceLock()) {
 }
 
 let win = null;
+let euroWin = null;
 
 // ---- settings (%APPDATA%\Kartotek\settings.json): the content folder the owner chose. Written atomically (temp file, then rename).
 function settingsFile() { return path.join(app.getPath('userData'), 'settings.json'); }
@@ -133,7 +136,7 @@ function createWindow() {
     win.webContents.send('data:flush-request');
     setTimeout(() => { if (win && !win.isDestroyed()) { closeConfirmed = true; win.close(); } }, 4000);
   });
-  win.on('closed', () => { win = null; });
+  win.on('closed', () => { win = null; if (euroWin && !euroWin.isDestroyed()) euroWin.close(); });
 
   const wc = win.webContents;
   // Navigation stays inside the app; links to the web and claude:// go to the operating system
@@ -199,6 +202,83 @@ ipcMain.handle('content:openFolder', async (event) => {
   if (!found.dir) return { ok: false, error: 'No content folder is set.' };
   const err = await shell.openPath(found.dir);
   return err ? { ok: false, error: err } : { ok: true, value: null };
+});
+
+// ---- Euro apply (task D2, ARCHITECTURE.md section 8). The owner sets its folder once; the choice is validated before it is saved.
+function euroFolder() {
+  const s = readSettings();
+  if (typeof s.euroApplyFolder === 'string' && s.euroApplyFolder) return { dir: s.euroApplyFolder, from: 'settings' };
+  if (process.env.KARTOTEK_EUROAPPLY) return { dir: path.resolve(process.env.KARTOTEK_EUROAPPLY), from: 'KARTOTEK_EUROAPPLY' };
+  return { dir: null, from: null };
+}
+
+// Euro apply opens in a window of its own: no preload, no Node, its own session, navigation limited to its server, other links to the browser
+function openEuroWindow() {
+  if (euroWin && !euroWin.isDestroyed()) { if (euroWin.isMinimized()) euroWin.restore(); euroWin.focus(); return; }
+  const partition = 'persist:euroapply';
+  const ses = session.fromPartition(partition);
+  ses.setPermissionRequestHandler((wc, permission, callback) => callback(false));
+  ses.setPermissionCheckHandler(() => false);
+  euroWin = new BrowserWindow({
+    width: 1360, height: 900, minWidth: 900, minHeight: 600, title: 'Euro apply', backgroundColor: '#09090b', autoHideMenuBar: true,
+    webPreferences: { partition, contextIsolation: true, sandbox: true, nodeIntegration: false, webSecurity: true, spellcheck: false },
+  });
+  const wc = euroWin.webContents;
+  const inside = (u) => u === euro.EURO_URL.slice(0, -1) || u.startsWith(euro.EURO_URL);
+  wc.on('will-navigate', (e, u) => { if (!inside(u)) { e.preventDefault(); openExternal(u); } });
+  wc.on('will-redirect', (e, u) => { if (!inside(u)) e.preventDefault(); });
+  wc.setWindowOpenHandler(({ url }) => { openExternal(url); return { action: 'deny' }; });
+  wc.on('will-attach-webview', (e) => e.preventDefault());
+  euroWin.on('closed', () => { euroWin = null; });
+  euroWin.loadURL(euro.EURO_URL);
+}
+
+ipcMain.handle('euroapply:status', async (event) => {
+  if (!isOwnFrame(event)) return { ok: false, error: 'forbidden' };
+  const f = euroFolder();
+  const check = euro.checkFolder(f.dir);
+  return { ok: true, value: { configured: !!f.dir, folder: f.dir, from: f.from, check, serverUp: f.dir && check.ok ? await euro.ping(1200) : false, url: euro.EURO_URL } };
+});
+ipcMain.handle('euroapply:chooseFolder', async (event) => {
+  if (!isOwnFrame(event)) return { ok: false, error: 'forbidden' };
+  const f = euroFolder();
+  const r = await dialog.showOpenDialog(win, { title: 'Choose the Euro apply folder', defaultPath: f.dir || app.getPath('documents'), properties: ['openDirectory'] });
+  if (r.canceled || !r.filePaths[0]) return { ok: true, value: { saved: false } };
+  const check = euro.checkFolder(r.filePaths[0]);
+  if (!check.ok) return { ok: true, value: { saved: false, problems: check.blocking } };
+  writeSettings(Object.assign(readSettings(), { euroApplyFolder: r.filePaths[0] }));
+  return { ok: true, value: { saved: true, folder: r.filePaths[0], notes: check.notes } };
+});
+ipcMain.handle('euroapply:clearFolder', (event) => {
+  if (!isOwnFrame(event)) return { ok: false, error: 'forbidden' };
+  const s = readSettings();
+  delete s.euroApplyFolder;
+  writeSettings(s);
+  return { ok: true, value: { cleared: true } };
+});
+// Read-only: the projection of data/universities.json (the only Euro apply file Kartotek reads)
+ipcMain.handle('euroapply:read', async (event) => {
+  if (!isOwnFrame(event)) return { ok: false, error: 'forbidden' };
+  const f = euroFolder();
+  if (!f.dir) return { ok: true, value: { ok: false, code: 'not-set', message: 'The Euro apply folder is not set.' } };
+  return { ok: true, value: await euro.readUniversities(f.dir) };
+});
+ipcMain.handle('euroapply:open', async (event) => {
+  if (!isOwnFrame(event)) return { ok: false, error: 'forbidden' };
+  const f = euroFolder();
+  if (!f.dir || !euro.checkFolder(f.dir).ok) return { ok: true, value: { opened: false, reason: 'not-set' } };
+  if (!(await euro.ping(1500))) return { ok: true, value: { opened: false, reason: 'not-running' } };
+  openEuroWindow();
+  return { ok: true, value: { opened: true } };
+});
+ipcMain.handle('euroapply:start', async (event) => {
+  if (!isOwnFrame(event)) return { ok: false, error: 'forbidden' };
+  const f = euroFolder();
+  if (!f.dir || !euro.checkFolder(f.dir).ok) return { ok: true, value: { opened: false, reason: 'not-set' } };
+  const r = await euro.startServer(f.dir);
+  if (!r.ok) return { ok: true, value: { opened: false, reason: 'start-failed', error: r.error } };
+  openEuroWindow();
+  return { ok: true, value: { opened: true } };
 });
 
 // ---- learner data in files (task C3, ARCHITECTURE.md section 4). The window never writes files itself; every call is checked here.

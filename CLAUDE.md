@@ -74,12 +74,13 @@ Script order is fixed by `src\index.html`: engine, store, cores, then the views,
 | --- | --- |
 | `main.jsx` | Mounts React into `#root`, on top of the engine's `window.App`. The engine owns state; React owns the shell and the tabs. |
 | `Shell.jsx` | Sidebar: the Study / Planning switch, the exam scope selector, the Mind maps, Career and System groups, theme switch, storage chip, tab routing. The engine's tab ids are unchanged. |
+| `plan.js` | Planning home timeline (D2): exam dates and pace, Application page rows and open steps, Euro apply deadlines (read only), one row for what both apps know (Euro apply owns it). Pure; `scripts\euro-tests.cjs` tests it. |
 | `nav.js` | Navigation model (D1): which mode, scope and sidebar entry a tab id belongs to, and back (`locate`, `studyTab`, `visibleTabs`). Pure; `scripts\nav-tests.cjs` tests it. |
 | `Welcome.jsx`, `welcome.css` | First-open welcome stage. |
 | `Review.jsx` | Review screen. |
 | `motion.jsx` | Motion system: curves, durations, spring, shared components. |
 | `index.css`, `fonts.css`, `legacy.css` | Tokens and `k-*` classes; fonts; styles carried over from the engine views. |
-| `tabs\` | One file per tab: `Study`, `Lesson`, `Cards`, `Cents` (exam overview, also exports `Tud`), `Mock`, `Apply` (TU Delft application plan), `MindMaps`, `Stats`, `Algorithm`, `Settings`, `Planned` (Career, Euro apply, the Mock exam picker). `index.js` registers them in `REACT_TABS`. `kit.jsx`, `manage-kit.jsx` and `insight-kit.jsx` are shared building blocks; each tab has its own `.css`. |
+| `tabs\` | One file per tab: `Study`, `Lesson`, `Cards`, `Cents` (exam overview, also exports `Tud`), `Mock`, `Apply` (TU Delft application plan), `MindMaps`, `Stats`, `Algorithm`, `Settings`, `Planned` (Career, the Mock exam picker), `PlanningHome` (combined timeline), `EuroApply` (the Euro apply page and its Settings panel). `index.js` registers them in `REACT_TABS`. `kit.jsx`, `manage-kit.jsx` and `insight-kit.jsx` are shared building blocks; each tab has its own `.css`. |
 | `tabs\study\` | Study screens: `Library`, `Runner` (legacy v1), `Cycle` (Study v2), `Srl`, `QList`, `common`, `util`; `cycle\` holds `Item` (one question), `Final` (final test and report) and `lib`. |
 | `tabs\mind\` | Mind-map assistant screens: `Reading`, `MapList`, `Coach`, `Checks`, `More`, `parts`, `util`. |
 | `stageshow\` | Trimmed copy (18 files) of an animation kit (MIT, Benji Taylor, see its `LICENSE`) used by the welcome stage. Never add brand logos. |
@@ -87,7 +88,7 @@ Script order is fixed by `src\index.html`: engine, store, cores, then the views,
 
 ### Other folders
 
-- `desktop\`: the Electron main process (`main.js`), the bridge (`preload.js`) and plain helpers (`serve.js`, `content.js` = content folder discovery, parsing and photo paths, `data.js` = learner-data files and backups, `data-api.js` = the checked data calls shared by `main.js` and the tests); `scripts\`: `start.cjs` (dev start with live reload), `run-tests.cjs` (`npm test`), `content-tests.cjs`, `data-tests.cjs`, `smoke.cjs` (`npm run smoke`), `bridge-preview.cjs` (the app in a normal browser with the real main-process modules). See `docs\ARCHITECTURE.md`.
+- `desktop\`: the Electron main process (`main.js`), the bridge (`preload.js`) and plain helpers (`euroapply.js` = the read-only Euro apply connection: folder check, one projected data file, server ping and launcher; Euro apply is the owner's separate app and its folder is never written to), (`serve.js`, `content.js` = content folder discovery, parsing and photo paths, `data.js` = learner-data files and backups, `data-api.js` = the checked data calls shared by `main.js` and the tests); `scripts\`: `start.cjs` (dev start with live reload), `run-tests.cjs` (`npm test`), `content-tests.cjs`, `data-tests.cjs`, `smoke.cjs` (`npm run smoke`), `bridge-preview.cjs` (the app in a normal browser with the real main-process modules). See `docs\ARCHITECTURE.md`.
 - `samples\`: synthetic studies (CC BY 4.0) that a fresh clone builds with.
 - `ui\scripts\copy-build.cjs`: copies the Vite output to `src\` and adds the licence banner.
 - `tools\`: `audit-study.py`, `check-mindmap.py`, `kconfig.py` (content folder), book fetch scripts, CEnT-S PDF scripts, `cents-items.json`.
