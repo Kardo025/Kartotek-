@@ -73,12 +73,13 @@ Script order is fixed by `src\index.html`: engine, store, cores, then the views,
 | Path | Purpose |
 | --- | --- |
 | `main.jsx` | Mounts React into `#root`, on top of the engine's `window.App`. The engine owns state; React owns the shell and the tabs. |
-| `Shell.jsx` | Sidebar navigation, theme switch, storage chip, tab routing. |
+| `Shell.jsx` | Sidebar: the Study / Planning switch, the exam scope selector, the Mind maps, Career and System groups, theme switch, storage chip, tab routing. The engine's tab ids are unchanged. |
+| `nav.js` | Navigation model (D1): which mode, scope and sidebar entry a tab id belongs to, and back (`locate`, `studyTab`, `visibleTabs`). Pure; `scripts\nav-tests.cjs` tests it. |
 | `Welcome.jsx`, `welcome.css` | First-open welcome stage. |
 | `Review.jsx` | Review screen. |
 | `motion.jsx` | Motion system: curves, durations, spring, shared components. |
 | `index.css`, `fonts.css`, `legacy.css` | Tokens and `k-*` classes; fonts; styles carried over from the engine views. |
-| `tabs\` | One file per tab: `Study`, `Lesson`, `Cards`, `Cents` (exam overview, also exports `Tud`), `Mock`, `Apply` (TU Delft application plan), `MindMaps`, `Stats`, `Algorithm`, `Settings`. `index.js` registers them in `REACT_TABS`. `kit.jsx`, `manage-kit.jsx` and `insight-kit.jsx` are shared building blocks; each tab has its own `.css`. |
+| `tabs\` | One file per tab: `Study`, `Lesson`, `Cards`, `Cents` (exam overview, also exports `Tud`), `Mock`, `Apply` (TU Delft application plan), `MindMaps`, `Stats`, `Algorithm`, `Settings`, `Planned` (Career, Euro apply, the Mock exam picker). `index.js` registers them in `REACT_TABS`. `kit.jsx`, `manage-kit.jsx` and `insight-kit.jsx` are shared building blocks; each tab has its own `.css`. |
 | `tabs\study\` | Study screens: `Library`, `Runner` (legacy v1), `Cycle` (Study v2), `Srl`, `QList`, `common`, `util`; `cycle\` holds `Item` (one question), `Final` (final test and report) and `lib`. |
 | `tabs\mind\` | Mind-map assistant screens: `Reading`, `MapList`, `Coach`, `Checks`, `More`, `parts`, `util`. |
 | `stageshow\` | Trimmed copy (18 files) of an animation kit (MIT, Benji Taylor, see its `LICENSE`) used by the welcome stage. Never add brand logos. |

@@ -253,3 +253,26 @@ The C3 "done when" is met on your data. Still unverified: the Electron window it
 - CI run #2 on `main` (commit 6735210): `test` and `installer` jobs both green, including the silent install, update, smoke test of the installed app and uninstall with the user-data sentinel untouched.
 - Tag `v0.1.0` pushed on that commit. Its run (#3) is green: tag equals `package.json` version, `Kartotek-Setup-0.1.0.exe` built (116 MB artifact `kartotek-installer`), fuses checked, installer check passed, **draft release created** with the installer and `SHA256SUMS.txt`. Drafts are not visible to anonymous visitors (the public releases list is empty), so the owner has to open the draft while signed in, read it and press Publish (`docs/RELEASING.md`, step 7).
 - Still to do: publish the draft; install the published installer on this PC and start it with the real data (first-run panel: import the real backup file).
+
+## 2026-11-15 · Task D1: navigation split into Study and Planning (branch `task/d1-navigation`)
+
+### What changed
+- Before starting: `main` already held all of C4 (nothing to merge); branched from `main`.
+- **Study | Planning switch** at the top of the sidebar, remembered between sessions. **Study:** Review, Study, Cards, Mock exam, End-of-lesson test, with one **Scope** selector (All, CEnT-S, TU Delft AE Prep) that re-points Review, Study, Cards and Mock exam to the existing exam tabs. **Planning:** CEnT-S and TU Delft AE Prep overviews, Application, Euro apply (placeholder for D2), Stats. **Always visible:** the AI Mind Mapping Assistant group with Mind maps (you asked for it to stay its own group), Career (a short "planned" page) and the System group (Settings, Algorithm).
+- **Nothing in the engine changed:** the tab ids are the old ones, so `App.scope`, `App.examDecks`, the saved last tab and `#hash` links work as before. `ui\src\nav.js` maps a tab id to its mode, scope and entry and back.
+- **Mock exam under All** opens a small picker (the two exams with their mock counts), because a mock belongs to one exam. End-of-lesson test and Mind maps are not exam-scoped, so the scope does not filter them.
+- Badges follow the scope; the arrow keys move through the visible entries and wrap; the mode switch takes Left and Right; the tab transition motion is kept (direction follows the sidebar order).
+- Tests: `npm test` +14 navigation tests; `npm run smoke` now visits every entry in both modes and all three scopes and opens all 19 old tab ids.
+
+### Verification
+| Check | Result |
+| --- | --- |
+| `npm test` | engine 53/53, desktop helpers, content, data, 14/14 navigation |
+| Desktop window (real Electron, `npm run smoke`) | passes: 36 entry visits across Study mode (3 scopes) and Planning mode, all 19 old tab ids open a highlighted, rendered entry, mode and scope remembered, Algorithm tab 53/53, 0 unexpected console errors |
+| Browser build (`build.ps1`), by hand | scope changes the tab id (`study` to `cents-study`), the mode switch returns to the last tab of a mode, Mock exam picker opens `tud-mock`, a reload restores Planning with scope TU Delft |
+| Screenshots, desktop window 1346 x 864, dark theme | Study mode (scope All), Study mode (scope TU Delft AE Prep), Planning mode |
+
+### Open points
+- The CI run for this branch's commit will repeat the smoke test on the Windows runner.
+- Still open from C4: publish the draft release `Kartotek 0.1.0` (the empty `v0.1.0` release that was published by hand has no installer).
+- D2 fills the Euro apply entry; the Planning home page and Content problems entry from the architecture are not part of D1.

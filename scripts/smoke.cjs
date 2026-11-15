@@ -104,25 +104,49 @@ async function main() {
     const exposed = await page.evaluate(() => ({ node: typeof require, process: typeof process }));
     if (exposed.node !== 'undefined' || exposed.process !== 'undefined') problems.push('Node leaked into the window: ' + JSON.stringify(exposed));
 
-    const sidebar = 'nav button, aside button';
-    const skip = /^(Auto|Light|Dark|This browser|Files)/;
-    const labels = await page.$$eval(sidebar, (els, skipSrc) => els.map((b) => (b.innerText || '').trim().split('\n')[0]).filter((t) => t && !new RegExp(skipSrc).test(t)), skip.source);
-    if (labels.length < 15) problems.push('only ' + labels.length + ' sidebar entries found');
-    for (let i = 0; i < labels.length; i++) {
-      // entries with the same label (Review, Study, Cards in three sections): take the n-th match
-      const nth = labels.slice(0, i + 1).filter((l) => l === labels[i]).length;
-      const matches = [];
-      for (const b of await page.$$(sidebar)) {
-        const t = ((await b.innerText()) || '').trim().split('\n')[0];
-        if (t === labels[i]) matches.push(b);
+    // Navigation (D1): two modes and a scope selector. Every entry of both modes is clicked in every scope and must render; then every
+    // old tab id (saved state, #hash links) is opened and must land on a highlighted entry.
+    const sidebar = '.k-nav-item';
+    const clickMode = async (mode) => { await page.click('.k-mode button[data-mode="' + mode + '"]'); await page.waitForTimeout(350); };
+    const visit = async (where, wanted) => {
+      const labels = await page.$$eval(sidebar, (els) => els.map((b) => (b.innerText || '').trim().split('\n')[0]));
+      for (const want of wanted) if (!labels.includes(want)) problems.push(where + ': entry "' + want + '" is missing (found ' + labels.join(', ') + ')');
+      let shown = 0;
+      for (let i = 0; i < labels.length; i++) {
+        const target = (await page.$$(sidebar))[i];
+        if (!target) { problems.push(where + ': entry ' + i + ' disappeared'); continue; }
+        await target.click();
+        await page.waitForTimeout(400);
+        const len = await page.$eval('main', (m) => m.innerText.length).catch(() => 0);
+        if (len < 20) problems.push(where + ': "' + labels[i] + '" rendered no content'); else shown++;
       }
-      const target = matches[nth - 1];
-      if (!target) { problems.push('sidebar entry not found: ' + labels[i]); continue; }
-      await target.click();
-      await page.waitForTimeout(450);
-      const len = await page.$eval('main', (m) => m.innerText.length).catch(() => 0);
-      if (len < 20) problems.push('tab "' + labels[i] + '" rendered no content');
+      return shown;
+    };
+    const SHARED = ['Mind maps', 'Career', 'Settings', 'Algorithm'];
+    let entries = 0;
+    await clickMode('study');
+    for (const scope of ['all', 'cents', 'tud']) {
+      await page.selectOption('.k-scope-select', scope);
+      await page.waitForTimeout(300);
+      entries += await visit('Study mode, scope ' + scope, ['Review', 'Study', 'Cards', 'Mock exam', 'End-of-lesson test'].concat(SHARED));
+      await clickMode('study');
     }
+    await clickMode('planning');
+    entries += await visit('Planning mode', ['CEnT-S', 'TU Delft AE Prep', 'Application', 'Euro apply', 'Stats'].concat(SHARED));
+    const oldTabs = ['study', 'etut', 'lesson', 'cards', 'mindmaps', 'stats', 'algo', 'settings', 'cents', 'tud', 'tud-apply']
+      .concat(['cents', 'tud'].flatMap((x) => ['study', 'etut', 'cards', 'mock'].map((t) => x + '-' + t)));
+    for (const id of oldTabs) {
+      await page.evaluate((t) => window.App.switchTab(t), id);
+      await page.waitForTimeout(300);
+      const state = await page.evaluate(() => ({ active: !!document.querySelector('.k-nav-item[aria-current="page"]'), len: document.querySelector('main').innerText.length }));
+      if (!state.active || state.len < 20) problems.push('old tab id "' + id + '" does not open a highlighted, rendered entry');
+    }
+    // the mode and the scope are remembered
+    await page.evaluate(() => window.App.switchTab('tud-etut'));
+    await page.waitForTimeout(300);
+    const remembered = await page.evaluate(() => ({ mode: window.App.pref('kartotek-mode'), scope: window.App.pref('kartotek-scope') }));
+    if (remembered.mode !== 'study' || remembered.scope !== 'tud') problems.push('mode and scope are not remembered: ' + JSON.stringify(remembered));
+    const labels = new Array(entries);
 
     // Run-time content (C2): read at start, problems listed, a new study appears after "Reload content", photos from the folder
     const startInfo = await page.evaluate(() => { const i = window.KHost.info(); return { desktop: i.desktop, dir: i.contentDir, studies: window.KHost.list('etuts').map((p) => p.etut_id), errors: i.problemCount }; });

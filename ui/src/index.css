@@ -300,7 +300,6 @@ body.k-app .toast[hidden] { display: none; }
 /* Exam sections in the sidebar: the nav scrolls on short screens, sub-items are a little tighter */
 .k-side-nav { min-height: 0; overflow-y: auto; scrollbar-width: thin; }
 .k-side-nav .k-nav-group { margin-top: 2px; }
-.k-side-nav .k-nav-item[data-tab$="-study"], .k-side-nav .k-nav-item[data-tab$="-etut"], .k-side-nav .k-nav-item[data-tab$="-cards"] { height: 36px; }
 
 /* Card types: cloze and multiple choice; source row under the answer */
 .k-cloze { display: inline-block; min-width: 2.6em; padding: 0 6px; border-radius: 6px; background: var(--k-accent-soft); color: var(--k-accent); font-weight: 600; text-align: center; }
@@ -364,3 +363,15 @@ body.k-app { font-size: 14px; }
 /* The deck select is as wide as its longest option; long study deck names would stretch it across the header */
 .k-head .k-select { max-width: min(320px, 100%); text-overflow: ellipsis; }
 body.k-app .k-rate-grid:focus-visible { outline: none; }
+
+/* Navigation: mode switch and scope selector (task D1) */
+.k-mode { margin: 0 2px 10px; }
+.k-mode button { height: 30px; font-weight: 600; }
+.k-mode button svg { flex: none; }
+.k-scope { display: grid; gap: 4px; margin: 2px 2px 8px; }
+.k-scope-label { padding: 0 8px; font-size: 11.5px; font-weight: 500; color: var(--k-text-3); }
+.k-scope-select { width: 100%; height: 30px; padding: 0 8px; border: 1px solid var(--k-line); border-radius: var(--k-r-sm); background: var(--k-tile); color: var(--k-text); font-family: inherit; font-weight: 500; font-size: 13px; cursor: pointer; color-scheme: light dark; }
+.k-scope-select:hover { border-color: var(--k-line-strong); }
+.k-scope-select:focus-visible { outline: 2px solid var(--k-accent); outline-offset: 1px; }
+.k-side .k-nav-group + .k-nav-item { margin-top: 0; }
+@media (max-width: 760px) { .k-side .k-mode, .k-side .k-scope { display: none; } }
