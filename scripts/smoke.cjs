@@ -15,8 +15,16 @@ const os = require('os');
 const path = require('path');
 
 const root = path.join(__dirname, '..');
-const EXPECTED = /Executing inline event handler violates the following Content Security Policy directive/;
+// Expected: the CSP blocking the sanitiser test's malicious SVG, and the 404s of the test's own kcontent:// path-escape probes (secret.png)
+const EXPECTED = /Executing inline event handler violates the following Content Security Policy directive|secret\.png/;
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// On GitHub Actions every problem also becomes a workflow annotation, which is readable on the run page without signing in
+function annotate(messages) {
+  if (process.env.GITHUB_ACTIONS !== 'true') return;
+  const esc = (t) => String(t).replace(/%/g, '%25').replace(/\r/g, '%0D').replace(/\n/g, '%0A');
+  messages.slice(0, 9).forEach((m) => console.log('::error title=Smoke test::' + esc(String(m).slice(0, 1800))));
+}
 
 // Both modes return { firstWindow(), close() }
 async function launchApp(env) {
@@ -72,7 +80,9 @@ async function main() {
   const errors = [];
   try {
     const page = await app.firstWindow();
-    page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
+    page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text() + (m.location() && m.location().url ? ' [' + m.location().url + ']' : '')); });
+    page.on('requestfailed', (r) => errors.push('request failed: ' + r.url()));
+    page.on('response', (r) => { if (r.status() >= 400) errors.push('HTTP ' + r.status() + ': ' + r.url()); });
     page.on('pageerror', (e) => errors.push('pageerror: ' + e.message));
     await page.waitForLoadState('domcontentloaded');
     // skip the first-open welcome stage, then reload so the shell starts normally
@@ -169,12 +179,13 @@ async function main() {
   const unexpected = errors.filter((e) => !EXPECTED.test(e));
   const expected = errors.length - unexpected.length;
   if (unexpected.length) problems.push('console errors: ' + unexpected.join(' | '));
-  console.log('Console errors: ' + unexpected.length + ' unexpected, ' + expected + ' expected (CSP blocking the sanitiser test payloads)');
-  if (problems.length) { console.log('FAILED:\n - ' + problems.join('\n - ')); process.exit(1); }
+  console.log('Console errors: ' + unexpected.length + ' unexpected, ' + expected + ' expected (CSP blocking the sanitiser test payloads, refused path-escape probes)');
+  if (problems.length) { console.log('FAILED:\n - ' + problems.join('\n - ')); annotate(problems); process.exit(1); }
   console.log('Smoke test passed');
 }
 
 const fail = (e) => {
+  annotate(['could not run: ' + (e && (e.stack || e.message))]);
   console.error('Smoke test could not run: ' + (e && e.message));
   console.error('If Electron failed to launch on Windows, check whether Smart App Control blocks the unsigned electron.exe (see docs/PROGRESS.md, task C1).');
   process.exit(1);
