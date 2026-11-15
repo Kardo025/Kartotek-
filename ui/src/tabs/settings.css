@@ -88,3 +88,48 @@
 .pl-choices { display: grid; gap: 8px; max-width: 420px; }
 .pl-choice { justify-content: flex-start; gap: 12px; height: auto; padding: 12px 14px; text-align: left; }
 .pl-choice-t { display: grid; gap: 2px; flex: 1; }
+
+/* ---- Settings › Models (task E1) */
+.md-panel .md-tabs { margin: 10px 0 14px; max-width: 640px; }
+.md-h { margin: 18px 0 8px; font-size: 15px; font-weight: 650; color: var(--k-text); }
+.md-provs { list-style: none; margin: 0 0 12px; padding: 0; display: grid; gap: 10px; }
+.md-prov { padding: 12px 14px; border: 1px solid var(--k-line); border-radius: 12px; background: var(--k-panel); }
+.md-prov-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.md-prov-name { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.md-prov-name > svg { color: var(--k-accent-text); }
+.md-prov-state { font-size: 12.5px; word-break: break-all; }
+.md-prov-actions { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px; margin-top: 10px; }
+.md-model { min-width: 220px; flex: 0 1 260px; margin: 0; }
+.md-key { display: flex; gap: 8px; margin-top: 10px; align-items: center; }
+.md-key input { flex: 1; min-width: 200px; height: 34px; padding: 0 10px; border: 1px solid var(--k-line-strong); border-radius: var(--k-r-md); background: var(--k-panel); color: var(--k-text); font: inherit; }
+.md-test { display: grid; gap: 4px; margin-top: 10px; padding: 10px 12px; border-radius: 10px; background: var(--k-tile); font-size: 13.5px; }
+.md-test.is-bad { background: color-mix(in srgb, var(--k-again) 10%, var(--k-tile)); }
+.md-reply { color: var(--k-text); }
+.md-stream { display: block; margin-top: 4px; color: var(--k-text-2); font-family: var(--f-mono, ui-monospace, monospace); font-size: 12px; white-space: pre-wrap; }
+.md-spin { display: inline-block; width: 12px; height: 12px; margin-right: 8px; border: 2px solid var(--k-line-strong); border-top-color: var(--k-accent); border-radius: 50%; animation: md-spin .8s linear infinite; vertical-align: -2px; }
+@keyframes md-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .md-spin { animation-duration: 2.4s; } }
+.md-add { margin-top: 6px; padding: 14px 16px; border: 1px dashed var(--k-line-strong); border-radius: 12px; }
+.md-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px 12px; margin-bottom: 8px; }
+.md-grid .md-wide { grid-column: 1 / -1; }
+.md-keynote { margin-top: 10px; }
+.md-slots td { vertical-align: top; }
+.md-slot-use { display: block; margin-top: 2px; max-width: 300px; }
+.md-slot-model { display: flex; gap: 6px; align-items: center; }
+.md-slot-model input { min-width: 180px; height: 32px; padding: 0 10px; border: 1px solid var(--k-line-strong); border-radius: var(--k-r-md); background: var(--k-panel); color: var(--k-text); font: inherit; font-size: 13.5px; }
+.md-usage-head { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 18px; }
+.md-kpis { display: flex; gap: 18px; flex-wrap: wrap; font-size: 13.5px; color: var(--k-text-2); padding-bottom: 6px; }
+.md-kpis b { color: var(--k-text); font-variant-numeric: tabular-nums; }
+.md-budget { display: grid; gap: 8px; margin: 14px 0; max-width: 640px; }
+.md-budget .k-field { max-width: 260px; }
+.md-usage-tables { display: grid; gap: 14px; }
+.md-usage-table h4 { margin: 0 0 6px; font-size: 14px; font-weight: 650; }
+.md-price-add { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; margin-top: 10px; }
+.md-price-add .k-field { width: 150px; margin: 0; }
+.md-price-add .k-field:first-child { width: 220px; }
+.md-prompt-list { list-style: none; margin: 8px 0; padding: 0; display: grid; gap: 6px; }
+.md-prompt-list li { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.md-prompt-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.md-prompt-cols textarea { width: 100%; min-height: 220px; padding: 10px; border: 1px solid var(--k-line-strong); border-radius: var(--k-r-md); background: var(--k-panel); color: var(--k-text); font-family: var(--f-mono, ui-monospace, monospace); font-size: 12.5px; }
+.md-prompt-default { margin: 0; min-height: 220px; padding: 10px; border-radius: var(--k-r-md); background: var(--k-tile); color: var(--k-text-2); font-size: 12.5px; white-space: pre-wrap; overflow: auto; }
+.md-hint { gap: 5px; color: var(--k-muted); border-style: dashed; }

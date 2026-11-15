@@ -14,6 +14,7 @@ files:
   - desktop/**
   - src/**
   - samples/**
+  - prompts/**
   - "!**/*.map"
 asar: true
 # The samples are read as plain files (the content service lists folders), so they stay outside the archive

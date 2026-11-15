@@ -74,7 +74,11 @@ The Python tools read the same setting. The build embeds everything it finds the
 
 ## Writing content with Claude Code
 
-Studies, tests, mock exams and mind-map readings are written by Claude Code from your files, following the rule files in this repository (`STUDY-RULES.md`, `PRIMING-RULES.md`, `LESSON-TEST-RULES.md`, `MOCK-RULES.md`, `MINDMAP-RULES.md`). The app builds a prompt for you and opens `claude://` links in your content folder. Nothing is sent anywhere by the app itself.
+Studies, tests, mock exams and mind-map readings are written by Claude Code from your files, following the rule files in this repository (`STUDY-RULES.md`, `PRIMING-RULES.md`, `LESSON-TEST-RULES.md`, `MOCK-RULES.md`, `MINDMAP-RULES.md`). The app builds a prompt for you and opens `claude://` links in your content folder.
+
+## Models (desktop app)
+
+**Settings, Models** connects Kartotek to a model: an API key (Anthropic, OpenAI, Google Gemini, OpenRouter), your existing Claude Code or Codex subscription through the command-line client installed on your PC, or a local model such as Ollama. Each provider has a **Test connection** button that makes one small call and shows the reply, the time and the cost. Three task slots (strong, fast, vision) choose which model does what; **Usage and budget** shows calls, tokens and estimated cost per day, feature and model, with a monthly budget warning. Keys are encrypted with Windows' protection for your account and never appear in your data, backups or exports. Without a model everything works as before. Calls go only to the provider you set up; with no provider, the app sends nothing anywhere.
 
 ## Licences
 

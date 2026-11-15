@@ -3,6 +3,7 @@
 // Done marks live in S.cents.done for both exams, so a topic shared by the exams is marked in both at once.
 // Mastery comes from KPrep (src/prep-core.js): DSR memory of the topic's cards, study and test progress, placement and mock results.
 import React, { useState } from "react";
+import ModelHint from "./ModelHint.jsx";
 import { motion } from "motion/react";
 import { Check, Plus, FilePdf, ArrowSquareOut, BookOpenText, Play, Copy, Exam, Compass, Timer, Stack, ClipboardText, VideoCamera } from "@phosphor-icons/react";
 import { PageHead, Panel, Btn, Kpi, Bar } from "./kit.jsx";
@@ -68,14 +69,15 @@ function genOpts(exam) { const x = selState(exam); return x.gen || { depth: "sta
 function openStudy(itemId) { App().goStudy(K().etutId(itemId)); window.scrollTo({ top: 0 }); }
 function openTest(itemId) { App().goLesson(K().lessonId(itemId)); window.scrollTo({ top: 0 }); }
 
-// "Ask Claude" link + copy button as one control
-export function AskPair({ prompt, label, icon, primary, title, copyLabel }) {
+// "Ask Claude" link + copy button as one control; without a model set up, a hint next to it says what to set up (task E1)
+export function AskPair({ prompt, label, icon, primary, title, copyLabel, what }) {
   return (
     <>
       <a className={"k-btn sm cents-ask" + (primary ? " primary" : "")} href={claudeLink(prompt)} title={title || "Opens Claude Code in the Kartotek folder with the prompt filled in. Press Enter there to send it."}>
         {icon} {label}
       </a>
       <button type="button" className="k-btn sm cents-copy" onClick={() => copyText(prompt)} aria-label={copyLabel || "Copy the prompt"} title="Copy the prompt"><Copy size={14} aria-hidden="true" /></button>
+      <ModelHint what={what} />
     </>
   );
 }

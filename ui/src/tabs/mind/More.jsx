@@ -1,5 +1,6 @@
 // Reference map (AI-generated, on request, from your sources) and Details (sources, photos, title, remove).
 import React, { useState } from "react";
+import ModelHint from "../ModelHint.jsx";
 import { Robot, Plus, Trash, ArrowsClockwise } from "@phosphor-icons/react";
 import { Panel, Btn, Tag, Lvl, ConfirmBtn, Field } from "../kit.jsx";
 import { App, KM, save, when, refOf, viewName, setLocalPhoto, DIR_LABEL } from "./util.js";
@@ -21,6 +22,7 @@ export function Reference({ doc, goTab }) {
         {!doc.sources.length && <p className="mm-warn">There is no course source yet. Add one in Details; without a source Claude will not invent a reference map.</p>}
         <div className="mm-btnrow">
           <Btn onClick={ask} disabled={!doc.sources.length}><Robot size={15} aria-hidden="true" /> {ref ? "Ask for a new reference map" : "Ask Claude for a reference map"}</Btn>
+          <ModelHint what="making a reference map" />
           {!doc.sources.length && <Btn onClick={() => goTab("details")}>Add a source</Btn>}
         </div>
         <Waiting doc={doc} kinds={["reference"]} />

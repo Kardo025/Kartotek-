@@ -197,6 +197,65 @@ async function main() {
     const direct = await page.evaluate(() => { const r = window.KTests.runAll(); return { pass: r.filter((x) => x.pass).length, total: r.length }; });
     if (!shown || !/^(\d+)\/\1 tests passed$/.test(shown)) problems.push('Algorithm tab shows: ' + shown);
     if (direct.pass !== direct.total) problems.push('KTests: ' + direct.pass + '/' + direct.total);
+
+    // Models (E1): nothing set up -> the panel says so; add a command-line client through the form and test it; add a local
+    // endpoint (a stand-in server) and an API key through the bridge; the key is encrypted on disk and never comes back.
+    // No real service is called: the client is a node script and the endpoint answers from this process.
+    {
+      const st0 = await page.evaluate(() => window.kartotek.models.status());
+      if (!st0.ok || st0.value.configured) problems.push('models: a fresh profile should have no model set up: ' + JSON.stringify(st0));
+      const cliDir = fs.mkdtempSync(path.join(os.tmpdir(), 'kartotek-smoke-cli-'));
+      const echoJs = path.join(cliDir, 'answer.js');
+      fs.writeFileSync(echoJs, "let s='';process.stdin.on('data',d=>s+=d);process.stdin.on('end',()=>process.stdout.write(JSON.stringify({reply:'Kartotek connection works.'})));");
+      const sse = require('http').createServer((q, r) => {
+        if (q.url.endsWith('/models')) { r.setHeader('Content-Type', 'application/json'); r.end(JSON.stringify({ data: [{ id: 'stand-in' }] })); return; }
+        r.setHeader('Content-Type', 'text/event-stream');
+        r.write('data: ' + JSON.stringify({ choices: [{ delta: { content: '{"reply":"Kartotek connection works."}' }, finish_reason: 'stop' }] }) + '\n\n');
+        r.write('data: ' + JSON.stringify({ choices: [], usage: { prompt_tokens: 50, completion_tokens: 9 } }) + '\n\n');
+        r.end('data: [DONE]\n\n');
+      });
+      await new Promise((res) => sse.listen(0, '127.0.0.1', res));
+      try {
+        for (const b of await page.$$(sidebar)) {
+          if ((((await b.innerText()) || '').trim().split('\n')[0]) === 'Settings') { await b.click(); break; }
+        }
+        await page.waitForSelector('#models-panel', { timeout: 8000 }).catch(() => problems.push('models: the Models panel is missing in Settings'));
+        await page.click('#models-panel button:has-text("Add a provider")');
+        await page.selectOption('.md-add select', 'cli-custom');
+        await page.fill('.md-add label:has-text("Command or full path") input', process.execPath);
+        await page.fill('.md-add label:has-text("Arguments") input', '"' + echoJs + '"');
+        await page.click('.md-add button:has-text("Add")');
+        await page.waitForSelector('.md-prov:has-text("Command-line client") button:has-text("Test connection")', { timeout: 8000 });
+        await page.click('.md-prov:has-text("Command-line client") button:has-text("Test connection")');
+        await page.waitForSelector('.md-prov:has-text("Command-line client") .md-test.is-ok', { timeout: 20000 })
+          .catch(async () => problems.push('models: the command-line test failed: ' + await page.$eval('.md-prov .md-test', (e) => e.innerText).catch(() => '?')));
+        const cliText = await page.$eval('.md-prov:has-text("Command-line client") .md-test', (e) => e.innerText).catch(() => '');
+        if (!/Connection works/.test(cliText)) problems.push('models: the command-line test did not report "Connection works": ' + cliText);
+
+        const base = 'http://127.0.0.1:' + sse.address().port + '/v1';
+        const local = await page.evaluate(async (b) => {
+          const M = window.kartotek.models;
+          const s = await M.saveProvider({ id: 'local', kind: 'openai-compatible', preset: 'custom', baseUrl: b, label: 'Local stand-in' });
+          const t = await M.test('smoke-local', 'local', 'stand-in', () => {});
+          const k = await M.saveProvider({ id: 'anthropic', kind: 'anthropic' }, 'sk-ant-smoke-NOT-A-REAL-KEY-123');
+          await M.setSlot('strong', 'cli', '');
+          const st = await M.status();
+          const u = await M.usage();
+          return { saved: s.ok, test: t.ok ? { matches: t.value.replyMatches, kind: t.value.costKind } : t, keyOk: k.ok, cfg: JSON.stringify(k.value || {}), configured: st.ok && st.value.configured, calls: u.ok ? u.value.total.calls : -1 };
+        }, base);
+        if (!local.saved || !local.test.matches) problems.push('models: the local endpoint test failed: ' + JSON.stringify(local.test));
+        if (!local.keyOk || local.cfg.includes('NOT-A-REAL-KEY') || !/"hasKey":true/.test(local.cfg)) problems.push('models: the key was not stored, or came back to the window');
+        const keysBin = path.join(profile, 'models', 'keys.bin');
+        if (!fs.existsSync(keysBin) || fs.readFileSync(keysBin).toString('latin1').includes('NOT-A-REAL-KEY')) problems.push('models: keys.bin missing or not encrypted');
+        for (const f of ['providers.json']) if (fs.readFileSync(path.join(profile, 'models', f), 'utf8').includes('NOT-A-REAL-KEY')) problems.push('models: the key is in ' + f);
+        if (!local.configured) problems.push('models: a slot was set but the status says nothing is set up');
+        if (local.calls < 2) problems.push('models: usage shows ' + local.calls + ' calls');
+        const usageText = fs.readdirSync(path.join(profile, 'models', 'usage')).map((f) => fs.readFileSync(path.join(profile, 'models', 'usage', f), 'utf8')).join('');
+        if (/connection works|NOT-A-REAL-KEY/i.test(usageText)) problems.push('models: the usage log holds reply text or a key');
+        console.log('Models: command-line client and local endpoint tested in the window; key encrypted (' + fs.statSync(keysBin).size + ' bytes); ' + local.calls + ' calls logged');
+      } finally { sse.close(); fs.rmSync(cliDir, { recursive: true, force: true }); }
+    }
+
     // Planning home and Euro apply without a folder (D2): Kartotek's own rows, what is missing, and a setup row instead of the app
     await clickMode('planning');
     await page.click('.k-nav-item[data-tab="home"]');

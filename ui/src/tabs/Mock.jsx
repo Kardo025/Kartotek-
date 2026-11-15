@@ -71,9 +71,9 @@ function Library({ exam, list, open }) {
       <PageHead title={"Mock exam · " + NAME[exam]} sub={<p className="k-sub">The real format: {secs.length} timed sections, {q} questions, {mins} minutes. Sections run in order; when a section's time is up the next one starts and you cannot go back.{exam === "cents" ? " Scoring +1 / 0 / −0.25, 5 options." : ""}</p>} />
       <Panel title="Mock exams" actions={
         <>
-          <AskPair prompt={C.mockPrompt(exam, n, prev, false)} primary icon={<Exam size={14} aria-hidden="true" />} label={"Write mock " + n + " with Claude"} copyLabel="Copy the mock exam prompt"
+          <AskPair what="writing a mock exam" prompt={C.mockPrompt(exam, n, prev, false)} primary icon={<Exam size={14} aria-hidden="true" />} label={"Write mock " + n + " with Claude"} copyLabel="Copy the mock exam prompt"
             title="Claude Code writes a new mock in the real format from your syllabus topics (MOCK-RULES.md), avoiding earlier mocks' questions." />
-          <AskPair prompt={C.mockPrompt(exam, n, prev, true)} icon={<FileArrowUp size={14} aria-hidden="true" />} label="Past paper with Claude" copyLabel="Copy the past-paper prompt"
+          <AskPair what="writing a mock exam" prompt={C.mockPrompt(exam, n, prev, true)} icon={<FileArrowUp size={14} aria-hidden="true" />} label="Past paper with Claude" copyLabel="Copy the past-paper prompt"
             title="Attach an official sample or past paper in Claude Code; it is transcribed into a mock exactly as written." />
           <label className="k-btn sm"><FileArrowUp size={14} aria-hidden="true" /> Load mock.json<input type="file" accept=".json,application/json" hidden onChange={onFile} /></label>
         </>
@@ -218,7 +218,7 @@ function Results({ m, exam, attempt, back }) {
       </Panel>
       <Panel title="Next">
         <div className="k-row-btns">
-          <AskPair prompt={C.mockPrompt(exam, n, prev, false)} primary icon={<Exam size={14} aria-hidden="true" />} label={"New-question mock " + n + " with Claude"} copyLabel="Copy the mock exam prompt" />
+          <AskPair what="writing a mock exam" prompt={C.mockPrompt(exam, n, prev, false)} primary icon={<Exam size={14} aria-hidden="true" />} label={"New-question mock " + n + " with Claude"} copyLabel="Copy the mock exam prompt" />
           <Btn size="sm" onClick={() => setShowQ(!showQ)} aria-pressed={showQ}>{showQ ? "Hide answers" : "Review answers"}</Btn>
         </div>
       </Panel>

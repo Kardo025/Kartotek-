@@ -309,3 +309,59 @@ The C3 "done when" is met on your data. Still unverified: the Electron window it
 - The test script that started your Euro apply hung while closing; I stopped it and the server it started. Your Euro apply server was not running before and is not running now.
 - The overdue open steps of the Application page (those whose loose date is already past, such as "Nov-Dec 2026") are shown at today's date, marked "past due".
 - Still open from earlier: publishing the C4 draft release; the real GitHub no-reply email; D1 and D2 are not pushed.
+
+## 2026-11-15 · Task E1: the model layer (branch `task/e1-model-layer`)
+
+### What changed
+- Before starting: merged `task/d2-euro-apply-planning` into `main` (your prompt is the OK); no `CLAUDE.md` change was pending; branched from `main`.
+- **One provider interface** (`desktop/models/service.js`, main process): every call is `{ feature, slot or target, system, messages (text and images), schema?, webSearch?, maxOutputTokens?, effort? }` with streaming events, cancellation by call id, token usage and cost per call, and typed errors (not-configured, auth, rate-limit, budget, network, schema, cancelled, cli-missing, refused, timeout). With a schema the answer is always checked (a small schema checker of Kartotek's own); a wrong answer gets one repair call, then a "schema" error.
+- **Adapters:** (a) **Anthropic** through the official SDK (`@anthropic-ai/sdk` 1.8.0, Apache-2.0; structured output, images, web search, `effort`) and **one OpenAI-compatible adapter** for OpenAI, Google Gemini (its OpenAI-compatible endpoint) and OpenRouter, as decided; (b) **command-line clients**: Claude Code first (`claude -p --output-format stream-json ... --permission-mode dontAsk`, prompt on stdin, its own empty folder, never `--bare`, so your subscription login is used), Codex (`codex exec --json ... --sandbox read-only`), and any other client; (c) **local endpoints** such as Ollama (`http://localhost:11434/v1`). Checked against the current docs: Anthropic (via the Claude API skill: models, prices, SDK, structured outputs, web search), Claude Code headless, Codex non-interactive mode, Ollama and Gemini OpenAI compatibility. OpenAI's own reference page refused the fetch (403); its parameters follow the published format and are covered by the stand-in tests.
+- **Settings, Models** (`ui/src/tabs/ModelsPanel.jsx`): add a provider (API key, command-line client or local model), **Test connection** (one small call through the shipped `connection-test` prompt with structured output; shows the reply, the time, the tokens and the cost, or the typed error and what to do), replace or delete a key, remove a provider; the three **task slots** (strong, fast, vision) with a model each (a list can be loaded from the provider); **Usage and budget**: calls, tokens and estimated cost per day, feature and model, month by month, a **monthly budget** with a warning at 80 % and a stop at 100 % that you can lift for the month; **Prices** (Anthropic's list prices shipped, others added by you); **Prompts**: the shipped prompt files with an editor, Reset to default and a flag when the shipped text changes (decision 14 moved this to E1).
+- **Keys** are encrypted with Electron `safeStorage` (Windows DPAPI) into `%APPDATA%\Kartotek\models\keys.bin`, decrypted only in the main process at call time, never returned to the window, never in `providers.json`, the usage log, the learner data, backups, exports or the repository. The usage log (`models\usage\YYYY-MM.jsonl`) holds no prompt or answer text.
+- **Without a model** everything works as before. Every AI button (Explain, Practice this again, Write a study, Write a mock, Ask Claude about a card, mind-map grading and reference map, Open in Claude Code) shows a small **"No model set up"** hint that says what it would need and opens Settings, Models; the button itself still opens Claude Code and the copy button copies the prompt. The browser page says models need the desktop app. (The buttons move onto the model layer in E2.)
+- `THIRD-PARTY-NOTICES.md` lists the SDK and its seven dependencies with their licence texts; the installer packs `prompts\` and the SDK (checked in the built `app.asar`: no development tools inside).
+
+### Verification
+| Check | Result |
+| --- | --- |
+| `npm test` | engine 53/53, every earlier suite, and **29 new model-layer tests**: schema and prompt files 5, model service with a fake provider 12 (keys encrypted and never leaked, slots, pricing, repair, cancel, budget, usage summary, connection test, input checks, removal), Anthropic adapter against an SSE stand-in through the SDK 3, OpenAI-compatible adapter against a server on 127.0.0.1 3, command-line adapter with fake Claude Code / Codex / custom clients (including a `.cmd` shim, cancel, timeout, "not logged in") 6 |
+| `npm run smoke`, real Electron window (dev) | passes: Models panel present; a command-line client added through the form and a local endpoint (stand-in server) both answer **Connection works**; an API key stored through the bridge is encrypted on disk (78-byte DPAPI blob) and never comes back; 2 calls logged without text; 0 unexpected console errors |
+| Same smoke test against the packaged app (`electron-builder --dir`) | passes; `app.asar` holds the SDK, its licence, `prompts\`, `desktop\models\`, and none of jsdom, Playwright or electron-builder |
+| Hint on AI buttons (real window) | fresh profile: 2 hints on the Mock exam page, a click opens Settings at Models; after a slot is set: 0 hints |
+| `npm run hygiene` | passes (178 tracked files) |
+
+### Not verified: the "done when"
+**No real provider was called.** This PC has no `claude`, `codex` or `ollama` on its PATH and nothing listens on port 11434, and I have no API key of yours (and tests must not call real services). The three adapters were proven against stand-ins and in the real window with a fake client and a stand-in endpoint. To finish the check on your PC, in the desktop app (`npm start`):
+1. **API key:** Settings, Models, Add a provider, "Anthropic API key", paste a key, Add; Test connection with `claude-haiku-5-5` (costs well under a cent).
+2. **Command-line client:** install Claude Code and sign in once (`claude` in a terminal), then Add a provider, "Claude Code (your subscription)", Add, Test connection. If it says "Not found", give the full path of `claude.exe` (or `claude.cmd`).
+3. **Local endpoint:** install Ollama, `ollama pull llama3.2`, then Add a provider, "Ollama on this PC", Add, model `llama3.2`, Test connection.
+
+### Open points
+- Prices for OpenAI, Gemini and OpenRouter models are not shipped (they change often); until you add them under Prices, those calls show "price unknown" and do not count towards the budget.
+- Codex's `--output-schema` limits were not checked against a real Codex (its docs do not state them); a mismatch would show as one repair call or a "schema" error.
+- The per-feature slot override ("advanced", ARCHITECTURE.md 5.3) is not built.
+
+
+## 2026-11-15 · Task E1, follow-up: real connection tests on this PC (branch `task/e1-model-layer`)
+
+### What changed
+- With your OK I installed **Ollama 0.40.16** (`winget install Ollama.Ollama`, user scope, installer hash checked by winget) and pulled **`llama3.2`** (2.0 GB), and installed the standalone **Claude Code 2.1.325** with Anthropic's official installer (`claude.ai/install.ps1`, read before running; it checks the SHA-256 of the download) into `%USERPROFILE%\.local\bin\claude.exe`.
+- That installer does **not** add `%USERPROFILE%\.local\bin` to PATH, so Kartotek's default command `claude` would have said "Not found". `desktop/models/cli.js` now also looks in that folder after PATH (one new test with a fake home folder).
+
+### Real tests (through Kartotek's own model service, a temporary profile, no keys)
+| Provider | Result |
+| --- | --- |
+| **Local endpoint: Ollama, `llama3.2`** | **passes**: model list loaded (`llama3.2:latest`), reply "Kartotek connection works." (matches, structured output valid, no repair), 106 input / 12 output tokens, cost $0 (free-local), 39.7 s for the first call (the model loads into memory), usage logged as `ollama · llama3.2` |
+| **Command-line: Claude Code** | first run: the typed error **auth: "Not logged in"** (correct). After your sign-in: **passes**: reply "Kartotek connection works." (matches, native structured output, no repair) with claude-haiku-5-5, 3.4 s, 302 output tokens, billed to your subscription (API equivalent about $0.007, shown as an estimate) |
+| **API key: Anthropic** | not run: a key must be pasted by you, and it is billed separately from the Claude subscription (console.anthropic.com). |
+
+`npm test`: every suite passes (command-line adapter 6/6 with the new check).
+
+### How you can finish the check
+1. Open a new terminal, run `%USERPROFILE%\.local\bin\claude.exe` (or `claude` after adding that folder to your user PATH), sign in, then quit with `/exit`.
+2. `npm start`, Settings, Models: Add a provider, "Claude Code (your subscription)", Add, Test connection.
+3. Add "Ollama on this PC", model `llama3.2`, Test connection (Ollama runs in the tray after a restart too).
+4. Optional: "Anthropic API key", paste the key, Test connection with `claude-haiku-5-5`.
+
+### Open points
+- None new. The E1 "done when" is met for the command-line client and the local endpoint; the API-key path is proven against the stand-in only, until you add a key.

@@ -336,6 +336,68 @@ ipcMain.on('data:flushed', (event) => {
   win.close();
 });
 
+// ---- the model layer (task E1, ARCHITECTURE.md section 5) and prompt files (section 6). Keys are encrypted with safeStorage (DPAPI)
+// and decrypted only here, at call time; the window gets no key back, only whether one is stored.
+const { createModelService } = require('./models/service');
+const { createPrompts } = require('./models/prompts');
+const { toPlain } = require('./models/errors');
+let modelService = null, promptService = null;
+function prompts() {
+  if (!promptService) promptService = createPrompts({ shippedDir: path.join(ROOT, 'prompts'), userDir: app.getPath('userData') });
+  return promptService;
+}
+function models() {
+  if (!modelService) {
+    modelService = createModelService({
+      dir: app.getPath('userData'),
+      prompts: prompts(),
+      encrypt: async (s) => {
+        const { safeStorage } = require('electron');
+        if (!(await safeStorage.isAsyncEncryptionAvailable())) throw new Error('Windows secure storage is not available, so keys cannot be stored.');
+        return safeStorage.encryptStringAsync(s);
+      },
+      decrypt: async (b) => { const { safeStorage } = require('electron'); return (await safeStorage.decryptStringAsync(b)).result; },
+    });
+  }
+  return modelService;
+}
+// Model calls report typed errors ({ code, message, advice }) instead of a bare message
+function handleModel(channel, fn) {
+  ipcMain.handle(channel, async (event, ...args) => {
+    if (!isOwnFrame(event)) return { ok: false, error: 'forbidden' };
+    try { return { ok: true, value: await fn(event, ...args) }; } catch (e) { const p = toPlain(e); return { ok: false, error: p.message, code: p.code, advice: p.advice }; }
+  });
+}
+const isStr = (s, max) => typeof s === 'string' && s.length <= (max || 200);
+handleModel('models:config', () => models().publicConfig());
+handleModel('models:status', () => models().status());
+handleModel('models:saveProvider', (e, p, key) => models().saveProvider(p, key == null ? undefined : key));
+handleModel('models:setKey', async (e, id, key) => { if (!isStr(id)) throw new Error('Invalid provider.'); await models().setKey(id, key); return models().publicConfig(); });
+handleModel('models:clearKey', (e, id) => { if (!isStr(id)) throw new Error('Invalid provider.'); return models().clearKey(id); });
+handleModel('models:removeProvider', (e, id) => { if (!isStr(id)) throw new Error('Invalid provider.'); return models().removeProvider(id); });
+handleModel('models:setSlot', (e, slot, id, model) => models().setSlot(slot, id || null, model || ''));
+handleModel('models:setBudget', (e, usd) => models().setBudget(usd));
+handleModel('models:allowOverBudget', () => models().allowOverBudget());
+handleModel('models:setPrice', (e, model, price) => models().setPrice(model, price));
+handleModel('models:listModels', (e, id) => { if (!isStr(id)) throw new Error('Invalid provider.'); return models().listModels(id); });
+handleModel('models:usage', (e, month) => models().usageSummary(isStr(month, 7) ? month : undefined));
+handleModel('models:cancel', (e, callId) => models().cancel(String(callId)));
+// Streaming calls: events go to the window as 'models:event' with the call id
+function sendModelEvent(event, callId, ev) { if (!event.sender.isDestroyed()) event.sender.send('models:event', { callId, event: ev }); }
+handleModel('models:run', (event, callId, request) => {
+  if (!isStr(callId, 80)) throw new Error('Invalid call id.');
+  return models().run(request, { callId, onEvent: (ev) => sendModelEvent(event, callId, ev) });
+});
+handleModel('models:test', (event, callId, id, model) => {
+  if (!isStr(callId, 80) || !isStr(id)) throw new Error('Invalid call.');
+  return models().test(id, isStr(model, 120) ? model : '', { callId, onEvent: (ev) => sendModelEvent(event, callId, ev) });
+});
+handleModel('prompts:list', () => prompts().list());
+handleModel('prompts:get', (e, id) => { if (!isStr(id, 80)) throw new Error('Invalid prompt.'); return prompts().get(id); });
+handleModel('prompts:saveOverride', (e, id, text) => { if (!isStr(id, 80) || !isStr(text, 100000)) throw new Error('Invalid prompt.'); return prompts().saveOverride(id, text); });
+handleModel('prompts:resetOverride', (e, id) => { if (!isStr(id, 80)) throw new Error('Invalid prompt.'); return prompts().resetOverride(id); });
+handleModel('prompts:render', (e, id, vars) => { if (!isStr(id, 80) || (vars && typeof vars !== 'object')) throw new Error('Invalid prompt.'); return prompts().render(id, vars || {}); });
+
 ipcMain.handle('app:info', (event) => {
   if (!isOwnFrame(event)) return { ok: false, error: 'forbidden' };
   return { ok: true, value: { version: app.getVersion(), platform: process.platform, dev: DEV, electron: process.versions.electron } };
