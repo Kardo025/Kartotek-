@@ -1,0 +1,66 @@
+# Windows installer (task C4, ARCHITECTURE.md section 1.4): electron-builder 26.x, NSIS, per user, no administrator rights.
+# The user data folder (%APPDATA%\Kartotek) is outside the install folder and is never touched by installing, updating or uninstalling.
+appId: app.kartotek.desktop
+productName: Kartotek
+copyright: Copyright (c) 2026 Eren
+
+directories:
+  output: dist-installer
+  buildResources: build
+
+# Only what the app runs: the main process, the engine and built UI, the samples. Never the sources of ui/, research/, tools/ or content.
+files:
+  - package.json
+  - desktop/**
+  - src/**
+  - samples/**
+  - "!**/*.map"
+asar: true
+# The samples are read as plain files (the content service lists folders), so they stay outside the archive
+asarUnpack:
+  - samples/**
+
+# Electron fuses (ARCHITECTURE.md section 2.4): the packaged app cannot be run as plain Node, ignores NODE_OPTIONS and the Node
+# inspector flags, loads code only from the checked app.asar, and gives file:// pages no extra rights (the app uses app://).
+electronFuses:
+  runAsNode: false
+  enableCookieEncryption: true
+  enableNodeOptionsEnvironmentVariable: false
+  enableNodeCliInspectArguments: false
+  enableEmbeddedAsarIntegrityValidation: true
+  onlyLoadAppFromAsar: true
+  grantFileProtocolExtraPrivileges: false
+
+extraResources:
+  - from: LICENSE
+    to: LICENSE.txt
+  - from: LICENSE-CONTENT.md
+    to: LICENSE-CONTENT.md
+  - from: THIRD-PARTY-NOTICES.md
+    to: THIRD-PARTY-NOTICES.md
+
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  icon: build/icon.ico
+  # Not signed yet (decision 3): Windows shows a SmartScreen warning, and Smart App Control may block the installer
+  signAndEditExecutable: true
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowElevation: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Kartotek
+  uninstallDisplayName: Kartotek
+  # Documented for clarity: this option only applies to one-click installers, and Kartotek's installer is not one-click.
+  # The uninstaller leaves %APPDATA%\Kartotek alone either way.
+  deleteAppDataOnUninstall: false
+  artifactName: Kartotek-Setup-${version}.exe
+
+# Releases are published by the GitHub workflow (.github/workflows/release.yml), not by electron-builder
+publish: null

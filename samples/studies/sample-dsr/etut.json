@@ -1,0 +1,1180 @@
+{
+  "etut_id": "ornek-dsr",
+  "title": "Sample · The DSR spaced repetition algorithm",
+  "sample": true,
+  "version": 5,
+  "created_at": "2026-09-29",
+  "source": {
+    "file": "dsr-spaced-repetition-slides.pdf",
+    "type": "pdf",
+    "slide_count": 28
+  },
+  "parts": [
+    {
+      "part_id": "p1",
+      "title": "Core principles and the memory model",
+      "slides": [
+        1,
+        2,
+        3,
+        4,
+        11,
+        14,
+        15
+      ],
+      "kazanimlar": [
+        {
+          "kazanim_id": "k1",
+          "kind": "kavram",
+          "title": "Core principles of retrieval and spaced repetition",
+          "objective": "Explain the system’s main principle, the role of retrieval and the targeted recall band.",
+          "slides": [
+            1,
+            2
+          ],
+          "blocks": [
+            {
+              "type": "text",
+              "md": "The system’s **main principle** has three steps: estimate the current state of memory for each card, choose the time that reaches the target recall probability at the **lowest review cost**, then update the model with every answer.",
+              "slides": [
+                1
+              ]
+            },
+            {
+              "type": "keypoints",
+              "title": "Core principles",
+              "items": [
+                "**Retrieval, not rereading:** try to recall the answer actively before the card is shown. The system’s main signal is the right/wrong retrieval outcome.",
+                "**Interval by goal:** there is no single universally best interval; the further away the use, the longer the intervals should generally be.",
+                "**Inverted-U relationship:** if the interval is too short the extra benefit is low; if it is too long, retrieval may fail.",
+                "**Hard but solvable:** the practical goal is to keep the recall probability in roughly the 80–90% band."
+              ],
+              "slides": [
+                1,
+                2
+              ]
+            },
+            {
+              "type": "svg",
+              "svg": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 480 200'><line x1='40' y1='170' x2='460' y2='170' stroke='var(--rule-strong)'/><line x1='40' y1='20' x2='40' y2='170' stroke='var(--rule-strong)'/><path d='M50,160 C150,30 330,30 440,160' fill='none' stroke='var(--pen)' stroke-width='3'/><circle cx='245' cy='63' r='6' fill='var(--good)'/><text x='245' y='48' text-anchor='middle' font-size='13' fill='var(--ink)'>hard but solvable</text><text x='60' y='190' font-size='12' fill='var(--muted)'>too short: little extra benefit</text><text x='455' y='190' text-anchor='end' font-size='12' fill='var(--muted)'>too long: failed retrieval</text><text x='12' y='95' font-size='12' fill='var(--muted)' transform='rotate(-90 12 95)'>benefit</text><text x='250' y='186' text-anchor='middle' font-size='12' fill='var(--muted)'>interval →</text></svg>",
+              "caption": "Schematic of the inverted-U relationship between interval and benefit (not to scale)."
+            },
+            {
+              "type": "analogy",
+              "md": "Think of a safe combination: reading it off a piece of paper does not show whether you really know it. Trying to dial it without looking reveals what your memory holds. The system measures the outcome of this “try without looking”."
+            }
+          ],
+          "self_explain": [
+            {
+              "prompt": "Why is rereading not the system’s main signal? Explain in your own words.",
+              "reference": "According to the slides, the system’s main signal is the right/wrong retrieval outcome; rereading can only support new or failed cards (p. 1). While reading, the answer is already in front of you; it does not measure whether memory can produce the information on its own."
+            },
+            {
+              "prompt": "Why is the target band roughly 80–90% rather than 100%? Which two extremes cause problems?",
+              "reference": "A review while the card is completely fresh can be inefficient; a review after it is almost certainly forgotten is costly too. That is why the “hard but solvable” zone, roughly 80–90%, is targeted (pp. 1–2)."
+            }
+          ],
+          "produce": {
+            "prompt": "From a course you study, write one study habit that follows this principle and one that does not.",
+            "rubric": [
+              "The example that follows it includes a recall attempt before looking at the answer",
+              "The example that does not follow it involves rereading or passive review",
+              "I explained the difference using the idea of the “main signal”"
+            ]
+          },
+          "recall": {
+            "prompt": "What is the main principle of the spaced repetition system, and which recall-probability band does an ideal review target?",
+            "model_answer": "The current state of memory is estimated for each card, the time that reaches the target recall probability at the lowest review cost is chosen, and the model is updated with every answer. An ideal review should be “hard but solvable”; the practical target is roughly the 80–90% band.",
+            "key_points": [
+              "Estimating the current state of memory",
+              "Choosing the time that reaches the target at the lowest review cost",
+              "Updating the model with every answer",
+              "Target band roughly 80–90%"
+            ]
+          }
+        },
+        {
+          "kazanim_id": "k2",
+          "kind": "kavram",
+          "title": "The D-S-R memory state",
+          "objective": "Define stability, difficulty and retrievability and tell which changes when.",
+          "slides": [
+            3,
+            10,
+            11
+          ],
+          "blocks": [
+            {
+              "type": "text",
+              "md": "A state vector is kept for each card: **x = (S, D, R, h, t)**. Here h is the answer and interval history, and t is the time of the last successful/real review.",
+              "slides": [
+                3
+              ]
+            },
+            {
+              "type": "compare",
+              "title": "Three core variables",
+              "columns": [
+                "Symbol",
+                "Name",
+                "Meaning",
+                "As it grows"
+              ],
+              "rows": [
+                [
+                  "S",
+                  "Stability",
+                  "How slowly memory fades (days)",
+                  "Supports a longer interval"
+                ],
+                [
+                  "D",
+                  "Difficulty",
+                  "How hard the card is to recall for this person (1–10)",
+                  "Reviews become more frequent; each success raises S less"
+                ],
+                [
+                  "R",
+                  "Retrievability",
+                  "Current estimated recall probability (0–1)",
+                  "—"
+                ]
+              ],
+              "slides": [
+                3,
+                11
+              ]
+            },
+            {
+              "type": "keypoints",
+              "items": [
+                "In the DSR approach **R changes over time**; **D and S are updated after reviews**."
+              ],
+              "slides": [
+                10
+              ]
+            },
+            {
+              "type": "callout",
+              "tone": "dikkat",
+              "md": "The same card is not assumed to have the same memory state for two different users: the state is kept separately for each **user–card pair**.",
+              "slides": [
+                11
+              ]
+            },
+            {
+              "type": "example",
+              "md": "Example memory state from the specification: difficulty `5.0`, stability `6.5` days, retrievability `0.87`.",
+              "slides": [
+                11,
+                12
+              ]
+            }
+          ],
+          "self_explain": [
+            {
+              "prompt": "Why does R change over time while D and S are updated only after reviews?",
+              "reference": "R is the current recall probability; it falls along the forgetting curve depending on the time since the last review (pp. 3, 14). D and S are estimates about the card; they are updated only when new evidence arrives, i.e. as the outcome of a review (p. 10)."
+            }
+          ],
+          "produce": {
+            "prompt": "Build an example comparing a card with high S and high D to a card with low S and low D: how do they differ in the current interval and in future growth?",
+            "rubric": [
+              "I stated that high S supports a longer interval now",
+              "I stated that high D reduces the growth of S on successful reviews",
+              "I separated R changing with time from D and S changing with reviews"
+            ]
+          },
+          "recall": {
+            "prompt": "What do S, D and R mean? Which one changes over time, and which ones after reviews?",
+            "model_answer": "S is stability: how slowly memory fades; as it grows the interval lengthens. D is difficulty: how hard the card is to recall for this person; as it rises reviews become more frequent. R is the current recall probability. R changes over time; D and S are updated after reviews.",
+            "key_points": [
+              "S: how slowly it is forgotten",
+              "D: personal difficulty, makes reviews more frequent",
+              "R: current recall probability",
+              "R changes with time; D and S with reviews"
+            ]
+          }
+        },
+        {
+          "kazanim_id": "k3",
+          "kind": "problem",
+          "title": "The forgetting curve and the target interval",
+          "objective": "Calculate the next interval using the forgetting curve and the target-interval formula.",
+          "slides": [
+            4,
+            14,
+            15
+          ],
+          "blocks": [
+            {
+              "type": "text",
+              "md": "The forgetting curve recommended for production: **R(t, S) = (1 + t / 9S)⁻¹**. With this definition **R(S, S) = 0.90**; that is, S is the number of days for the recall probability to drop from 100% to 90%.",
+              "slides": [
+                14
+              ]
+            },
+            {
+              "type": "text",
+              "md": "The card should be shown again when R(t, S) = R*. Solving this equation gives the **target interval**: **I = 9S (1/R* − 1)**.",
+              "slides": [
+                14
+              ]
+            },
+            {
+              "type": "worked",
+              "problem": "Find the next interval for a card with S = 30 days at the target R* = 0.90.",
+              "steps": [
+                {
+                  "do": "Write the formula: I = 9S(1/R* − 1)",
+                  "why": "The card should be shown when R(t, S) = R*; this formula is the solution of that equation for t (p. 14)."
+                },
+                {
+                  "do": "Substitute: I = 9 × 30 × (1/0.90 − 1)",
+                  "why": "Given: S = 30 days, R* = 0.90."
+                },
+                {
+                  "do": "1/0.90 − 1 = 0.111…  →  270 × 0.111… = 30",
+                  "why": "With R* = 0.90, I equals S, because by definition R(S, S) = 0.90 (p. 14)."
+                }
+              ],
+              "answer": "I = 30 days",
+              "slides": [
+                14,
+                15
+              ]
+            },
+            {
+              "type": "example",
+              "md": "If R* = 0.85 is chosen for the same card, I ≈ 47.65 days. A lower target retention produces a longer interval and a smaller review load.",
+              "slides": [
+                15
+              ]
+            },
+            {
+              "type": "svg",
+              "svg": "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 480 185'><line x1='40' y1='150' x2='460' y2='150' stroke='var(--rule-strong)'/><line x1='40' y1='10' x2='40' y2='150' stroke='var(--rule-strong)'/><line x1='40' y1='80' x2='460' y2='80' stroke='var(--margin)' stroke-dasharray='0'/><line x1='40' y1='115' x2='460' y2='115' stroke='var(--hard)'/><polyline points='40,10 110,35.2 180,58.3 250,80 320,100.3 390,119.2 460,137.4' fill='none' stroke='var(--pen)' stroke-width='3' stroke-linejoin='round'/><circle cx='250' cy='80' r='6' fill='var(--margin)'/><circle cx='373.6' cy='115' r='6' fill='var(--hard)'/><text x='250' y='70' text-anchor='middle' font-size='12' fill='var(--ink)'>R* = 0.90 → I = 30 d</text><text x='373.6' y='134' text-anchor='middle' font-size='12' fill='var(--ink)'>R* = 0.85 → I ≈ 47.65 d</text><text x='34' y='14' text-anchor='end' font-size='11' fill='var(--muted)'>1.0</text><text x='34' y='84' text-anchor='end' font-size='11' fill='var(--muted)'>0.9</text><text x='34' y='154' text-anchor='end' font-size='11' fill='var(--muted)'>0.8</text><text x='40' y='172' font-size='11' fill='var(--muted)'>0</text><text x='250' y='172' text-anchor='middle' font-size='11' fill='var(--muted)'>30 days</text><text x='460' y='172' text-anchor='end' font-size='11' fill='var(--muted)'>60 days</text></svg>",
+              "caption": "The forgetting curve for S = 30 days and the intervals given by two different target retentions."
+            },
+            {
+              "type": "compare",
+              "title": "Recommended R* by learning goal",
+              "columns": [
+                "Learning goal",
+                "Recommended R*",
+                "Comment"
+              ],
+              "rows": [
+                [
+                  "Short quiz tomorrow",
+                  "0.92–0.95",
+                  "More frequent safety reviews"
+                ],
+                [
+                  "Exam in 2–8 weeks",
+                  "0.85–0.90",
+                  "Balanced load and retention"
+                ],
+                [
+                  "Ongoing professional knowledge / language",
+                  "0.80–0.88",
+                  "Durable memory with less load"
+                ],
+                [
+                  "Critical safety knowledge",
+                  "0.93+",
+                  "High cost of error"
+                ]
+              ],
+              "slides": [
+                4
+              ]
+            },
+            {
+              "type": "callout",
+              "tone": "ipucu",
+              "md": "Target retention is not a “higher is always better” setting; it balances study load against the risk of forgetting.",
+              "slides": [
+                15
+              ]
+            }
+          ],
+          "practice": [
+            {
+              "q_id": "k3p1",
+              "stem": "For a card with S = 10 days and R* = 0.90, how many days is the next interval?",
+              "options": [
+                "5 days",
+                "9 days",
+                "10 days",
+                "90 days"
+              ],
+              "correct": 2,
+              "solution": "I = 9 × 10 × (1/0.90 − 1) = 90 × 0.111… = 10 days. For R* = 0.90, I always equals S."
+            },
+            {
+              "q_id": "k3p2",
+              "stem": "If R* = 0.85 is chosen for the same card (S = 10 days), does the interval get longer or shorter? Calculate.",
+              "solution": "I = 9 × 10 × (1/0.85 − 1) = 90 × 0.1765 ≈ 15.9 days. The interval gets longer because the target retention fell (p. 15)."
+            }
+          ],
+          "self_explain": [
+            {
+              "prompt": "Why does the interval equal S when R* = 0.90 is chosen?",
+              "reference": "By definition S is the number of days for R to drop to 0.90: R(S, S) = 0.90. If the target R* is also 0.90, the card is shown exactly S days later (pp. 14–15)."
+            }
+          ],
+          "recall": {
+            "prompt": "For a card with S = 30 days, what is the next interval for R* = 0.90 and R* = 0.85? What follows from this difference?",
+            "model_answer": "With I = 9S(1/R* − 1), R* = 0.90 gives 30 days and R* = 0.85 gives about 47.65 days. A lower target retention produces a longer interval and a smaller review load.",
+            "key_points": [
+              "I = 9S(1/R* − 1)",
+              "R* = 0.90 → 30 days",
+              "R* = 0.85 → ≈ 47.65 days",
+              "Lower R* → longer interval, less load"
+            ]
+          }
+        }
+      ],
+      "quiz": [
+        {
+          "q_id": "p1q1",
+          "kazanim_id": "k1",
+          "level": "basic",
+          "stem": "What should be used as the **main signal** in the spaced repetition system?",
+          "options": [
+            "The right/wrong retrieval outcome",
+            "How many times the card was read",
+            "How long the card stayed on screen",
+            "Whether the user liked the card"
+          ],
+          "correct": 0,
+          "solution": "The slides stress the “retrieval, not rereading” principle: the answer is actively recalled before it is shown, and the system’s main signal is the right/wrong retrieval outcome (p. 1).",
+          "distractor_notes": [
+            "Correct: this is the statement on the slide itself.",
+            "Rereading only supports new/failed cards; it is not the main signal.",
+            "Time on screen is not mentioned as a signal; response time is used to adjust quality.",
+            "Liking is not mentioned at all."
+          ]
+        },
+        {
+          "q_id": "p1q2",
+          "kazanim_id": "k1",
+          "level": "basic",
+          "stem": "According to the **inverted-U** relationship between interval and benefit, which is true?",
+          "options": [
+            "The longer the interval, the greater the benefit",
+            "If the interval is too short the extra benefit is low; if it is too long, retrieval may fail",
+            "There is a single universally best interval for all content",
+            "Retention always rises as the interval gets shorter"
+          ],
+          "correct": 1,
+          "solution": "The slides point to an inverted-U relationship where the extra benefit is low when the interval is too short, and retrieval may fail when it is too long (p. 1).",
+          "distractor_notes": [
+            "With too long an interval retrieval may fail; the benefit does not keep rising.",
+            "Correct.",
+            "The slides explicitly say “there is no single universally best interval”.",
+            "With too short an interval the extra benefit is low."
+          ]
+        },
+        {
+          "q_id": "p1q3",
+          "kazanim_id": "k2",
+          "level": "basic",
+          "stem": "What is expected as a card’s **D (difficulty)** rises?",
+          "options": [
+            "Successful reviews raise S more",
+            "Reviews become less frequent",
+            "Reviews become more frequent and each successful review raises S less",
+            "R falls more slowly over time"
+          ],
+          "correct": 2,
+          "solution": "As D grows, reviews become more frequent (p. 3); a high D means each successful review raises S less (p. 11).",
+          "distractor_notes": [
+            "The opposite: high D reduces growth.",
+            "The opposite: reviews become more frequent.",
+            "Correct.",
+            "The rate at which R falls is set by S; D does not define it directly."
+          ]
+        },
+        {
+          "q_id": "p1q4",
+          "kazanim_id": "k3",
+          "level": "basic",
+          "stem": "With R(t, S) = (1 + t / 9S)⁻¹ and S = 12 days, what is the predicted R **12 days** after the last review?",
+          "options": [
+            "0.50",
+            "0.75",
+            "0.95",
+            "0.90"
+          ],
+          "correct": 3,
+          "solution": "When t = S, R = 1 / (1 + 1/9) = 0.90. By definition R(S, S) = 0.90; the value of S does not matter (p. 14).",
+          "distractor_notes": [
+            "0.50 is obtained when t = 9S.",
+            "0.75 is obtained when t = 3S.",
+            "For 0.95, t should be about S/2.",
+            "Correct."
+          ]
+        }
+      ],
+      "teach": {
+        "prompt": "Write out the core principles and the memory model without notes, as if explaining them to a friend who knows nothing about the topic.",
+        "rubric": [
+          "The three steps of the main principle: estimate, choose the time, update",
+          "Retrieval being the main signal",
+          "The inverted-U relationship and the 80–90% target band",
+          "The meaning of S, D and R",
+          "R changing with time, D and S with reviews",
+          "I = 9S(1/R* − 1) and lower R* → longer interval"
+        ]
+      },
+      "summary": {
+        "md": "The system’s main principle: estimate the current state of memory for each card, choose the time that reaches the **target recall probability** at the lowest review cost, and update the model with every answer. The main signal is not rereading but the **retrieval** outcome. There is an **inverted-U** relationship between interval and benefit; the practical goal is to keep recall in roughly the 80–90% band.\n\nEach card’s state is kept with **stability (S)**, **difficulty (D)** and **retrievability (R)**; R changes over time, while D and S are updated after reviews.\n\nThe **forgetting curve** is defined as R(t, S) = (1 + t / 9S)⁻¹, with R(S, S) = 0.90. The **target interval** is computed as I = 9S(1/R* − 1); a lower **target retention** produces a longer interval and a smaller review load.",
+        "keywords": [
+          {
+            "term": "Retrieval",
+            "definition": "An active attempt to recall before the answer is shown; the system’s main signal."
+          },
+          {
+            "term": "Inverted U",
+            "definition": "Too short an interval gives little extra benefit; too long an interval makes retrieval fail."
+          },
+          {
+            "term": "Stability (S)",
+            "definition": "How slowly memory fades; the number of days for R to drop to 0.90."
+          },
+          {
+            "term": "Difficulty (D)",
+            "definition": "How hard the card is to recall for this person (1–10); as it rises reviews become more frequent."
+          },
+          {
+            "term": "Retrievability (R)",
+            "definition": "Current estimated recall probability (0–1)."
+          },
+          {
+            "term": "Target interval",
+            "definition": "I = 9S(1/R* − 1): the time until R drops to the target retention."
+          }
+        ]
+      },
+      "priming": {
+        "terms": [
+          {
+            "term": "Retrieval",
+            "definition": "An active attempt to recall before the answer is shown; the system’s main signal."
+          },
+          {
+            "term": "Inverted U",
+            "definition": "Too short an interval gives little extra benefit; too long an interval makes retrieval fail."
+          },
+          {
+            "term": "Stability (S)",
+            "definition": "How slowly memory fades; the number of days for R to drop to 0.90."
+          },
+          {
+            "term": "Difficulty (D)",
+            "definition": "How hard the card is to recall for this person (1–10); as it rises reviews become more frequent."
+          },
+          {
+            "term": "Retrievability (R)",
+            "definition": "Current estimated recall probability (0–1)."
+          },
+          {
+            "term": "Target interval",
+            "definition": "I = 9S(1/R* − 1): the time until R drops to the target retention."
+          }
+        ],
+        "reference": {
+          "big_picture": "The system keeps a memory state (D, S, R) for each card, schedules the next review for when recall is predicted to fall to the target retention, and updates the state with every retrieval.",
+          "concepts": [
+            "Retrieval",
+            "Stability (S)",
+            "Difficulty (D)",
+            "Retrievability (R)",
+            "Forgetting curve",
+            "Target interval"
+          ],
+          "links": [
+            {
+              "from": "Retrieval",
+              "rel": "affects",
+              "to": "Stability (S)"
+            },
+            {
+              "from": "Retrieval",
+              "rel": "affects",
+              "to": "Difficulty (D)"
+            },
+            {
+              "from": "Forgetting curve",
+              "rel": "requires",
+              "to": "Stability (S)"
+            },
+            {
+              "from": "Retrievability (R)",
+              "rel": "result_of",
+              "to": "Forgetting curve"
+            },
+            {
+              "from": "Target interval",
+              "rel": "requires",
+              "to": "Stability (S)"
+            }
+          ],
+          "chain": [
+            "Estimate the memory state: D, S and R",
+            "Choose the time when R reaches the target",
+            "Retrieve at the review",
+            "Update the model with the answer"
+          ],
+          "compare": {
+            "x": "A higher target retention",
+            "y": "A lower target retention",
+            "md": "A lower target retention produces a longer interval and a smaller review load."
+          }
+        }
+      }
+    },
+    {
+      "part_id": "p2",
+      "title": "Updating after an answer and handling failure",
+      "slides": [
+        7,
+        8,
+        9,
+        15,
+        16,
+        17,
+        18,
+        23,
+        24
+      ],
+      "kazanimlar": [
+        {
+          "kazanim_id": "k4",
+          "kind": "olgu",
+          "title": "Rating conversion",
+          "objective": "Convert the Again, Hard, Good and Easy ratings into the model input (y, q).",
+          "slides": [
+            15
+          ],
+          "blocks": [
+            {
+              "type": "text",
+              "md": "The rating the user picks in the interface is kept separate from the model input. The model uses two things: **y** (the retrieval outcome, 0 or 1) and **q** (the quality factor).",
+              "slides": [
+                15
+              ]
+            },
+            {
+              "type": "compare",
+              "title": "Rating conversion",
+              "columns": [
+                "Interface rating",
+                "y",
+                "q",
+                "Comment"
+              ],
+              "rows": [
+                [
+                  "again",
+                  "0",
+                  "0.0",
+                  "Could not recall or answered wrongly"
+                ],
+                [
+                  "hard",
+                  "1",
+                  "0.6",
+                  "Correct, but slow / hard / with a hint"
+                ],
+                [
+                  "good",
+                  "1",
+                  "1.0",
+                  "Correct at the expected quality"
+                ],
+                [
+                  "easy",
+                  "1",
+                  "1.3",
+                  "Fast and confident correct answer"
+                ]
+              ],
+              "slides": [
+                15
+              ]
+            },
+            {
+              "type": "callout",
+              "tone": "dikkat",
+              "md": "The system should not accept the rating blindly. If the person’s median time for that card type is 4 seconds, an “easy” given after 25 seconds should be treated as good or hard.",
+              "slides": [
+                15
+              ]
+            },
+            {
+              "type": "analogy",
+              "md": "Picture a student who says “that was very easy” after using the whole exam time: what they say contradicts what they did. The system likewise looks at behaviour, together with time, not at the claim."
+            }
+          ],
+          "recall": {
+            "prompt": "How are the Again, Hard, Good and Easy ratings converted into y and q values? Why is an “Easy” choice not always accepted as is?",
+            "model_answer": "Again: y = 0, q = 0; Hard: y = 1, q = 0.6; Good: y = 1, q = 1.0; Easy: y = 1, q = 1.3. If the response time is much longer than the person’s median (e.g. median 4 s, answer 25 s), “easy” is treated as good or hard.",
+            "key_points": [
+              "Again: y = 0, q = 0",
+              "Hard 0.6 · Good 1.0 · Easy 1.3",
+              "A slow “easy” is pulled down"
+            ]
+          }
+        },
+        {
+          "kazanim_id": "k5",
+          "kind": "problem",
+          "title": "Stability update: success and failure",
+          "objective": "Explain how S is updated after a successful and a failed retrieval and calculate the failure example.",
+          "slides": [
+            8,
+            17,
+            18
+          ],
+          "blocks": [
+            {
+              "type": "text",
+              "md": "A **successful retrieval** grows the current stability: **G = exp(w0 − w1·D − w2·ln(1+S) + w3(1−R) + w4(q−1))** and **S′ = clip(S_min, S_max, S(1 + G))**. Initial weights: w0 = 1.4 · w1 = 0.08 · w2 = 0.25 · w3 = 1.0 · w4 = 0.35.",
+              "slides": [
+                17
+              ]
+            },
+            {
+              "type": "keypoints",
+              "title": "What changes the growth?",
+              "items": [
+                "As the card gets harder, growth **decreases**.",
+                "As the current stability gets very high, growth **decreases**.",
+                "If the card was retrieved successfully at a low R, growth **increases**.",
+                "As answer quality rises, growth **increases**."
+              ],
+              "slides": [
+                17
+              ]
+            },
+            {
+              "type": "text",
+              "md": "A **failed retrieval** does not reset the card but tightens the plan noticeably: **S′ = max(S_min, S · [f0 − f1(1 − R)])**, with initial values f0 = 0.55 and f1 = 0.15.",
+              "slides": [
+                18
+              ]
+            },
+            {
+              "type": "worked",
+              "problem": "A card with S = 20 days was forgotten when its predicted R was 0.85 at review time. What is the new S? (f0 = 0.55, f1 = 0.15)",
+              "steps": [
+                {
+                  "do": "Formula: S′ = max(S_min, S · [f0 − f1(1 − R)])",
+                  "why": "Failure does not reset the card; the current S is shrunk by a factor (p. 18)."
+                },
+                {
+                  "do": "1 − R = 0.15  →  f1 × 0.15 = 0.0225",
+                  "why": "If R at review time is low, the factor shrinks a little more."
+                },
+                {
+                  "do": "0.55 − 0.0225 = 0.5275  →  20 × 0.5275 = 10.55",
+                  "why": "Since the result is larger than S_min, the max does not change it."
+                }
+              ],
+              "answer": "S′ = 10.55 days",
+              "slides": [
+                18
+              ]
+            },
+            {
+              "type": "callout",
+              "tone": "ipucu",
+              "md": "This mechanism does not erase the card’s history; it accepts that the system’s earlier stability estimate was too optimistic.",
+              "slides": [
+                18
+              ]
+            },
+            {
+              "type": "analogy",
+              "md": "When a bridge with an estimated load capacity starts swaying earlier than expected, it is not torn down and rebuilt; the capacity estimate is lowered and the bridge is inspected more often."
+            }
+          ],
+          "practice": [
+            {
+              "q_id": "k5p1",
+              "stem": "A card with S = 40 days was forgotten when R = 0.90 at review time (f0 = 0.55, f1 = 0.15). About how many days is the new S?",
+              "options": [
+                "21.4 days",
+                "22.0 days",
+                "18.0 days",
+                "40 days"
+              ],
+              "correct": 0,
+              "solution": "S′ = 40 × [0.55 − 0.15 × (1 − 0.90)] = 40 × (0.55 − 0.015) = 40 × 0.535 = 21.4 days. 22.0 days comes from forgetting the f1 term."
+            }
+          ],
+          "self_explain": [
+            {
+              "prompt": "Why does a low R increase the growth after a successful retrieval?",
+              "reference": "According to the slides, if the card was retrieved successfully at a low R, S grows more; “a hard but successful retrieval is informative” (pp. 4, 17). In the formula this comes from the w3(1 − R) term."
+            }
+          ],
+          "recall": {
+            "prompt": "How is S updated after a failed retrieval? Calculate the result for S = 20 days and R = 0.85, and explain why this is not a “reset”.",
+            "model_answer": "S′ = max(S_min, S · [f0 − f1(1 − R)]) = 20 × [0.55 − 0.15 × 0.15] = 10.55 days. The card is not reset: its history is kept, and only the stability estimate is lowered because the earlier estimate proved too optimistic.",
+            "key_points": [
+              "S′ = max(S_min, S · [f0 − f1(1 − R)])",
+              "Result 10.55 days",
+              "Not a reset, but a correction of the estimate"
+            ]
+          }
+        },
+        {
+          "kazanim_id": "k6",
+          "kind": "kavram",
+          "title": "Consecutive-failure policy and types of failure",
+          "objective": "Tell apart the system’s response by the number of consecutive failures, and the types of failure.",
+          "slides": [
+            7,
+            9,
+            23,
+            24
+          ],
+          "blocks": [
+            {
+              "type": "compare",
+              "title": "Consecutive-forgetting policy",
+              "columns": [
+                "Consecutive failures",
+                "Algorithmic response",
+                "Interface response"
+              ],
+              "rows": [
+                [
+                  "1",
+                  "S drops, relearning starts",
+                  "Show the correct answer, ask again in 10 minutes"
+                ],
+                [
+                  "2",
+                  "S is updated more conservatively, D rises",
+                  "“This card looks hard; would you like to add a hint?”"
+                ],
+                [
+                  "3",
+                  "The card is sent to quality review",
+                  "“Try splitting the card or studying the underlying concept first”"
+                ],
+                [
+                  "4+",
+                  "Intervention is recommended instead of automatic review",
+                  "Suspend the card or switch to tutorial mode"
+                ]
+              ],
+              "slides": [
+                24
+              ]
+            },
+            {
+              "type": "tree",
+              "root": "Types of failure",
+              "children": [
+                {
+                  "label": "Real forgetting",
+                  "children": [
+                    "No answer can be produced at all; the case that lowers stability the most"
+                  ]
+                },
+                {
+                  "label": "Partial recall",
+                  "children": [
+                    "The concept is known but the exact term/date/formula does not come; lighter penalty and a better hint"
+                  ]
+                },
+                {
+                  "label": "Confusion",
+                  "children": [
+                    "Two similar concepts are mixed up; a comparison card is added"
+                  ]
+                },
+                {
+                  "label": "Misunderstood information",
+                  "children": [
+                    "A consistent but wrong answer; needs explanation, example and counterexample"
+                  ]
+                },
+                {
+                  "label": "Card design error",
+                  "children": [
+                    "More than one answer, no context or ambiguous; the card should be split"
+                  ]
+                },
+                {
+                  "label": "Attention-related error",
+                  "children": [
+                    "Unusually long time, time of day, many errors; interpret cautiously"
+                  ]
+                }
+              ],
+              "slides": [
+                9
+              ]
+            },
+            {
+              "type": "callout",
+              "tone": "ipucu",
+              "md": "A failed retrieval can contribute to learning when it is followed by correct feedback. That is why a failed card is treated not as a “card to punish” but as a **“card needing extra support”**.",
+              "slides": [
+                23
+              ]
+            }
+          ],
+          "self_explain": [
+            {
+              "prompt": "Why is a content intervention recommended after three consecutive failures instead of “reviewing more often”?",
+              "reference": "Consecutive errors show the problem is not only forgetting: the card’s structure, hint, information load or missing background should be examined (p. 7). The policy stops the scheduling algorithm from masking bad card design with “more frequent review” (p. 24)."
+            }
+          ],
+          "produce": {
+            "prompt": "Think of an error you have made: which of the failure types on the slide does it match, and what intervention does it need?",
+            "rubric": [
+              "I named the error with one of the six types on the slide",
+              "I wrote the intervention that fits the type",
+              "I explained why “more frequent review” may not be enough"
+            ]
+          },
+          "recall": {
+            "prompt": "How does the system respond when a card is forgotten 1, 2, 3 and 4+ times in a row?",
+            "model_answer": "1: S drops, relearning starts and the card is asked again in 10 minutes. 2: S is updated more conservatively, D rises and adding a hint is suggested. 3: The card is sent to quality review; splitting it or studying the underlying concept first is suggested. 4+: Intervention is recommended instead of automatic review: suspending or tutorial mode.",
+            "key_points": [
+              "1: relearning, 10 min",
+              "2: D rises, hint suggested",
+              "3: quality review",
+              "4+: intervention (suspend / tutorial mode)"
+            ]
+          }
+        }
+      ],
+      "quiz": [
+        {
+          "q_id": "p2q1",
+          "kazanim_id": "k4",
+          "level": "basic",
+          "stem": "The user chose **hard** on a card and the answer was correct. What is the model input?",
+          "options": [
+            "y = 1, q = 0.6",
+            "y = 0, q = 0",
+            "y = 1, q = 1.0",
+            "y = 1, q = 1.3"
+          ],
+          "correct": 0,
+          "solution": "According to the rating table, hard: recall_result = 1 and quality q = 0.6 (p. 15).",
+          "distractor_notes": [
+            "Correct.",
+            "This is again.",
+            "This is good.",
+            "This is easy."
+          ]
+        },
+        {
+          "q_id": "p2q2",
+          "kazanim_id": "k5",
+          "level": "basic",
+          "stem": "A card with S = 20 days was forgotten when its predicted R was 0.85 (f0 = 0.55, f1 = 0.15). How many days is the new S?",
+          "options": [
+            "9 days",
+            "10.55 days",
+            "11 days",
+            "20 days"
+          ],
+          "correct": 1,
+          "solution": "S′ = 20 × [0.55 − 0.15 × (1 − 0.85)] = 20 × (0.55 − 0.0225) = 20 × 0.5275 = 10.55 days (p. 18).",
+          "distractor_notes": [
+            "9 days is the example from the earlier simple model with ρ = 0.45; this question asks for the f0–f1 formula.",
+            "Correct.",
+            "A rounded value that ignores the f1 term.",
+            "Failure lowers S; it does not stay the same."
+          ]
+        },
+        {
+          "q_id": "p2q3",
+          "kazanim_id": "k5",
+          "level": "medium",
+          "stem": "Which statement about S growth after a successful retrieval is **false**?",
+          "options": [
+            "As the card gets harder, growth decreases",
+            "As the current S gets very high, growth decreases",
+            "For a card retrieved successfully at a low R, growth decreases",
+            "As answer quality rises, growth increases"
+          ],
+          "correct": 2,
+          "solution": "According to the slides, if the card was retrieved successfully at a low R, growth **increases**; a “hard but successfully recalled review” is informative (p. 17). The other three statements match the slide items.",
+          "distractor_notes": [
+            "True statement: the −w1·D term.",
+            "True statement: the −w2·ln(1+S) term.",
+            "False statement; this is the answer sought.",
+            "True statement: the w4(q−1) term."
+          ]
+        },
+        {
+          "q_id": "p2q4",
+          "kazanim_id": "k6",
+          "level": "basic",
+          "stem": "A card was forgotten for the **third time in a row**. What does the consecutive-forgetting policy recommend?",
+          "options": [
+            "Keep showing the same card every day",
+            "Reset the card completely",
+            "Double the card’s interval",
+            "Send the card to quality review; suggest splitting it or studying the underlying concept first"
+          ],
+          "correct": 3,
+          "solution": "According to the table, at the third consecutive failure the card is sent to quality review and the interface says “try splitting the card or studying the underlying concept first” (p. 24).",
+          "distractor_notes": [
+            "The policy exists precisely to prevent this: showing a bad card more often.",
+            "Failure does not reset the card (p. 18).",
+            "The slides give no such response; failure shortens the interval.",
+            "Correct."
+          ]
+        }
+      ],
+      "teach": {
+        "prompt": "Write out how the model is updated after an answer and how failures are handled without notes, as if explaining them to a friend.",
+        "rubric": [
+          "The y and q values of the ratings",
+          "A slow “easy” being pulled down",
+          "S growing with G on success and the four factors",
+          "S shrinking but not being reset on failure",
+          "The consecutive-failure policy (1, 2, 3, 4+)",
+          "Different interventions by failure type"
+        ]
+      },
+      "summary": {
+        "md": "The interface rating is converted into the model input: **again** y = 0, q = 0; **hard** 0.6; **good** 1.0; **easy** 1.3. If the response time is much longer than the person’s median, “easy” is pulled down.\n\nA **successful retrieval** grows S with G: difficulty and a high S reduce growth, while success at a low R and high quality increase it. A **failed retrieval** lowers S with S′ = max(S_min, S · [f0 − f1(1 − R)]) but does **not reset** the card; in the example 20 days drop to 10.55 days.\n\n**Consecutive-forgetting policy**: relearning at 1, a hint at 2, quality review at 3, intervention at 4+. The types of failure (real forgetting, partial recall, confusion, misunderstood information, card design error, attention) need different interventions; a failed card is treated as a **card needing extra support**.",
+        "keywords": [
+          {
+            "term": "Quality factor (q)",
+            "definition": "again 0 · hard 0.6 · good 1.0 · easy 1.3."
+          },
+          {
+            "term": "Growth (G)",
+            "definition": "exp(w0 − w1·D − w2·ln(1+S) + w3(1−R) + w4(q−1)); S′ = S(1 + G)."
+          },
+          {
+            "term": "Failure update",
+            "definition": "S′ = max(S_min, S · [f0 − f1(1 − R)]), f0 = 0.55, f1 = 0.15."
+          },
+          {
+            "term": "Relearning",
+            "definition": "The short-interval recovery stage of a forgotten card (e.g. after 10 minutes)."
+          },
+          {
+            "term": "Consecutive-forgetting policy",
+            "definition": "1 → relearning, 2 → hint, 3 → quality review, 4+ → intervention."
+          },
+          {
+            "term": "Misunderstood information",
+            "definition": "A consistent but wrong answer; needs explanation, example and counterexample rather than more frequent review."
+          }
+        ]
+      },
+      "priming": {
+        "terms": [
+          {
+            "term": "Quality factor (q)",
+            "definition": "again 0 · hard 0.6 · good 1.0 · easy 1.3."
+          },
+          {
+            "term": "Growth (G)",
+            "definition": "exp(w0 − w1·D − w2·ln(1+S) + w3(1−R) + w4(q−1)); S′ = S(1 + G)."
+          },
+          {
+            "term": "Failure update",
+            "definition": "S′ = max(S_min, S · [f0 − f1(1 − R)]), f0 = 0.55, f1 = 0.15."
+          },
+          {
+            "term": "Relearning",
+            "definition": "The short-interval recovery stage of a forgotten card (e.g. after 10 minutes)."
+          },
+          {
+            "term": "Consecutive-forgetting policy",
+            "definition": "1 → relearning, 2 → hint, 3 → quality review, 4+ → intervention."
+          },
+          {
+            "term": "Misunderstood information",
+            "definition": "A consistent but wrong answer; needs explanation, example and counterexample rather than more frequent review."
+          }
+        ],
+        "reference": {
+          "big_picture": "After an answer the rating becomes y and q; a success grows stability with G, a failure lowers it without resetting the card, and repeated failures bring a policy matched to the type of failure.",
+          "concepts": [
+            "Rating (y, q)",
+            "Successful retrieval",
+            "Growth G",
+            "Failed retrieval",
+            "Relearning",
+            "Consecutive-forgetting policy"
+          ],
+          "links": [
+            {
+              "from": "Rating (y, q)",
+              "rel": "affects",
+              "to": "Growth G"
+            },
+            {
+              "from": "Growth G",
+              "rel": "result_of",
+              "to": "Successful retrieval"
+            },
+            {
+              "from": "Failed retrieval",
+              "rel": "causes",
+              "to": "Relearning"
+            },
+            {
+              "from": "Consecutive-forgetting policy",
+              "rel": "result_of",
+              "to": "Failed retrieval"
+            }
+          ],
+          "chain": [
+            "The rating is converted to y and q",
+            "Success or failure",
+            "S grows with G, or drops without a reset",
+            "The next interval is scheduled",
+            "Repeated failures raise the policy level"
+          ],
+          "compare": {
+            "x": "Successful retrieval",
+            "y": "Failed retrieval",
+            "md": "A success grows S with G; a failure lowers S with S′ = max(S_min, S · [f0 − f1(1 − R)]) but does not reset the card."
+          }
+        }
+      }
+    }
+  ],
+  "final_test": [
+    {
+      "q_id": "f1",
+      "kazanim_id": "k1",
+      "level": "medium",
+      "stem": "A student rereads the cards every day while looking at the answer and never tries to recall without looking. According to the principles on the slides, which assessment is most accurate?",
+      "options": [
+        "The system’s main signal is missing: active retrieval should be attempted before the answer is shown",
+        "Reading every day is the most efficient approach according to the inverted-U relationship",
+        "As reading time grows, stability S rises directly",
+        "Rereading is forbidden only for old cards"
+      ],
+      "correct": 0,
+      "solution": "The slides say “retrieval, not rereading”: rereading can support new/failed cards, but the system’s main signal is the right/wrong retrieval outcome (p. 1). Without an attempt made without looking, this signal does not exist.",
+      "distractor_notes": [
+        "Correct.",
+        "According to the inverted U, too short an interval gives little extra benefit.",
+        "S is updated from review outcomes, not reading time.",
+        "The slides see rereading as support for new/failed cards; there is no rule “forbidden for old cards”."
+      ]
+    },
+    {
+      "q_id": "f2",
+      "kazanim_id": "k2",
+      "level": "medium",
+      "stem": "A card has not been reviewed for 30 days. Which of these has changed in that time?",
+      "options": [
+        "Only D",
+        "R; because R changes over time, while D and S are updated after reviews",
+        "Only S",
+        "None; without a review the memory state does not change"
+      ],
+      "correct": 1,
+      "solution": "In the DSR approach R changes over time; D and S are updated after reviews (p. 10). Without a review, only the time-dependent R drops.",
+      "distractor_notes": [
+        "D is updated only after a review.",
+        "Correct.",
+        "S is also updated only after a review.",
+        "R depends on time; it drops even without a review."
+      ]
+    },
+    {
+      "q_id": "f3",
+      "kazanim_id": "k3",
+      "level": "medium",
+      "stem": "The user lowered the target retention from 0.90 to 0.85. What happens for a card with S = 30 days?",
+      "options": [
+        "The interval shortens and the review load rises",
+        "The interval does not change; only the calculation of R changes",
+        "The interval lengthens from 30 days to about 47.65 days and the review load drops",
+        "The card is moved to the relearning stage"
+      ],
+      "correct": 2,
+      "solution": "I = 9S(1/R* − 1): 30 days at R* = 0.90, ≈ 47.65 days at R* = 0.85. A lower target retention produces a longer interval and a smaller review load (p. 15).",
+      "distractor_notes": [
+        "Wrong direction: when R* falls the interval lengthens.",
+        "The interval depends directly on R*.",
+        "Correct.",
+        "Changing the target retention is not a failure; it causes no state transition."
+      ]
+    },
+    {
+      "q_id": "f4",
+      "kazanim_id": "k4",
+      "level": "medium",
+      "stem": "A user whose personal median response time is 4 seconds chose **easy** after 25 seconds. What should the system do?",
+      "options": [
+        "Accept q = 1.3 as is",
+        "Count the answer as wrong (y = 0)",
+        "Suspend the card immediately",
+        "Treat the “easy” as good or hard"
+      ],
+      "correct": 3,
+      "solution": "The slides ask that ratings not be accepted blindly: an “easy” given after 25 s with a median of 4 s should be treated as good or hard (p. 15). Since the answer is correct, y stays 1.",
+      "distractor_notes": [
+        "The slides say exactly not to do this.",
+        "The answer is correct; only the quality is lowered.",
+        "Suspending is stage 4+ of the consecutive-failure policy; there is no failure here.",
+        "Correct."
+      ]
+    },
+    {
+      "q_id": "f5",
+      "kazanim_id": "k5",
+      "level": "medium",
+      "stem": "Which is the correct interpretation of the S update after a failed retrieval?",
+      "options": [
+        "S drops but is not reset; the system accepts that its earlier stability estimate was too optimistic",
+        "The card returns to its initial state and the whole history is erased",
+        "S does not change; only D rises",
+        "S rises, because the error is informative"
+      ],
+      "correct": 0,
+      "solution": "Failure should not reset the card but should tighten the plan; the mechanism does not erase the card’s history, it accepts that the earlier estimate was too optimistic (p. 18).",
+      "distractor_notes": [
+        "Correct.",
+        "The slides explicitly say “should not reset the card”.",
+        "S is lowered; a change in D alone is not enough.",
+        "What is “informative” is a successful retrieval at a low R; failure lowers S."
+      ]
+    },
+    {
+      "q_id": "f6",
+      "kazanim_id": "k6",
+      "level": "medium",
+      "stem": "A user consistently gives the same wrong answer on a card. According to the classification on the slides, which type of failure is this and what does it need?",
+      "options": [
+        "Attention-related error; take a break for a while",
+        "Misunderstood information; not more frequent review but explanation, example and counterexample",
+        "Real forgetting; lower stability the most",
+        "Card design error; delete the card immediately"
+      ],
+      "correct": 1,
+      "solution": "The definition “the user gives a consistent but conceptually wrong answer” is misunderstood information; it needs not just more frequent review but explanation, example and counterexample (p. 9).",
+      "distractor_notes": [
+        "An attention error relates to an unusually long time, the time of day or many errors in a session.",
+        "Correct.",
+        "In real forgetting the user cannot produce an answer at all; here there is a consistent answer.",
+        "For a design error the card is split; deleting is not recommended."
+      ]
+    }
+  ]
+}

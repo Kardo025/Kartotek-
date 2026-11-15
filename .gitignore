@@ -1,0 +1,37 @@
+# Dependencies and build output
+node_modules/
+ui/dist/
+Kartotek-DSR.html
+
+# Your content lives outside the repository (see README.md). These are safety nets so that it cannot be committed by accident.
+kartotek.config.json
+/content/
+/studies/
+/lessons/
+/mocks/
+/mindmaps/
+/exam/
+/sources/
+/notes/
+/Notes/
+/pdf-extracts/
+
+# Private working material of the maintainer
+/research/
+/docs/PUBLISHING-AUDIT.md
+/backup-before-redesign/
+/kartotek/
+
+# Download cache and generated files
+tools/cache/
+*.pdf
+
+# Local tool settings
+.claude/settings.local.json
+__pycache__/
+
+# Installer build output
+/dist-installer*/
+
+# Private terms for the hygiene check
+hygiene.local.txt

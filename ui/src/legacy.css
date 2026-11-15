@@ -1,0 +1,70 @@
+/*
+ * The Study, End-of-lesson test, Cards, Stats, Settings and Algorithm tabs are still drawn by the engine's
+ * views. Their stylesheet is kept, but every token it reads is remapped onto the new palette and type,
+ * so the whole app speaks one visual language.
+ */
+:root, :root[data-theme="light"], :root[data-theme="dark"] {
+  --ground: var(--k-bg); --surface: var(--k-panel); --card: var(--k-panel); --card-2: var(--k-tile);
+  --ink: var(--k-text); --ink-2: var(--k-text-2); --muted: var(--k-muted);
+  --line: var(--k-line); --rule: var(--k-line); --rule-strong: var(--k-line-strong); --margin: var(--k-line);
+  --pen: var(--k-accent); --pen-ink: var(--k-accent-text); --pen-soft: var(--k-accent-soft);
+  --steel: var(--k-muted); --steel-deep: var(--k-text-2); --steel-soft: var(--k-badge);
+  --brass: var(--k-accent); --brass-deep: var(--k-accent-strong); --brass-soft: var(--k-accent-soft);
+  --again: var(--k-again); --hard: var(--k-hard); --good: var(--k-good); --easy: var(--k-easy);
+  --again-soft: var(--k-pill-relearning); --hard-soft: var(--k-pill-learning); --good-soft: var(--k-pill-review); --easy-soft: var(--k-accent-soft);
+  --sig-new: var(--k-muted); --sig-learning: var(--k-hard); --sig-review: var(--k-good); --sig-relearning: var(--k-again);
+  --shadow: var(--k-shadow); --shadow-lift: var(--k-shadow-lift); --tray-light: transparent;
+  --f-card: "Inter Variable", "Segoe UI", system-ui, sans-serif;
+  --f-ui: "Inter Variable", "Segoe UI", system-ui, sans-serif;
+  --f-data: var(--f-ui);
+  --f-mono: ui-monospace, "Cascadia Mono", "SF Mono", Consolas, monospace;
+}
+:root[data-theme="light"] {
+  --guide-1: #b4534a; --guide-2: #3f8a55; --guide-3: #4f6fd6; --guide-4: #b8862a; --guide-5: #8a5cc4; --guide-6: #2f8a8a;
+  --s1: #4f46e5; --s2: #e0692f; --s3: #16a07a; --s4: #d4a017; --s5: #d6589a;
+}
+:root[data-theme="dark"] {
+  --guide-1: #f08a7e; --guide-2: #7fd09a; --guide-3: #9aa8fb; --guide-4: #f2c46b; --guide-5: #c9a2f5; --guide-6: #6fd0d0;
+  --s1: #8b8cf8; --s2: #f59a61; --s3: #4fd1a5; --s4: #f2c94c; --s5: #f28cc0;
+}
+
+body.k-app { font-size: 15px; line-height: 1.55; }
+body.k-app .k-legacy { max-width: 1180px; }
+body.k-app .k-legacy h2 { font-family: var(--f-ui); font-weight: 700; letter-spacing: -0.015em; }
+body.k-app .k-legacy h3 { font-size: 14.5px; font-weight: 650; color: var(--k-text); }
+body.k-app .k-legacy .panel { border-radius: 12px; border-color: var(--k-line); background: var(--k-panel); box-shadow: var(--k-shadow); }
+body.k-app .k-legacy .btn { border-radius: 9px; font-weight: 600; }
+body.k-app .k-legacy .input, body.k-app .k-legacy input[type="text"], body.k-app .k-legacy input[type="number"],
+body.k-app .k-legacy input[type="search"], body.k-app .k-legacy select, body.k-app .k-legacy textarea { border-radius: 9px; }
+body.k-app .k-legacy .pill, body.k-app .k-legacy .lvl { border-radius: 99px; }
+body.k-app .k-legacy table { font-variant-numeric: tabular-nums; }
+body.k-app .modal { border-radius: 14px; }
+
+/* Finish-review fixes for the engine-drawn tabs */
+:root[data-theme="light"] { --k-warn-bg: #fef3c7; --k-warn-t: #854d0e; }
+:root[data-theme="dark"] { --k-warn-bg: #3a2e0a; --k-warn-t: #fcd34d; }
+body.k-app .lvl.warn { background: var(--k-warn-bg); color: var(--k-warn-t); }
+body.k-app .lvl.warn i { color: var(--k-warn-t); }
+body.k-app .pill.new { background: var(--k-pill-new); color: var(--k-pill-new-t); }
+body.k-app .pill.learning { background: var(--k-pill-learning); color: var(--k-pill-learning-t); }
+body.k-app .pill.review { background: var(--k-pill-review); color: var(--k-pill-review-t); }
+body.k-app .pill.relearning, body.k-app .pill.flag { background: var(--k-pill-relearning); color: var(--k-pill-relearning-t); }
+body.k-app .param-grid { grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); }
+body.k-app .param-grid label.field, body.k-app .settings-grid label.field { min-width: 0; }
+body.k-app .param-grid label.field span { overflow-wrap: anywhere; }
+body.k-app .grid2 { align-items: start; }
+body.k-app .kpi .value { font-size: 24px; }
+/* Wide tables and formulas scroll sideways; a soft edge shadow shows there is more */
+body.k-app .table-wrap, body.k-app .formula {
+  background:
+    linear-gradient(to right, var(--k-panel) 30%, transparent) left / 40px 100% no-repeat local,
+    linear-gradient(to left, var(--k-panel) 30%, transparent) right / 40px 100% no-repeat local,
+    radial-gradient(farthest-side at 0 50%, color-mix(in srgb, var(--k-text) 16%, transparent), transparent) left / 12px 100% no-repeat scroll,
+    radial-gradient(farthest-side at 100% 50%, color-mix(in srgb, var(--k-text) 16%, transparent), transparent) right / 12px 100% no-repeat scroll,
+    var(--k-panel);
+}
+body.k-app .table-wrap table { background: transparent; }
+@media (max-width: 600px) {
+  body.k-app input, body.k-app select, body.k-app textarea { font-size: 16px; }
+  body.k-app .chart text, body.k-app .state-diagram text { font-size: 20px; }
+}

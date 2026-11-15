@@ -1,0 +1,959 @@
+{
+ "etut_id": "sample-cycle-v2",
+ "title": "Sample: the Luma gate (Study v2 cycle)",
+ "version": 2,
+ "created_at": "2026-10-07T01:00:00+03:00",
+ "schema_version": 2,
+ "workflow": "cycle-v2",
+ "sample": true,
+ "source": {
+  "file": "Synthetic source S1 (from the Study Agent specification)",
+  "type": "pdf",
+  "slide_count": 1,
+  "unit": "page"
+ },
+ "sources": [
+  {
+   "id": "S1",
+   "title": "Fictional Luma system (synthetic fixture, Study Agent spec §Worked miniature example)",
+   "file": "research\\study-v2\\docs\\study-agent-spec.md",
+   "type": "pdf",
+   "unit": "page",
+   "pages": "1"
+  }
+ ],
+ "units": [
+  {
+   "id": "U1",
+   "source": "S1",
+   "loc": "S1 ¶1",
+   "type": "condition",
+   "text": "The gate is open if and only if both switches A and B are on.",
+   "disposition": "included"
+  },
+  {
+   "id": "U2",
+   "source": "S1",
+   "loc": "S1 ¶1",
+   "type": "proposition",
+   "text": "If either switch is off, the gate stays closed.",
+   "disposition": "included"
+  },
+  {
+   "id": "U3",
+   "source": "S1",
+   "loc": "S1 ¶1",
+   "type": "exception",
+   "text": "A broken sensor can display OPEN while the gate is closed.",
+   "disposition": "included"
+  },
+  {
+   "id": "U4",
+   "source": "S1",
+   "loc": "S1 exercise 1",
+   "type": "exercise",
+   "text": "A on, B off: open or closed? Supplied key: closed.",
+   "disposition": "included"
+  }
+ ],
+ "relations": [
+  {
+   "id": "R1",
+   "from": "switches A and B",
+   "to": "gate state",
+   "type": "conditional",
+   "direction": "forward",
+   "conditions": [
+    "A on",
+    "B on (jointly required)"
+   ],
+   "units": [
+    "U1",
+    "U2"
+   ]
+  },
+  {
+   "id": "R2",
+   "from": "sensor display",
+   "to": "actual gate state",
+   "type": "comparative",
+   "direction": "undirected",
+   "conditions": [
+    "the sensor may be broken"
+   ],
+   "units": [
+    "U3"
+   ]
+  }
+ ],
+ "outcomes": [
+  {
+   "id": "LO-1",
+   "part_id": "p1",
+   "kazanim_id": "k1",
+   "object": "condition",
+   "performance": "State the condition under which the gate is open.",
+   "conditions": "without notes",
+   "units": [
+    "U1"
+   ],
+   "relations": [
+    "R1"
+   ],
+   "criteria": [
+    {
+     "id": "C-1",
+     "text": "States that the gate is open only when both A and B are on."
+    }
+   ],
+   "status": "covered"
+  },
+  {
+   "id": "LO-2",
+   "part_id": "p1",
+   "kazanim_id": "k1",
+   "object": "relation",
+   "performance": "Predict the gate state when either switch is off and justify it.",
+   "conditions": "without notes",
+   "units": [
+    "U2",
+    "U4"
+   ],
+   "relations": [
+    "R1"
+   ],
+   "criteria": [
+    {
+     "id": "C-2",
+     "text": "Predicts closed when at least one switch is off."
+    },
+    {
+     "id": "C-3",
+     "text": "Justifies it with the both-switches condition."
+    }
+   ],
+   "status": "covered"
+  },
+  {
+   "id": "LO-3",
+   "part_id": "p1",
+   "kazanim_id": "k2",
+   "object": "exception",
+   "performance": "Explain why a display showing OPEN does not by itself establish that the gate is open.",
+   "conditions": "without notes",
+   "units": [
+    "U3"
+   ],
+   "relations": [
+    "R2"
+   ],
+   "criteria": [
+    {
+     "id": "C-4",
+     "text": "Says that OPEN on the display alone is not enough."
+    },
+    {
+     "id": "C-5",
+     "text": "Gives the reason: a broken sensor can show OPEN while the gate is closed."
+    }
+   ],
+   "status": "covered"
+  }
+ ],
+ "parts": [
+  {
+   "part_id": "p1",
+   "title": "How two switches control the gate",
+   "slides": [
+    1
+   ],
+   "prerequisites": [],
+   "orientation": {
+    "place": "This is the only part of the sample. It shows every stage of the new study cycle on a tiny synthetic source.",
+    "purpose": "You will be able to state the gate rule, predict the gate for any switch setting and explain why the display can mislead.",
+    "prereq": "No background is needed; everything comes from source S1."
+   },
+   "summary": {
+    "md": "This part covers how two switches control a fictional **gate**. The gate is open only when **switch A** and **switch B** are both on. If either switch is off, the gate stays **closed**. A **sensor** displays the gate state, but a broken sensor can show **OPEN** while the gate is closed. You will distinguish the rule about the gate from what its display shows.",
+    "keywords": [
+     {
+      "term": "gate",
+      "definition": "The fictional Luma gate whose state depends on two switches.",
+      "ref": "S1 ¶1"
+     },
+     {
+      "term": "switch A / switch B",
+      "definition": "The two switches; both must be on for the gate to open.",
+      "ref": "S1 ¶1"
+     },
+     {
+      "term": "closed",
+      "definition": "The gate state whenever at least one switch is off.",
+      "ref": "S1 ¶1"
+     },
+     {
+      "term": "sensor",
+      "definition": "Displays the gate state; it can be broken.",
+      "ref": "S1 ¶1"
+     },
+     {
+      "term": "OPEN (display)",
+      "definition": "What the display may show even when the gate is closed.",
+      "ref": "S1 ¶1"
+     }
+    ]
+   },
+   "kazanimlar": [
+    {
+     "kazanim_id": "k1",
+     "kind": "kavram",
+     "title": "The gate rule",
+     "objective": "Without notes, state when the gate is open and predict it for any switch setting.",
+     "slides": [
+      1
+     ],
+     "outcomes": [
+      "LO-1",
+      "LO-2"
+     ],
+     "blocks": [
+      {
+       "type": "text",
+       "md": "In the Luma system the gate is **open if and only if both switches A and B are on** (S1 ¶1). \"If and only if\" means two things at once: both on → open, and open → both on.",
+       "refs": [
+        "U1"
+       ]
+      },
+      {
+       "type": "compare",
+       "title": "All four switch settings",
+       "columns": [
+        "A",
+        "B",
+        "Gate"
+       ],
+       "rows": [
+        [
+         "on",
+         "on",
+         "open"
+        ],
+        [
+         "on",
+         "off",
+         "closed"
+        ],
+        [
+         "off",
+         "on",
+         "closed"
+        ],
+        [
+         "off",
+         "off",
+         "closed"
+        ]
+       ],
+       "refs": [
+        "U1",
+        "U2"
+       ]
+      },
+      {
+       "type": "callout",
+       "tone": "ipucu",
+       "md": "One switch on is never enough: the rule needs **both** (S1 ¶1).",
+       "refs": [
+        "U2"
+       ]
+      }
+     ],
+     "practice": [
+      {
+       "q_id": "k1-check",
+       "stem": "Embedded check (not counted): with A on and B on, what does the rule say?",
+       "options": [
+        "Open",
+        "Closed",
+        "It depends on the display",
+        "It cannot be decided"
+       ],
+       "correct": 0,
+       "solution": "Both switches are on, so the gate is open (S1 ¶1)."
+      }
+     ],
+     "recall": {
+      "prompt": "Without notes: when is the Luma gate open, and what happens if one switch is off?",
+      "model_answer": "It is open only if both switches A and B are on; if either switch is off, it stays closed.",
+      "key_points": [
+       "both A and B on → open",
+       "either switch off → closed"
+      ]
+     },
+     "priming": {
+      "summary_md": "The **gate** has one rule: it is open only when **switch A** and **switch B** are both on. Any setting with a switch off leaves it **closed**.",
+      "keywords": [
+       {
+        "term": "switch A / switch B",
+        "definition": "The two switches; both must be on for the gate to open.",
+        "ref": "S1 ¶1"
+       }
+      ],
+      "purpose": "State the gate rule and predict the gate for any switch setting."
+     },
+     "feynman": {
+      "prompt": "Explain the gate rule to a classmate: when is the gate open, and what happens for each of the four switch settings?",
+      "criteria": [
+       "C-1",
+       "C-2",
+       "C-3"
+      ]
+     }
+    },
+    {
+     "kazanim_id": "k2",
+     "kind": "kavram",
+     "title": "Display versus actual state",
+     "objective": "Without notes, explain why OPEN on the display does not prove that the gate is open.",
+     "slides": [
+      1
+     ],
+     "outcomes": [
+      "LO-3"
+     ],
+     "blocks": [
+      {
+       "type": "text",
+       "md": "The sensor only **displays** the state. S1 adds that a **broken sensor can display OPEN even while the gate is closed** (S1 ¶1). So the display is an observation that can be wrong; the switch rule decides the actual state.",
+       "refs": [
+        "U3"
+       ]
+      },
+      {
+       "type": "callout",
+       "tone": "dikkat",
+       "md": "Do not read the display as the rule: OPEN on the screen is not evidence that A and B are both on.",
+       "refs": [
+        "U3"
+       ]
+      }
+     ],
+     "recall": {
+      "prompt": "Without notes: why can't you conclude that the gate is open just because the display shows OPEN?",
+      "model_answer": "Because a broken sensor can display OPEN while the gate is actually closed.",
+      "key_points": [
+       "the display alone is not enough",
+       "a broken sensor can show OPEN while closed"
+      ]
+     },
+     "priming": {
+      "summary_md": "A **sensor** shows the gate state on a display. The display can be wrong: a broken sensor can show **OPEN** while the gate is closed.",
+      "keywords": [
+       {
+        "term": "sensor",
+        "definition": "Displays the gate state; it can be broken.",
+        "ref": "S1 ¶1"
+       }
+      ],
+      "purpose": "Explain why OPEN on the display does not by itself show that the gate is open."
+     },
+     "feynman": {
+      "prompt": "Explain to a classmate why they cannot trust OPEN on the display by itself.",
+      "criteria": [
+       "C-4",
+       "C-5"
+      ]
+     }
+    }
+   ],
+   "feynman": {
+    "prompt": "Explain to a classmate who missed this part how the two switches control the gate, and why the display can mislead them. Use your own words.",
+    "criteria": [
+     "C-1",
+     "C-2",
+     "C-3",
+     "C-4",
+     "C-5"
+    ]
+   },
+   "items": [
+    {
+     "q_id": "i1",
+     "version": 1,
+     "origin": "imported",
+     "source_ref": "S1, exercise 1",
+     "units": [
+      "U4"
+     ],
+     "format": "typed",
+     "kazanim_id": "k1",
+     "outcomes": [
+      "LO-2"
+     ],
+     "criteria": [
+      "C-2",
+      "C-3"
+     ],
+     "performance": "solve",
+     "difficulty": "basic",
+     "stem": "*S1, exercise 1.* A is on and B is off. Is the gate open or closed? Say why.",
+     "rubric": {
+      "criteria": [
+       {
+        "id": "C-2",
+        "text": "Says closed.",
+        "required": true
+       },
+       {
+        "id": "C-3",
+        "text": "Gives the reason: both switches must be on.",
+        "required": true
+       }
+      ],
+      "accept": [
+       "'shut' for closed"
+      ],
+      "contradictions": [
+       "Says open"
+      ],
+      "model": "Closed: the gate opens only when both A and B are on, and B is off (S1 ¶1; supplied key: closed)."
+     },
+     "hints": [
+      "Look at what the rule needs from **both** switches."
+     ],
+     "steps": [
+      {
+       "do": "Check switch A: on.",
+       "why": "The rule needs A on."
+      },
+      {
+       "do": "Check switch B: off.",
+       "why": "The rule also needs B on, so the condition fails."
+      }
+     ],
+     "solution": "Closed. B is off, and the gate is open only when both switches are on (S1 ¶1).",
+     "family": "f-a-on-b-off",
+     "use": "practice",
+     "validation": "verified"
+    },
+    {
+     "q_id": "i2",
+     "version": 1,
+     "origin": "generated",
+     "units": [
+      "U2"
+     ],
+     "format": "mcq_single",
+     "kazanim_id": "k1",
+     "outcomes": [
+      "LO-2"
+     ],
+     "criteria": [
+      "C-2"
+     ],
+     "performance": "identify",
+     "difficulty": "basic",
+     "stem": "A is off and B is on. What is the gate state?",
+     "options": [
+      {
+       "id": "a",
+       "md": "Open"
+      },
+      {
+       "id": "b",
+       "md": "Closed"
+      },
+      {
+       "id": "c",
+       "md": "Determined only by the display"
+      }
+     ],
+     "key": [
+      "b"
+     ],
+     "option_notes": {
+      "a": "Open needs both switches on; A is off.",
+      "b": "Correct.",
+      "c": "The rule, not the display, decides the state (S1 ¶1)."
+     },
+     "hints": [
+      "Is there any setting with one switch off that opens the gate?"
+     ],
+     "solution": "Closed: either switch off keeps the gate closed (S1 ¶1).",
+     "family": "f-a-off-b-on",
+     "use": "practice",
+     "validation": "verified"
+    },
+    {
+     "q_id": "i3",
+     "version": 1,
+     "origin": "generated",
+     "units": [
+      "U3"
+     ],
+     "format": "typed",
+     "kazanim_id": "k2",
+     "outcomes": [
+      "LO-3"
+     ],
+     "criteria": [
+      "C-4",
+      "C-5"
+     ],
+     "performance": "explain",
+     "difficulty": "medium",
+     "stem": "The display says OPEN. Is that alone enough to conclude the gate is open? Explain using the source.",
+     "rubric": {
+      "criteria": [
+       {
+        "id": "C-4",
+        "text": "Says no, the display alone is not enough.",
+        "required": true
+       },
+       {
+        "id": "C-5",
+        "text": "Gives the reason: a broken sensor can show OPEN while the gate is closed.",
+        "required": true
+       }
+      ],
+      "accept": [
+       "'faulty sensor' for broken sensor"
+      ],
+      "contradictions": [
+       "Says the display proves the gate is open"
+      ],
+      "model": "No. A broken sensor can display OPEN while the gate is closed (S1 ¶1), so you would need the switch states."
+     },
+     "hints": [
+      "What does S1 say about a broken sensor?"
+     ],
+     "solution": "No: a broken sensor can show OPEN while the gate is closed (S1 ¶1).",
+     "family": "f-display",
+     "use": "practice",
+     "validation": "verified"
+    },
+    {
+     "q_id": "i4",
+     "version": 1,
+     "origin": "generated",
+     "units": [
+      "U1",
+      "U2"
+     ],
+     "format": "mcq_multi",
+     "kazanim_id": "k1",
+     "outcomes": [
+      "LO-2"
+     ],
+     "criteria": [
+      "C-2"
+     ],
+     "performance": "distinguish",
+     "difficulty": "medium",
+     "stem": "Which switch settings leave the gate closed?",
+     "options": [
+      {
+       "id": "a",
+       "md": "A on, B on"
+      },
+      {
+       "id": "b",
+       "md": "A on, B off"
+      },
+      {
+       "id": "c",
+       "md": "A off, B on"
+      },
+      {
+       "id": "d",
+       "md": "A off, B off"
+      }
+     ],
+     "keep_order": true,
+     "key": [
+      "b",
+      "c",
+      "d"
+     ],
+     "option_notes": {
+      "a": "Both on is the only setting that opens the gate.",
+      "b": "Correct: B is off.",
+      "c": "Correct: A is off.",
+      "d": "Correct: both are off."
+     },
+     "hints": [
+      "Only one setting opens the gate. Which one?"
+     ],
+     "solution": "Every setting except A on and B on keeps the gate closed (S1 ¶1).",
+     "family": "f-all-settings",
+     "use": "practice",
+     "validation": "verified"
+    },
+    {
+     "q_id": "i5",
+     "version": 1,
+     "origin": "generated",
+     "units": [
+      "U1"
+     ],
+     "format": "typed",
+     "kazanim_id": "k1",
+     "outcomes": [
+      "LO-1"
+     ],
+     "criteria": [
+      "C-1"
+     ],
+     "performance": "explain",
+     "difficulty": "basic",
+     "stem": "State the condition under which the Luma gate is open.",
+     "rubric": {
+      "criteria": [
+       {
+        "id": "C-1",
+        "text": "Both A and B must be on (and only then).",
+        "required": true
+       }
+      ],
+      "accept": [
+       "'A and B both switched on'"
+      ],
+      "contradictions": [
+       "Either switch is enough"
+      ],
+      "model": "The gate is open if and only if both switches A and B are on (S1 ¶1)."
+     },
+     "solution": "Both A and B on — and only then (S1 ¶1).",
+     "family": "f-condition",
+     "use": "practice",
+     "validation": "verified"
+    },
+    {
+     "q_id": "i6",
+     "version": 1,
+     "origin": "generated",
+     "units": [
+      "U1",
+      "U2"
+     ],
+     "format": "numeric",
+     "kazanim_id": "k1",
+     "outcomes": [
+      "LO-1"
+     ],
+     "criteria": [
+      "C-1"
+     ],
+     "performance": "transfer",
+     "difficulty": "medium",
+     "stem": "Each switch can be on or off, so there are 4 settings. In how many of them is the gate open?",
+     "numeric": {
+      "value": 1,
+      "tol": 0
+     },
+     "hints": [
+      "List the four settings and apply the rule to each."
+     ],
+     "solution": "1: only A on and B on (S1 ¶1).",
+     "family": "f-count",
+     "use": "practice",
+     "validation": "verified"
+    },
+    {
+     "q_id": "i7",
+     "version": 1,
+     "origin": "generated",
+     "units": [
+      "U1",
+      "U2",
+      "U3"
+     ],
+     "format": "mcq_multi",
+     "kazanim_id": "k2",
+     "integrates": [
+      "k1",
+      "k2"
+     ],
+     "outcomes": [
+      "LO-2",
+      "LO-3"
+     ],
+     "criteria": [
+      "C-2",
+      "C-4",
+      "C-5"
+     ],
+     "performance": "distinguish",
+     "difficulty": "medium",
+     "stem": "Switch A is on, switch B is off, and the display shows OPEN. Which statements are true?",
+     "options": [
+      {
+       "id": "a",
+       "md": "The gate is closed."
+      },
+      {
+       "id": "b",
+       "md": "The display proves the gate is open."
+      },
+      {
+       "id": "c",
+       "md": "The sensor may be broken."
+      },
+      {
+       "id": "d",
+       "md": "The display is right, so the switch rule does not apply here."
+      }
+     ],
+     "key": [
+      "a",
+      "c"
+     ],
+     "option_notes": {
+      "a": "Correct: B is off, so the rule keeps the gate closed (S1 ¶1).",
+      "b": "The display alone is not enough; a broken sensor can show OPEN while the gate is closed (S1 ¶1).",
+      "c": "Correct: a broken sensor can show OPEN while the gate is closed (S1 ¶1).",
+      "d": "The rule always decides the gate; the display can be wrong (S1 ¶1)."
+     },
+     "solution": "B is off, so the gate is closed (the rule needs both switches on). The display then shows OPEN while the gate is closed, which a broken sensor can do (S1 ¶1). True: a and c.",
+     "family": "f-connect",
+     "use": "practice",
+     "validation": "verified",
+     "key_source": "solved"
+    }
+   ],
+   "connect": {
+    "blocks": [
+     {
+      "type": "keypoints",
+      "title": "Connect the two topics",
+      "items": [
+       "The switches decide the gate: open only when A and B are both on (S1 ¶1).",
+       "The display only reports the state and can be wrong: a broken sensor can show OPEN while the gate is closed (S1 ¶1).",
+       "When the switches and the display disagree, the switch rule decides."
+      ],
+      "refs": [
+       "U1",
+       "U2",
+       "U3"
+      ]
+     }
+    ]
+   }
+  }
+ ],
+ "final_test": [
+  {
+   "q_id": "F1",
+   "version": 1,
+   "origin": "generated",
+   "units": [
+    "U1"
+   ],
+   "format": "typed",
+   "kazanim_id": "k1",
+   "outcomes": [
+    "LO-1"
+   ],
+   "criteria": [
+    "C-1"
+   ],
+   "performance": "explain",
+   "difficulty": "medium",
+   "stem": "In your own words: what must be true for the Luma gate to be open?",
+   "rubric": {
+    "criteria": [
+     {
+      "id": "C-1",
+      "text": "Both switches A and B are on (and only then).",
+      "required": true
+     }
+    ],
+    "accept": [],
+    "contradictions": [
+     "One switch is enough"
+    ],
+    "model": "Both A and B must be on; that is the only setting in which it is open (S1 ¶1)."
+   },
+   "solution": "Both A and B on (S1 ¶1).",
+   "family": "f-final-condition",
+   "use": "final",
+   "validation": "verified"
+  },
+  {
+   "q_id": "F2",
+   "version": 1,
+   "origin": "generated",
+   "units": [
+    "U2",
+    "U3"
+   ],
+   "format": "mcq_single",
+   "kazanim_id": "k1",
+   "outcomes": [
+    "LO-2"
+   ],
+   "criteria": [
+    "C-2"
+   ],
+   "performance": "transfer",
+   "difficulty": "medium",
+   "stem": "Switch A is off, switch B is on, and the display shows OPEN. According to the rule, what is the actual gate state?",
+   "options": [
+    {
+     "id": "a",
+     "md": "Open, because the display says so"
+    },
+    {
+     "id": "b",
+     "md": "Closed"
+    },
+    {
+     "id": "c",
+     "md": "It cannot be decided from this information"
+    }
+   ],
+   "key": [
+    "b"
+   ],
+   "option_notes": {
+    "a": "The display can be wrong; the rule decides.",
+    "b": "Correct.",
+    "c": "The switch states are given, so the rule decides it."
+   },
+   "solution": "Closed: A is off, and a display showing OPEN can come from a broken sensor (S1 ¶1).",
+   "family": "f-final-mixed",
+   "use": "final",
+   "validation": "verified",
+   "integrates": [
+    "k1",
+    "k2"
+   ]
+  },
+  {
+   "q_id": "F3",
+   "version": 1,
+   "origin": "generated",
+   "units": [
+    "U1",
+    "U2"
+   ],
+   "format": "typed",
+   "kazanim_id": "k1",
+   "outcomes": [
+    "LO-2"
+   ],
+   "criteria": [
+    "C-2",
+    "C-3"
+   ],
+   "performance": "solve",
+   "difficulty": "medium",
+   "stem": "Both switches are on. Then B is switched off. What happens to the gate, and why?",
+   "rubric": {
+    "criteria": [
+     {
+      "id": "C-2",
+      "text": "Says the gate closes (is closed).",
+      "required": true
+     },
+     {
+      "id": "C-3",
+      "text": "Reason: the rule needs both switches on.",
+      "required": true
+     }
+    ],
+    "accept": [],
+    "contradictions": [
+     "Stays open"
+    ],
+    "model": "It closes, because the gate is open only while both A and B are on (S1 ¶1)."
+   },
+   "solution": "It closes: B off breaks the both-switches condition (S1 ¶1).",
+   "family": "f-final-switch-off",
+   "use": "final",
+   "validation": "verified"
+  },
+  {
+   "q_id": "F4",
+   "version": 1,
+   "origin": "generated",
+   "units": [
+    "U3"
+   ],
+   "format": "typed",
+   "kazanim_id": "k2",
+   "outcomes": [
+    "LO-3"
+   ],
+   "criteria": [
+    "C-4",
+    "C-5"
+   ],
+   "performance": "transfer",
+   "difficulty": "medium",
+   "stem": "A technician sees OPEN on the display and concludes that the gate is open. What is wrong with this conclusion?",
+   "rubric": {
+    "criteria": [
+     {
+      "id": "C-4",
+      "text": "Says the display alone does not establish it.",
+      "required": true
+     },
+     {
+      "id": "C-5",
+      "text": "Reason: a broken sensor can show OPEN while closed.",
+      "required": true
+     }
+    ],
+    "accept": [],
+    "contradictions": [
+     "Agrees with the technician"
+    ],
+    "model": "The display alone is not enough: a broken sensor can display OPEN while the gate is closed (S1 ¶1)."
+   },
+   "solution": "A broken sensor can show OPEN while the gate is closed (S1 ¶1).",
+   "family": "f-final-technician",
+   "use": "final",
+   "validation": "verified"
+  }
+ ],
+ "final_blueprint": [
+  {
+   "criterion": "C-1",
+   "outcome": "LO-1",
+   "item": "F1"
+  },
+  {
+   "criterion": "C-2",
+   "outcome": "LO-2",
+   "item": "F2"
+  },
+  {
+   "criterion": "C-2",
+   "outcome": "LO-2",
+   "item": "F3"
+  },
+  {
+   "criterion": "C-3",
+   "outcome": "LO-2",
+   "item": "F3"
+  },
+  {
+   "criterion": "C-4",
+   "outcome": "LO-3",
+   "item": "F4"
+  },
+  {
+   "criterion": "C-5",
+   "outcome": "LO-3",
+   "item": "F4"
+  }
+ ],
+ "gaps": [
+  {
+   "what": "This is a synthetic source",
+   "why": "It demonstrates the workflow; it is not course content."
+  }
+ ],
+ "not_covered": []
+}

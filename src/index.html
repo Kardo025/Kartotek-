@@ -1,0 +1,65 @@
+<title>Kartotek</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#09090b">
+<meta name="description" content="Spaced-repetition cards, studies and end-of-lesson tests, scheduled by the D-S-R memory model.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23ff6b5b'/%3E%3Crect x='7' y='9' width='18' height='14' rx='2.5' fill='none' stroke='%231a0b09' stroke-width='2.2'/%3E%3Cpath d='M7 14h18' stroke='%231a0b09' stroke-width='2.2'/%3E%3C/svg%3E">
+<script>
+  // Theme before first paint. The choice is "system" (default), "light" or "dark"; "system" follows the OS live.
+  (function () {
+    var mode = null;
+    try { mode = localStorage.getItem('kartotek-theme'); } catch (e) {}
+    if (mode !== 'light' && mode !== 'dark') mode = 'system';
+    var mq = window.matchMedia ? matchMedia('(prefers-color-scheme: dark)') : null;
+    window.KartotekTheme = {
+      mode: mode,
+      apply: function (m) {
+        this.mode = m;
+        var t = m === 'system' ? (mq && mq.matches ? 'dark' : 'light') : m;
+        document.documentElement.setAttribute('data-theme', t);
+        document.documentElement.setAttribute('data-theme-mode', m);
+        var meta = document.querySelector('meta[name="theme-color"]');
+        if (meta) meta.setAttribute('content', t === 'dark' ? '#09090b' : '#f7f7f8');
+        return t;
+      }
+    };
+    window.KartotekTheme.apply(mode);
+    if (mq) {
+      var onChange = function () {
+        if (window.KartotekTheme.mode !== 'system') return;
+        window.KartotekTheme.apply('system');
+        window.dispatchEvent(new Event('kartotek-theme'));
+      };
+      if (mq.addEventListener) mq.addEventListener('change', onChange); else if (mq.addListener) mq.addListener(onChange);
+    }
+  })();
+  // The React shell boots the app after it has drawn the page
+  window.KARTOTEK_DEFER_BOOT = true;
+</script>
+<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="ui.css">
+
+<div id="root"></div>
+
+<script src="config.js"></script>
+<script src="host.js"></script>
+<script src="engine.js"></script>
+<script src="store.js"></script>
+<script src="etut-core.js"></script>
+<script src="study-v2.js"></script>
+<script src="etut-anim.js"></script>
+<script src="lesson-core.js"></script>
+<script src="mock-core.js"></script>
+<script src="mindmap-core.js"></script>
+<script src="metacog.js"></script>
+<script src="cents-data.js"></script>
+<script src="prep-core.js"></script>
+<script src="charts.js"></script>
+<script src="tests.js"></script>
+<script src="app.js"></script>
+<script src="views-manage.js"></script>
+<script src="etut-srl.js"></script>
+<script src="views-etut.js"></script>
+<script src="views-lesson.js"></script>
+<script src="views-insight.js"></script>
+<script src="ui.js"></script>

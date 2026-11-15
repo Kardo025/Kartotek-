@@ -1,0 +1,97 @@
+.cents-of { font-size: 14px; font-weight: 500; color: var(--k-muted); }
+.cents-score { font-size: 14.5px; font-weight: 600; line-height: 1.4; display: block; margin-top: 6px; }
+.cents-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 12px 16px; }
+.cents-chips-l { font-size: 12.5px; font-weight: 600; color: var(--k-muted); margin-right: 4px; }
+.cents-chip { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 13px; border-radius: 99px; border: 1px solid var(--k-accent); background: var(--k-accent-soft); color: var(--k-accent); font: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; }
+.cents-chip.off { border: 1px dashed var(--k-line-strong, var(--k-line)); background: transparent; color: var(--k-muted); text-decoration: line-through; font-weight: 500; }
+.cents-chip[aria-disabled="true"] { cursor: not-allowed; }
+.cents-note { margin-left: 4px; }
+.cents-tabs { display: grid; overflow: hidden; padding: 0; }
+.cents-tab { position: relative; border: 0; border-right: 1px solid var(--k-line); background: none; text-align: left; padding: 12px 16px; min-width: 0; font: inherit; color: inherit; cursor: pointer; }
+.cents-tab:last-child { border-right: 0; }
+.cents-tab:hover { background: var(--k-tile); }
+.cents-tab-bg { position: absolute; inset: 0; background: var(--k-accent-soft); box-shadow: inset 0 -3px 0 var(--k-accent); }
+.cents-tab-in { position: relative; display: flex; flex-direction: column; gap: 4px; }
+.cents-tab-n { display: flex; justify-content: space-between; gap: 8px; font-weight: 650; font-size: 15px; }
+.cents-tab-n span { color: var(--k-muted); font-weight: 500; font-size: 12.5px; }
+.cents-tab-c { font-size: 12.5px; color: var(--k-muted); }
+.cents-sechead { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.cents-sechead h2 { margin: 0; font-size: 18px; font-weight: 650; }
+.cents-sechead p { margin: 0; }
+.cents .k-btn[aria-pressed="true"] { border-color: var(--k-accent); background: var(--k-accent-soft); color: var(--k-accent); }
+.cents-next { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; padding: 12px 16px; background: var(--k-accent-soft); border: 1px solid var(--k-accent); border-radius: 12px; font-size: 14px; }
+.cents-next b { color: var(--k-accent); }
+.cents-next-p { margin-left: auto; font-weight: 600; }
+.cents-book { padding: 0; overflow: hidden; }
+.cents-book-h { display: flex; align-items: baseline; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--k-line); flex-wrap: wrap; }
+.cents-book-h h3 { margin: 0; font-size: 15px; font-weight: 650; }
+.cents-links { margin-left: auto; display: flex; gap: 14px; font-size: 13.5px; font-weight: 600; }
+.cents-links a, .cents-pg a { display: inline-flex; gap: 5px; align-items: center; color: var(--k-accent); text-decoration: none; }
+.cents-links a:hover, .cents-pg a:hover { text-decoration: underline; }
+.cents-row { display: grid; grid-template-columns: 28px 36px minmax(0, 1fr) 210px 432px; gap: 12px; align-items: center; padding: 6px 16px; border-top: 1px solid var(--k-line); min-height: 46px; }
+.cents-row:hover { background: var(--k-tile); }
+.cents-book-h + .cents-row, .cents-skip.nb + .cents-row { border-top: 0; }
+.cents-tick { width: 24px; height: 24px; padding: 0; border-radius: 7px; border: 1.5px solid var(--k-line-strong, var(--k-line)); background: var(--k-panel); display: grid; place-items: center; color: #fff; cursor: pointer; }
+.cents-tick[aria-pressed="true"] { background: var(--k-accent-fill); border-color: var(--k-accent-fill); }
+.cents-row.done .cents-t { color: var(--k-muted); text-decoration: line-through; }
+.cents-code { color: var(--k-muted); font-size: 13px; font-variant-numeric: tabular-nums; font-weight: 600; }
+.cents-pg { display: flex; flex-direction: column; font-size: 13.5px; text-align: right; align-items: flex-end; }
+.cents-act { display: flex; gap: 6px; align-items: center; justify-content: flex-end; white-space: nowrap; }
+.cents-act .k-btn { white-space: nowrap; }
+.cents-pill { white-space: nowrap; display: inline-block; font-size: 11.5px; border-radius: 99px; padding: 1px 8px; font-weight: 600; margin-left: 8px; background: var(--k-badge); color: var(--k-muted); }
+.cents-pill.o { background: var(--k-warn-bg); color: var(--k-warn-t); }
+.cents-skip { margin: 0; padding: 10px 16px; border-top: 1px dashed var(--k-line); font-size: 13px; color: var(--k-muted); }
+.cents-skip.nb { border-top: 0; }
+@media (max-width: 1100px) { .cents-row { grid-template-columns: 28px 36px minmax(0, 1fr) auto; } .cents-pg { grid-column: 3; align-items: flex-start; text-align: left; } .cents-act { grid-column: 4; grid-row: 1 / span 2; } }
+.cents-ask { text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+.cents-copy { padding: 0 9px; }
+.cents-pill.s { background: var(--k-accent-soft); color: var(--k-accent); }
+.cents-syl-n { display: inline-grid; place-items: center; min-width: 24px; height: 24px; padding: 0 6px; margin-right: 10px; border-radius: 7px; background: var(--k-accent-soft); color: var(--k-accent); font-size: 13px; font-variant-numeric: tabular-nums; }
+.cents-book-h h3 { display: flex; align-items: center; }
+.cents-bk { font-size: 12.5px; color: var(--k-muted); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+.cents-src-row { padding: 10px 16px; border-top: 1px solid var(--k-line); }
+.cents-book-h + .cents-src-row { border-top: 0; }
+.cents-src-h { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; font-size: 14px; }
+.cents-src-note { margin: 4px 0 0; }
+/* Plan panel: exam date, pace, per-exam new-card budget, generation options */
+.cents-plan-grid { display: grid; grid-template-columns: minmax(200px, 1fr) minmax(260px, 1.6fr) minmax(200px, 1fr) minmax(260px, 1.4fr); gap: 16px 20px; align-items: start; }
+.cents-plan .k-field { display: flex; flex-direction: column; gap: 6px; }
+.cents-pace { display: flex; flex-direction: column; gap: 6px; font-size: 13.5px; padding-top: 2px; }
+.cents-pace b:first-child { font-size: 20px; font-weight: 700; }
+.cents-pace .cents-pill { align-self: flex-start; margin-left: 0; }
+.cents-gen { display: flex; flex-direction: column; gap: 8px; }
+.cents-seg { display: inline-flex; border: 1px solid var(--k-line); border-radius: 9px; overflow: hidden; align-self: flex-start; }
+.cents-seg button { border: 0; border-right: 1px solid var(--k-line); background: var(--k-panel); color: var(--k-text-2, inherit); font: inherit; font-size: 13px; font-weight: 600; padding: 6px 11px; cursor: pointer; }
+.cents-seg button:last-child { border-right: 0; }
+.cents-seg button[aria-pressed="true"] { background: var(--k-accent-soft); color: var(--k-accent); }
+@media (max-width: 1250px) { .cents-plan-grid { grid-template-columns: 1fr 1fr; } }
+/* Up next: up to three picks with the reason */
+.cents-next { flex-direction: column; align-items: stretch; gap: 8px; }
+.cents-next ol { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.cents-next li { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; gap: 10px; align-items: baseline; }
+.cents-why { font-size: 12.5px; font-weight: 600; color: var(--k-accent); text-align: right; }
+/* Topic title with its status pills on a second line */
+.cents-t { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.cents-row.done .cents-t { text-decoration: none; }
+.cents-row.done .cents-t-text { color: var(--k-muted); }
+.cents-pills { display: flex; flex-wrap: wrap; gap: 4px; }
+.cents-pills .cents-pill { margin-left: 0; }
+.cents-pill.st.ok { background: color-mix(in srgb, var(--k-good, #15803d) 14%, transparent); color: var(--k-good, #15803d); }
+.cents-pill.st.mid { background: var(--k-accent-soft); color: var(--k-accent); }
+.cents-pill.st.warn, .cents-pill.b { background: var(--k-warn-bg); color: var(--k-warn-t); }
+.cents-pill.st.bad { background: color-mix(in srgb, var(--k-again, #dc2626) 14%, transparent); color: var(--k-again, #dc2626); }
+.cents-book-h .cents-links { gap: 6px; }
+
+/* TU Delft: exam rules and practice ladders */
+.cents-rules-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 28px; }
+.cents-rules-l { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 6px; font-size: 13.5px; color: var(--k-text-2, var(--k-text)); }
+.cents-rules-l b { color: var(--k-text); font-weight: 600; }
+.cents-rules-src { margin: 10px 0 0; }
+.cents-lad-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 24px; padding: 4px 16px 14px; }
+.cents-lad-col h4 { font-size: 13px; font-weight: 650; margin: 8px 0 6px; display: flex; align-items: center; gap: 6px; }
+.cents-lad-col h4 .cents-pill { margin-left: 0; }
+.cents-lad-col ol { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; font-size: 13.5px; }
+.cents-lad-col li { line-height: 1.35; }
+.cents-lad-col li b { font-weight: 600; }
+.cents-lad-col li .k-small { display: block; color: var(--k-muted); }
+@media (max-width: 1100px) { .cents-rules-grid, .cents-lad-grid { grid-template-columns: 1fr; } }

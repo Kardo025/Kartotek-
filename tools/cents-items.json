@@ -1,0 +1,2083 @@
+{
+ "cents-at1.1": {
+  "code": "1.1",
+  "title": "Real Numbers",
+  "book": "at",
+  "book_name": "Algebra and Trigonometry 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/algebra-and-trigonometry-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    17,
+    32
+   ]
+  ]
+ },
+ "cents-at1.2": {
+  "code": "1.2",
+  "title": "Exponents & Scientific Notation",
+  "book": "at",
+  "book_name": "Algebra and Trigonometry 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/algebra-and-trigonometry-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    33,
+    47
+   ]
+  ]
+ },
+ "cents-at1.3": {
+  "code": "1.3",
+  "title": "Radicals & Rational Exponents",
+  "book": "at",
+  "book_name": "Algebra and Trigonometry 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/algebra-and-trigonometry-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    48,
+    57
+   ]
+  ]
+ },
+ "cents-at1.4": {
+  "code": "1.4",
+  "title": "Polynomials",
+  "book": "at",
+  "book_name": "Algebra and Trigonometry 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/algebra-and-trigonometry-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    58,
+    66
+   ]
+  ]
+ },
+ "cents-at1.5": {
+  "code": "1.5",
+  "title": "Factoring Polynomials",
+  "book": "at",
+  "book_name": "Algebra and Trigonometry 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/algebra-and-trigonometry-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    67,
+    75
+   ]
+  ]
+ },
+ "cents-at1.6": {
+  "code": "1.6",
+  "title": "Rational Expressions",
+  "book": "at",
+  "book_name": "Algebra and Trigonometry 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/algebra-and-trigonometry-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    76,
+    83
+   ]
+  ]
+ },
+ "cents-at2.1": {
+  "code": "2.1",
+  "title": "Rectangular Coordinate Systems (iki nokta arası uzaklık)",
+  "book": "at",
+  "book_name": "Algebra and Trigonometry 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/algebra-and-trigonometry-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    91,
+    105
+   ]
+  ]
+ },
+ "cents-at2.2": {
+  "code": "2.2",
+  "title": "Linear Equations",
+  "book": "at",
+  "book_name": "Algebra and Trigonometry 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/algebra-and-trigonometry-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    106,
+    121
+   ]
+  ]
+ },
+ "cents-at2.3": {
+  "code": "2.3",
+  "title": "Models & Applications (sözel problemler)",
+  "book": "at",
+  "book_name": "Algebra and Trigonometry 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/algebra-and-trigonometry-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    122,
+    131
+   ]
+  ]
+ },
+ "cents-at2.5": {
+  "code": "2.5",
+  "title": "Quadratic Equations",
+  "book": "at",
+  "book_name": "Algebra and Trigonometry 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/algebra-and-trigonometry-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    141,
+    154
+   ]
+  ]
+ },
+ "cents-at2.6": {
+  "code": "2.6",
+  "title": "Other Types of Equations",
+  "book": "at",
+  "book_name": "Algebra and Trigonometry 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/algebra-and-trigonometry-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    155,
+    166
+   ]
+  ]
+ },
+ "cents-at2.7": {
+  "code": "2.7",
+  "title": "Linear & Absolute Value Inequalities",
+  "book": "at",
+  "book_name": "Algebra and Trigonometry 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/algebra-and-trigonometry-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    167,
+    176
+   ]
+  ]
+ },
+ "cents-at3.1": {
+  "code": "3.1",
+  "title": "Functions & Function Notation",
+  "book": "at",
+  "book_name": "Algebra and Trigonometry 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/algebra-and-trigonometry-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    185,
+    207
+   ]
+  ]
+ },
+ "cents-at3.2": {
+  "code": "3.2",
+  "title": "Domain & Range",
+  "book": "at",
+  "book_name": "Algebra and Trigonometry 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/algebra-and-trigonometry-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    208,
+    225
+   ]
+  ]
+ },
+ "cents-at3.3": {
+  "code": "3.3",
+  "title": "Rates of Change & Behavior of Graphs",
+  "book": "at",
+  "book_name": "Algebra and Trigonometry 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/algebra-and-trigonometry-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    226,
+    242
+   ]
+  ]
+ },
+ "cents-at3.4": {
+  "code": "3.4",
+  "title": "Composition of Functions",
+  "book": "at",
+  "book_name": "Algebra and Trigonometry 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/algebra-and-trigonometry-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    243,
+    257
+   ]
+  ]
+ },
+ "cents-at3.5": {
+  "code": "3.5",
+  "title": "Transformation of Functions",
+  "book": "at",
+  "book_name": "Algebra and Trigonometry 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/algebra-and-trigonometry-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    258,
+    288
+   ]
+  ]
+ },
+ "cents-at3.6": {
+  "code": "3.6",
+  "title": "Absolute Value Functions",
+  "book": "at",
+  "book_name": "Algebra and Trigonometry 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/algebra-and-trigonometry-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    289,
+    296
+   ]
+  ]
+ },
+ "cents-at3.7": {
+  "code": "3.7",
+  "title": "Inverse Functions",
+  "book": "at",
+  "book_name": "Algebra and Trigonometry 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/algebra-and-trigonometry-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    297,
+    312
+   ]
+  ]
+ },
+ "cents-at4.1": {
+  "code": "4.1",
+  "title": "Linear Functions (eğim, doğru denklemi, grafik, kesişim)",
+  "book": "at",
+  "book_name": "Algebra and Trigonometry 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/algebra-and-trigonometry-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    325,
+    360
+   ]
+  ]
+ },
+ "cents-at4.2": {
+  "code": "4.2",
+  "title": "Modeling with Linear Functions",
+  "book": "at",
+  "book_name": "Algebra and Trigonometry 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/algebra-and-trigonometry-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    361,
+    374
+   ]
+  ]
+ },
+ "cents-at5.1": {
+  "code": "5.1",
+  "title": "Quadratic Functions (parabol)",
+  "book": "at",
+  "book_name": "Algebra and Trigonometry 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/algebra-and-trigonometry-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    399,
+    417
+   ]
+  ]
+ },
+ "cents-at5.2": {
+  "code": "5.2",
+  "title": "Power & Polynomial Functions",
+  "book": "at",
+  "book_name": "Algebra and Trigonometry 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/algebra-and-trigonometry-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    418,
+    438
+   ]
+  ]
+ },
+ "cents-at5.6": {
+  "code": "5.6",
+  "title": "Rational Functions (sadece 1/(ax+b))",
+  "book": "at",
+  "book_name": "Algebra and Trigonometry 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/algebra-and-trigonometry-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    483,
+    507
+   ]
+  ]
+ },
+ "cents-at6.1": {
+  "code": "6.1",
+  "title": "Exponential Functions",
+  "book": "at",
+  "book_name": "Algebra and Trigonometry 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/algebra-and-trigonometry-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    538,
+    555
+   ]
+  ]
+ },
+ "cents-at6.2": {
+  "code": "6.2",
+  "title": "Graphs of Exponential Functions",
+  "book": "at",
+  "book_name": "Algebra and Trigonometry 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/algebra-and-trigonometry-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    556,
+    568
+   ]
+  ]
+ },
+ "cents-at6.3": {
+  "code": "6.3",
+  "title": "Logarithmic Functions",
+  "book": "at",
+  "book_name": "Algebra and Trigonometry 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/algebra-and-trigonometry-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    569,
+    578
+   ]
+  ]
+ },
+ "cents-at6.4": {
+  "code": "6.4",
+  "title": "Graphs of Logarithmic Functions",
+  "book": "at",
+  "book_name": "Algebra and Trigonometry 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/algebra-and-trigonometry-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    579,
+    599
+   ]
+  ]
+ },
+ "cents-at6.5": {
+  "code": "6.5",
+  "title": "Logarithmic Properties",
+  "book": "at",
+  "book_name": "Algebra and Trigonometry 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/algebra-and-trigonometry-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    600,
+    611
+   ]
+  ]
+ },
+ "cents-at6.6": {
+  "code": "6.6",
+  "title": "Exponential & Logarithmic Equations",
+  "book": "at",
+  "book_name": "Algebra and Trigonometry 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/algebra-and-trigonometry-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    612,
+    623
+   ]
+  ]
+ },
+ "cents-at7.2": {
+  "code": "7.2",
+  "title": "Right Triangle Trigonometry (fizik için)",
+  "book": "at",
+  "book_name": "Algebra and Trigonometry 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/algebra-and-trigonometry-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    699,
+    710
+   ]
+  ]
+ },
+ "cents-at11.1": {
+  "code": "11.1",
+  "title": "Systems of Linear Equations: Two Variables",
+  "book": "at",
+  "book_name": "Algebra and Trigonometry 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/algebra-and-trigonometry-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    1012,
+    1029
+   ]
+  ]
+ },
+ "cents-at11.3": {
+  "code": "11.3",
+  "title": "Nonlinear Systems & Inequalities (düzlem bölgeleri)",
+  "book": "at",
+  "book_name": "Algebra and Trigonometry 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/algebra-and-trigonometry-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    1041,
+    1052
+   ]
+  ]
+ },
+ "cents-at13.5": {
+  "code": "13.5",
+  "title": "Counting Principles",
+  "book": "at",
+  "book_name": "Algebra and Trigonometry 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/algebra-and-trigonometry-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    1253,
+    1263
+   ]
+  ]
+ },
+ "cents-at13.7": {
+  "code": "13.7",
+  "title": "Probability",
+  "book": "at",
+  "book_name": "Algebra and Trigonometry 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/algebra-and-trigonometry-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    1270,
+    1280
+   ]
+  ]
+ },
+ "cents-cm3": {
+  "code": "3.1-3.6",
+  "title": "Sayı sistemleri, asal çarpanlar, bölünebilme",
+  "book": "cm",
+  "book_name": "Contemporary Mathematics",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/contemporary-mathematics_-_WEB.pdf",
+  "ranges": [
+   [
+    138,
+    220
+   ]
+  ]
+ },
+ "cents-cm7a": {
+  "code": "7.1-7.3",
+  "title": "Sayma kuralı, permütasyon, kombinasyon",
+  "book": "cm",
+  "book_name": "Contemporary Mathematics",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/contemporary-mathematics_-_WEB.pdf",
+  "ranges": [
+   [
+    734,
+    747
+   ]
+  ]
+ },
+ "cents-cm7b": {
+  "code": "7.4-7.9",
+  "title": "Olasılık, toplama kuralı, bağımsız olaylar",
+  "book": "cm",
+  "book_name": "Contemporary Mathematics",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/contemporary-mathematics_-_WEB.pdf",
+  "ranges": [
+   [
+    748,
+    799
+   ]
+  ]
+ },
+ "cents-cm8": {
+  "code": "8.1-8.3",
+  "title": "Veri düzenleme, grafikler, ortalama, medyan, mod",
+  "book": "cm",
+  "book_name": "Contemporary Mathematics",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/contemporary-mathematics_-_WEB.pdf",
+  "ranges": [
+   [
+    826,
+    882
+   ]
+  ]
+ },
+ "cents-cm10": {
+  "code": "10.1-10.4, 10.6-10.7",
+  "title": "Açılar, üçgenler, çokgenler, çember, alan, hacim",
+  "book": "cm",
+  "book_name": "Contemporary Mathematics",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/contemporary-mathematics_-_WEB.pdf",
+  "ranges": [
+   [
+    1004,
+    1061
+   ],
+   [
+    1078,
+    1107
+   ]
+  ]
+ },
+ "cents-is1.3": {
+  "code": "1.3",
+  "title": "Levels of Measurement (nominal, ordinal, interval, ratio)",
+  "book": "is",
+  "book_name": "Introductory Statistics 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/introductory-statistics-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    38,
+    45
+   ]
+  ]
+ },
+ "cents-is2": {
+  "code": "2.1-2.2",
+  "title": "Grafikler ve histogram",
+  "book": "is",
+  "book_name": "Introductory Statistics 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/introductory-statistics-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    78,
+    97
+   ]
+  ]
+ },
+ "cents-cm1": {
+  "code": "1.1-1.5",
+  "title": "Kümeler, Venn diyagramları, küme işlemleri",
+  "book": "cm",
+  "book_name": "Contemporary Mathematics",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/contemporary-mathematics_-_WEB.pdf",
+  "ranges": [
+   [
+    16,
+    60
+   ]
+  ]
+ },
+ "cents-cm2.1": {
+  "code": "2.1",
+  "title": "Statements & Quantifiers",
+  "book": "cm",
+  "book_name": "Contemporary Mathematics",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/contemporary-mathematics_-_WEB.pdf",
+  "ranges": [
+   [
+    70,
+    79
+   ]
+  ]
+ },
+ "cents-cm2.2": {
+  "code": "2.2",
+  "title": "Compound Statements",
+  "book": "cm",
+  "book_name": "Contemporary Mathematics",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/contemporary-mathematics_-_WEB.pdf",
+  "ranges": [
+   [
+    80,
+    87
+   ]
+  ]
+ },
+ "cents-cm2.3": {
+  "code": "2.3",
+  "title": "Constructing Truth Tables",
+  "book": "cm",
+  "book_name": "Contemporary Mathematics",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/contemporary-mathematics_-_WEB.pdf",
+  "ranges": [
+   [
+    88,
+    96
+   ]
+  ]
+ },
+ "cents-cm2.4": {
+  "code": "2.4",
+  "title": "Conditional & Biconditional",
+  "book": "cm",
+  "book_name": "Contemporary Mathematics",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/contemporary-mathematics_-_WEB.pdf",
+  "ranges": [
+   [
+    97,
+    105
+   ]
+  ]
+ },
+ "cents-cm2.5": {
+  "code": "2.5",
+  "title": "Equivalent Statements",
+  "book": "cm",
+  "book_name": "Contemporary Mathematics",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/contemporary-mathematics_-_WEB.pdf",
+  "ranges": [
+   [
+    106,
+    111
+   ]
+  ]
+ },
+ "cents-cm2.6": {
+  "code": "2.6",
+  "title": "De Morgan's Laws",
+  "book": "cm",
+  "book_name": "Contemporary Mathematics",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/contemporary-mathematics_-_WEB.pdf",
+  "ranges": [
+   [
+    112,
+    117
+   ]
+  ]
+ },
+ "cents-cm2.7": {
+  "code": "2.7",
+  "title": "Logical Arguments",
+  "book": "cm",
+  "book_name": "Contemporary Mathematics",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/contemporary-mathematics_-_WEB.pdf",
+  "ranges": [
+   [
+    118,
+    125
+   ]
+  ]
+ },
+ "cents-cb2": {
+  "code": "Ch. 2",
+  "title": "Chemistry of Life (su, makromoleküller)",
+  "book": "cb",
+  "book_name": "Concepts of Biology",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/Concepts-Biology_-_WEB.pdf",
+  "ranges": [
+   [
+    43,
+    70
+   ]
+  ]
+ },
+ "cents-cb3": {
+  "code": "Ch. 3",
+  "title": "Cell Structure & Function",
+  "book": "cb",
+  "book_name": "Concepts of Biology",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/Concepts-Biology_-_WEB.pdf",
+  "ranges": [
+   [
+    71,
+    104
+   ]
+  ]
+ },
+ "cents-cb4": {
+  "code": "Ch. 4",
+  "title": "How Cells Obtain Energy",
+  "book": "cb",
+  "book_name": "Concepts of Biology",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/Concepts-Biology_-_WEB.pdf",
+  "ranges": [
+   [
+    105,
+    130
+   ]
+  ]
+ },
+ "cents-cb5": {
+  "code": "Ch. 5",
+  "title": "Photosynthesis",
+  "book": "cb",
+  "book_name": "Concepts of Biology",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/Concepts-Biology_-_WEB.pdf",
+  "ranges": [
+   [
+    131,
+    148
+   ]
+  ]
+ },
+ "cents-cb6": {
+  "code": "Ch. 6",
+  "title": "Reproduction at the Cellular Level (hücre döngüsü, mitoz)",
+  "book": "cb",
+  "book_name": "Concepts of Biology",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/Concepts-Biology_-_WEB.pdf",
+  "ranges": [
+   [
+    149,
+    164
+   ]
+  ]
+ },
+ "cents-cb7": {
+  "code": "Ch. 7",
+  "title": "Cellular Basis of Inheritance (mayoz)",
+  "book": "cb",
+  "book_name": "Concepts of Biology",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/Concepts-Biology_-_WEB.pdf",
+  "ranges": [
+   [
+    165,
+    184
+   ]
+  ]
+ },
+ "cents-cb8": {
+  "code": "Ch. 8",
+  "title": "Patterns of Inheritance (Mendel)",
+  "book": "cb",
+  "book_name": "Concepts of Biology",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/Concepts-Biology_-_WEB.pdf",
+  "ranges": [
+   [
+    185,
+    210
+   ]
+  ]
+ },
+ "cents-cb9": {
+  "code": "Ch. 9",
+  "title": "Molecular Biology (DNA, transkripsiyon, translasyon)",
+  "book": "cb",
+  "book_name": "Concepts of Biology",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/Concepts-Biology_-_WEB.pdf",
+  "ranges": [
+   [
+    211,
+    236
+   ]
+  ]
+ },
+ "cents-cb16": {
+  "code": "Ch. 16",
+  "title": "The Body's Systems",
+  "book": "cb",
+  "book_name": "Concepts of Biology",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/Concepts-Biology_-_WEB.pdf",
+  "ranges": [
+   [
+    409,
+    456
+   ]
+  ]
+ },
+ "cents-cb19": {
+  "code": "19.4",
+  "title": "Community Ecology (türler arası etkileşimler)",
+  "book": "cb",
+  "book_name": "Concepts of Biology",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/Concepts-Biology_-_WEB.pdf",
+  "ranges": [
+   [
+    522,
+    531
+   ]
+  ]
+ },
+ "cents-cb20": {
+  "code": "Ch. 20",
+  "title": "Ecosystems (enerji akışı, besin zinciri)",
+  "book": "cb",
+  "book_name": "Concepts of Biology",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/Concepts-Biology_-_WEB.pdf",
+  "ranges": [
+   [
+    537,
+    574
+   ]
+  ]
+ },
+ "cents-b30": {
+  "code": "30.1-30.4",
+  "title": "Bitki gövdesi, gövde, kök, yaprak",
+  "book": "b2",
+  "book_name": "Biology 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/Biology-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    880,
+    898
+   ]
+  ]
+ },
+ "cents-b32": {
+  "code": "32.1",
+  "title": "Çiçek, meyve, tohum",
+  "book": "b2",
+  "book_name": "Biology 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/Biology-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    939,
+    948
+   ]
+  ]
+ },
+ "cents-b33": {
+  "code": "33.2",
+  "title": "Hayvan dokuları",
+  "book": "b2",
+  "book_name": "Biology 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/Biology-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    978,
+    986
+   ]
+  ]
+ },
+ "cents-c1": {
+  "code": "1.1-1.5",
+  "title": "Madde, hal değişimi, ölçüm, belirsizlik",
+  "book": "ch",
+  "book_name": "Chemistry 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/chemistry-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    23,
+    52
+   ]
+  ]
+ },
+ "cents-c2": {
+  "code": "2.1-2.7",
+  "title": "Atom teorisi, izotop, bileşikler, adlandırma",
+  "book": "ch",
+  "book_name": "Chemistry 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/chemistry-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    74,
+    115
+   ]
+  ]
+ },
+ "cents-c3": {
+  "code": "3.1, 3.3-3.4",
+  "title": "Mol, molarite, derişim birimleri",
+  "book": "ch",
+  "book_name": "Chemistry 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/chemistry-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    129,
+    139
+   ],
+   [
+    147,
+    159
+   ]
+  ]
+ },
+ "cents-c3.2": {
+  "code": "3.2",
+  "title": "Empirical formula",
+  "book": "ch",
+  "book_name": "Chemistry 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/chemistry-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    140,
+    146
+   ]
+  ]
+ },
+ "cents-c4": {
+  "code": "4.1-4.4",
+  "title": "Denkleştirme, stokiyometri, sınırlayıcı reaktif, verim",
+  "book": "ch",
+  "book_name": "Chemistry 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/chemistry-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    170,
+    198
+   ]
+  ]
+ },
+ "cents-c4.5": {
+  "code": "4.5",
+  "title": "Quantitative analysis (titrasyon)",
+  "book": "ch",
+  "book_name": "Chemistry 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/chemistry-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    199,
+    205
+   ]
+  ]
+ },
+ "cents-c5": {
+  "code": "5.1, 5.3",
+  "title": "Enerji, entalpi, ekzotermik ve endotermik",
+  "book": "ch",
+  "book_name": "Chemistry 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/chemistry-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    220,
+    227
+   ],
+   [
+    239,
+    253
+   ]
+  ]
+ },
+ "cents-c6a": {
+  "code": "6.2-6.3",
+  "title": "Bohr modeli, kuantum sayıları",
+  "book": "ch",
+  "book_name": "Chemistry 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/chemistry-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    276,
+    291
+   ]
+  ]
+ },
+ "cents-c6b": {
+  "code": "6.4-6.5",
+  "title": "Elektron dizilimi, periyodik özellikler",
+  "book": "ch",
+  "book_name": "Chemistry 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/chemistry-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    292,
+    309
+   ]
+  ]
+ },
+ "cents-c7": {
+  "code": "7.1-7.3, 7.6",
+  "title": "Bağlar, Lewis yapıları, VSEPR, polarlık",
+  "book": "ch",
+  "book_name": "Chemistry 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/chemistry-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    321,
+    339
+   ],
+   [
+    351,
+    364
+   ]
+  ]
+ },
+ "cents-c8.2": {
+  "code": "8.2",
+  "title": "Hybrid Atomic Orbitals",
+  "book": "ch",
+  "book_name": "Chemistry 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/chemistry-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    385,
+    394
+   ]
+  ]
+ },
+ "cents-c9": {
+  "code": "9.1-9.3",
+  "title": "Gaz basıncı, ideal gaz, kısmi basınç",
+  "book": "ch",
+  "book_name": "Chemistry 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/chemistry-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    419,
+    451
+   ]
+  ]
+ },
+ "cents-c10.1": {
+  "code": "10.1",
+  "title": "Intermolecular Forces",
+  "book": "ch",
+  "book_name": "Chemistry 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/chemistry-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    478,
+    488
+   ]
+  ]
+ },
+ "cents-c11": {
+  "code": "11.1-11.4",
+  "title": "Çözünme, elektrolitler, koligatif özellikler",
+  "book": "ch",
+  "book_name": "Chemistry 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/chemistry-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    547,
+    581
+   ]
+  ]
+ },
+ "cents-c12": {
+  "code": "12.1-12.2, 12.5, 12.7",
+  "title": "Tepkime hızı, aktivasyon enerjisi, kataliz",
+  "book": "ch",
+  "book_name": "Chemistry 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/chemistry-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    600,
+    606
+   ],
+   [
+    624,
+    628
+   ],
+   [
+    633,
+    640
+   ]
+  ]
+ },
+ "cents-c13": {
+  "code": "13.1-13.3",
+  "title": "Denge, K ve Q, Le Chatelier",
+  "book": "ch",
+  "book_name": "Chemistry 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/chemistry-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    657,
+    674
+   ]
+  ]
+ },
+ "cents-c14": {
+  "code": "14.1-14.4, 14.6-14.7",
+  "title": "Asit-baz, pH, hidroliz, tampon, indikatör",
+  "book": "ch",
+  "book_name": "Chemistry 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/chemistry-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    693,
+    720
+   ],
+   [
+    724,
+    736
+   ]
+  ]
+ },
+ "cents-c16": {
+  "code": "16.1-16.4",
+  "title": "Entropi, Gibbs serbest enerjisi (kavramsal)",
+  "book": "ch",
+  "book_name": "Chemistry 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/chemistry-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    781,
+    805
+   ]
+  ]
+ },
+ "cents-c17": {
+  "code": "17.1, 17.3",
+  "title": "Redoks denkleştirme, elektrot potansiyelleri",
+  "book": "ch",
+  "book_name": "Chemistry 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/chemistry-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    815,
+    818
+   ],
+   [
+    822,
+    827
+   ]
+  ]
+ },
+ "cents-c18": {
+  "code": "18.1-18.2",
+  "title": "Metallerin özellikleri",
+  "book": "ch",
+  "book_name": "Chemistry 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/chemistry-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    853,
+    865
+   ]
+  ]
+ },
+ "cents-c20": {
+  "code": "20.1-20.3",
+  "title": "Hidrokarbonlar, alkol, eter, aldehit, keton, asit, ester",
+  "book": "ch",
+  "book_name": "Chemistry 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/chemistry-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    973,
+    999
+   ]
+  ]
+ },
+ "cents-p1": {
+  "code": "1.3",
+  "title": "Physical quantities and units (SI, conversion, prefixes, scientific notation, significant figures, order of magnitude)",
+  "book": "ph",
+  "book_name": "Physics (High School)",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/Physics_-_WEB.pdf",
+  "ranges": [
+   [
+    29,
+    52
+   ]
+  ]
+ },
+ "cents-p2": {
+  "code": "2.1-2.4, 3.1-3.2",
+  "title": "Relative motion, displacement, velocity, acceleration, equations of motion, x-t, v-t and a-t graphs, free fall",
+  "book": "ph",
+  "book_name": "Physics (High School)",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/Physics_-_WEB.pdf",
+  "ranges": [
+   [
+    68,
+    94
+   ],
+   [
+    109,
+    125
+   ]
+  ]
+ },
+ "cents-p4.1": {
+  "code": "4.1-4.3",
+  "title": "Force, Newton's first and second laws, weight, normal force, tension",
+  "book": "ph",
+  "book_name": "Physics (High School)",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/Physics_-_WEB.pdf",
+  "ranges": [
+   [
+    133,
+    145
+   ]
+  ]
+ },
+ "cents-p5.1": {
+  "code": "5.1-5.2",
+  "title": "Vectors: addition, subtraction, components, sin, cos, tan",
+  "book": "ph",
+  "book_name": "Physics (High School)",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/Physics_-_WEB.pdf",
+  "ranges": [
+   [
+    163,
+    181
+   ]
+  ]
+ },
+ "cents-p6": {
+  "code": "6.1-6.2",
+  "title": "Angular velocity, uniform circular motion, period, frequency, centripetal acceleration",
+  "book": "ph",
+  "book_name": "Physics (High School)",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/Physics_-_WEB.pdf",
+  "ranges": [
+   [
+    217,
+    230
+   ]
+  ]
+ },
+ "cents-p7.2": {
+  "code": "7.2",
+  "title": "Gravitational force (universal gravitation)",
+  "book": "ph",
+  "book_name": "Physics (High School)",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/Physics_-_WEB.pdf",
+  "ranges": [
+   [
+    255,
+    263
+   ]
+  ]
+ },
+ "cents-p9": {
+  "code": "9.1-9.2",
+  "title": "Work, power, kinetic and potential energy, conservation of energy",
+  "book": "ph",
+  "book_name": "Physics (High School)",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/Physics_-_WEB.pdf",
+  "ranges": [
+   [
+    299,
+    309
+   ]
+  ]
+ },
+ "cents-p11.1": {
+  "code": "11.1-11.2",
+  "title": "Temperature scales (Celsius, Kelvin), thermal energy, heat",
+  "book": "ph",
+  "book_name": "Physics (High School)",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/Physics_-_WEB.pdf",
+  "ranges": [
+   [
+    351,
+    363
+   ]
+  ]
+ },
+ "cents-p12.1": {
+  "code": "12.1-12.3",
+  "title": "Zeroth law, first law and thermodynamic work, second law (qualitative)",
+  "book": "ph",
+  "book_name": "Physics (High School)",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/Physics_-_WEB.pdf",
+  "ranges": [
+   [
+    382,
+    397
+   ]
+  ]
+ },
+ "cents-p13": {
+  "code": "13.1-13.2",
+  "title": "Wave motion, wavelength, frequency, wave speed v = fλ",
+  "book": "ph",
+  "book_name": "Physics (High School)",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/Physics_-_WEB.pdf",
+  "ranges": [
+   [
+    417,
+    426
+   ]
+  ]
+ },
+ "cents-p14.1": {
+  "code": "14.1",
+  "title": "Sound waves: speed, frequency, wavelength",
+  "book": "ph",
+  "book_name": "Physics (High School)",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/Physics_-_WEB.pdf",
+  "ranges": [
+   [
+    443,
+    449
+   ]
+  ]
+ },
+ "cents-p15": {
+  "code": "15.1",
+  "title": "Light waves and the electromagnetic spectrum",
+  "book": "ph",
+  "book_name": "Physics (High School)",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/Physics_-_WEB.pdf",
+  "ranges": [
+   [
+    485,
+    492
+   ]
+  ]
+ },
+ "cents-p18": {
+  "code": "18.1-18.3",
+  "title": "Charge, conductors and insulators, Coulomb's law, electric field",
+  "book": "ph",
+  "book_name": "Physics (High School)",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/Physics_-_WEB.pdf",
+  "ranges": [
+   [
+    580,
+    602
+   ]
+  ]
+ },
+ "cents-p19": {
+  "code": "19.1",
+  "title": "Current, resistance, Ohm's law",
+  "book": "ph",
+  "book_name": "Physics (High School)",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/Physics_-_WEB.pdf",
+  "ranges": [
+   [
+    635,
+    643
+   ]
+  ]
+ },
+ "cents-p20": {
+  "code": "20.1",
+  "title": "Magnets, magnetic field lines",
+  "book": "ph",
+  "book_name": "Physics (High School)",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/Physics_-_WEB.pdf",
+  "ranges": [
+   [
+    681,
+    695
+   ]
+  ]
+ },
+ "cents-cp11": {
+  "code": "11.2-11.5, 11.7",
+  "title": "Yoğunluk, basınç, Stevin, Pascal, Arşimet",
+  "book": "cp",
+  "book_name": "College Physics 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/college-physics-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    463,
+    474
+   ],
+   [
+    479,
+    485
+   ]
+  ]
+ },
+ "cents-cp12": {
+  "code": "12.1-12.2",
+  "title": "Süreklilik denklemi, Bernoulli",
+  "book": "cp",
+  "book_name": "College Physics 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/college-physics-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    512,
+    519
+   ]
+  ]
+ },
+ "cents-cp13.3": {
+  "code": "13.3",
+  "title": "İdeal gaz yasası",
+  "book": "cp",
+  "book_name": "College Physics 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/college-physics-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    566,
+    573
+   ]
+  ]
+ },
+ "cents-up2.4": {
+  "code": "2.4",
+  "title": "Products of Vectors (dot and cross product, conceptual)",
+  "book": "up",
+  "book_name": "University Physics Volume 1",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/university-physics-volume-1_-_WEB.pdf",
+  "ranges": [
+   [
+    84,
+    95
+   ]
+  ]
+ },
+ "cents-at5.8": {
+  "code": "5.8",
+  "title": "Modeling Using Variation (direct and inverse proportionality)",
+  "book": "at",
+  "book_name": "Algebra and Trigonometry 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/algebra-and-trigonometry-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    520,
+    537
+   ]
+  ]
+ },
+ "tud-at7.1": {
+  "code": "7.1",
+  "title": "Angles: degrees and radians",
+  "book": "at",
+  "book_name": "Algebra and Trigonometry 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/algebra-and-trigonometry-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    676,
+    698
+   ]
+  ]
+ },
+ "tud-at7.3": {
+  "code": "7.3",
+  "title": "Unit circle: exact values, periodicity, symmetry",
+  "book": "at",
+  "book_name": "Algebra and Trigonometry 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/algebra-and-trigonometry-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    711,
+    728
+   ]
+  ]
+ },
+ "tud-at7.4": {
+  "code": "7.4",
+  "title": "The other trigonometric functions",
+  "book": "at",
+  "book_name": "Algebra and Trigonometry 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/algebra-and-trigonometry-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    729,
+    743
+   ]
+  ]
+ },
+ "tud-at8.1": {
+  "code": "8.1",
+  "title": "Graphs of sine and cosine: amplitude, period, phase, f(x) = a + b sin(cx - d)",
+  "book": "at",
+  "book_name": "Algebra and Trigonometry 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/algebra-and-trigonometry-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    751,
+    769
+   ]
+  ]
+ },
+ "tud-at9.1": {
+  "code": "9.1",
+  "title": "Trigonometric identities (Pythagorean identity)",
+  "book": "at",
+  "book_name": "Algebra and Trigonometry 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/algebra-and-trigonometry-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    811,
+    820
+   ]
+  ]
+ },
+ "tud-at9.2": {
+  "code": "9.2",
+  "title": "Sum and difference identities",
+  "book": "at",
+  "book_name": "Algebra and Trigonometry 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/algebra-and-trigonometry-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    821,
+    836
+   ]
+  ]
+ },
+ "tud-at9.3": {
+  "code": "9.3",
+  "title": "Double-angle formulas",
+  "book": "at",
+  "book_name": "Algebra and Trigonometry 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/algebra-and-trigonometry-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    837,
+    848
+   ]
+  ]
+ },
+ "tud-at9.5": {
+  "code": "9.5",
+  "title": "Solving trigonometric equations",
+  "book": "at",
+  "book_name": "Algebra and Trigonometry 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/algebra-and-trigonometry-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    856,
+    871
+   ]
+  ]
+ },
+ "tud-at10.1": {
+  "code": "10.1",
+  "title": "Law of sines",
+  "book": "at",
+  "book_name": "Algebra and Trigonometry 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/algebra-and-trigonometry-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    879,
+    896
+   ]
+  ]
+ },
+ "tud-at10.2": {
+  "code": "10.2",
+  "title": "Law of cosines",
+  "book": "at",
+  "book_name": "Algebra and Trigonometry 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/algebra-and-trigonometry-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    897,
+    910
+   ]
+  ]
+ },
+ "tud-at10.6": {
+  "code": "10.6-10.7",
+  "title": "Parametric equations and their graphs",
+  "book": "at",
+  "book_name": "Algebra and Trigonometry 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/algebra-and-trigonometry-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    954,
+    978
+   ]
+  ]
+ },
+ "tud-at10.8": {
+  "code": "10.8",
+  "title": "Vectors: magnitude, direction, components, dot product",
+  "book": "at",
+  "book_name": "Algebra and Trigonometry 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/algebra-and-trigonometry-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    979,
+    999
+   ]
+  ]
+ },
+ "tud-c1-2.2": {
+  "code": "2.2-2.3",
+  "title": "Limits and limit laws",
+  "book": "c1",
+  "book_name": "Calculus Volume 1",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/calculus-volume-1_-_WEB.pdf",
+  "ranges": [
+   [
+    124,
+    162
+   ]
+  ]
+ },
+ "tud-c1-4.6": {
+  "code": "4.6",
+  "title": "Limits at infinity and asymptotes",
+  "book": "c1",
+  "book_name": "Calculus Volume 1",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/calculus-volume-1_-_WEB.pdf",
+  "ranges": [
+   [
+    362,
+    388
+   ]
+  ]
+ },
+ "tud-c1-3.1": {
+  "code": "3.1-3.2",
+  "title": "The derivative, tangent lines, the derivative as a function",
+  "book": "c1",
+  "book_name": "Calculus Volume 1",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/calculus-volume-1_-_WEB.pdf",
+  "ranges": [
+   [
+    196,
+    223
+   ]
+  ]
+ },
+ "tud-c1-3.3": {
+  "code": "3.3",
+  "title": "Differentiation rules (product and quotient rules)",
+  "book": "c1",
+  "book_name": "Calculus Volume 1",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/calculus-volume-1_-_WEB.pdf",
+  "ranges": [
+   [
+    224,
+    237
+   ]
+  ]
+ },
+ "tud-c1-3.4": {
+  "code": "3.4",
+  "title": "Derivatives as rates of change (distance, velocity, acceleration)",
+  "book": "c1",
+  "book_name": "Calculus Volume 1",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/calculus-volume-1_-_WEB.pdf",
+  "ranges": [
+   [
+    238,
+    248
+   ]
+  ]
+ },
+ "tud-c1-3.5": {
+  "code": "3.5",
+  "title": "Derivatives of trigonometric functions",
+  "book": "c1",
+  "book_name": "Calculus Volume 1",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/calculus-volume-1_-_WEB.pdf",
+  "ranges": [
+   [
+    249,
+    257
+   ]
+  ]
+ },
+ "tud-c1-3.6": {
+  "code": "3.6",
+  "title": "The chain rule",
+  "book": "c1",
+  "book_name": "Calculus Volume 1",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/calculus-volume-1_-_WEB.pdf",
+  "ranges": [
+   [
+    258,
+    266
+   ]
+  ]
+ },
+ "tud-c1-3.9": {
+  "code": "3.9",
+  "title": "Derivatives of exponential and logarithmic functions",
+  "book": "c1",
+  "book_name": "Calculus Volume 1",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/calculus-volume-1_-_WEB.pdf",
+  "ranges": [
+   [
+    283,
+    295
+   ]
+  ]
+ },
+ "tud-c1-4.3": {
+  "code": "4.3",
+  "title": "Maxima and minima",
+  "book": "c1",
+  "book_name": "Calculus Volume 1",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/calculus-volume-1_-_WEB.pdf",
+  "ranges": [
+   [
+    325,
+    336
+   ]
+  ]
+ },
+ "tud-c1-4.5": {
+  "code": "4.5",
+  "title": "Derivatives and the shape of a graph (concavity, inflection points)",
+  "book": "c1",
+  "book_name": "Calculus Volume 1",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/calculus-volume-1_-_WEB.pdf",
+  "ranges": [
+   [
+    347,
+    361
+   ]
+  ]
+ },
+ "tud-c1-4.7": {
+  "code": "4.7",
+  "title": "Applied optimization problems",
+  "book": "c1",
+  "book_name": "Calculus Volume 1",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/calculus-volume-1_-_WEB.pdf",
+  "ranges": [
+   [
+    389,
+    401
+   ]
+  ]
+ },
+ "tud-c1-4.10": {
+  "code": "4.10",
+  "title": "Antiderivatives and the constant of integration",
+  "book": "c1",
+  "book_name": "Calculus Volume 1",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/calculus-volume-1_-_WEB.pdf",
+  "ranges": [
+   [
+    427,
+    438
+   ]
+  ]
+ },
+ "tud-c1-5.2": {
+  "code": "5.2-5.3",
+  "title": "The definite integral and the fundamental theorem of calculus",
+  "book": "c1",
+  "book_name": "Calculus Volume 1",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/calculus-volume-1_-_WEB.pdf",
+  "ranges": [
+   [
+    464,
+    495
+   ]
+  ]
+ },
+ "tud-c1-5.4": {
+  "code": "5.4",
+  "title": "Integration formulas and net change",
+  "book": "c1",
+  "book_name": "Calculus Volume 1",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/calculus-volume-1_-_WEB.pdf",
+  "ranges": [
+   [
+    496,
+    513
+   ]
+  ]
+ },
+ "tud-c1-5.5": {
+  "code": "5.5",
+  "title": "Substitution (integrals of c f(ax + b) + d)",
+  "book": "c1",
+  "book_name": "Calculus Volume 1",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/calculus-volume-1_-_WEB.pdf",
+  "ranges": [
+   [
+    514,
+    523
+   ]
+  ]
+ },
+ "tud-c1-6.1": {
+  "code": "6.1",
+  "title": "Areas between curves",
+  "book": "c1",
+  "book_name": "Calculus Volume 1",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/calculus-volume-1_-_WEB.pdf",
+  "ranges": [
+   [
+    548,
+    558
+   ]
+  ]
+ },
+ "tud-c1-6.2": {
+  "code": "6.2",
+  "title": "Volumes of revolution: disks and washers",
+  "book": "c1",
+  "book_name": "Calculus Volume 1",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/calculus-volume-1_-_WEB.pdf",
+  "ranges": [
+   [
+    559,
+    576
+   ]
+  ]
+ },
+ "tud-c1-6.3": {
+  "code": "6.3",
+  "title": "Volumes of revolution: cylindrical shells",
+  "book": "c1",
+  "book_name": "Calculus Volume 1",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/calculus-volume-1_-_WEB.pdf",
+  "ranges": [
+   [
+    577,
+    589
+   ]
+  ]
+ },
+ "tud-c1-6.4": {
+  "code": "6.4",
+  "title": "Arc length and surface area of revolution",
+  "book": "c1",
+  "book_name": "Calculus Volume 1",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/calculus-volume-1_-_WEB.pdf",
+  "ranges": [
+   [
+    590,
+    601
+   ]
+  ]
+ },
+ "tud-c1-6.6": {
+  "code": "6.6",
+  "title": "Moments and centers of mass (center of gravity of 2D shapes)",
+  "book": "c1",
+  "book_name": "Calculus Volume 1",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/calculus-volume-1_-_WEB.pdf",
+  "ranges": [
+   [
+    618,
+    633
+   ]
+  ]
+ },
+ "tud-c3-1.1": {
+  "code": "1.1-1.2",
+  "title": "Parametric curves and their tangent lines",
+  "book": "c3",
+  "book_name": "Calculus Volume 3",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/calculus-volume-3_-_WEB.pdf",
+  "ranges": [
+   [
+    16,
+    45
+   ]
+  ]
+ },
+ "tud-c3-2.1": {
+  "code": "2.1",
+  "title": "Vectors in the plane",
+  "book": "c3",
+  "book_name": "Calculus Volume 3",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/calculus-volume-3_-_WEB.pdf",
+  "ranges": [
+   [
+    98,
+    116
+   ]
+  ]
+ },
+ "tud-c3-2.3": {
+  "code": "2.3",
+  "title": "The dot product: angles and projections",
+  "book": "c3",
+  "book_name": "Calculus Volume 3",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/calculus-volume-3_-_WEB.pdf",
+  "ranges": [
+   [
+    139,
+    156
+   ]
+  ]
+ },
+ "tud-c3-2.5": {
+  "code": "2.5",
+  "title": "Vector equation of a line (lines and planes)",
+  "book": "c3",
+  "book_name": "Calculus Volume 3",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/calculus-volume-3_-_WEB.pdf",
+  "ranges": [
+   [
+    177,
+    199
+   ]
+  ]
+ },
+ "tud-c3-3.1": {
+  "code": "3.1-3.2",
+  "title": "Vector-valued functions and tangent vectors",
+  "book": "c3",
+  "book_name": "Calculus Volume 3",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/calculus-volume-3_-_WEB.pdf",
+  "ranges": [
+   [
+    243,
+    264
+   ]
+  ]
+ },
+ "tud-c3-3.4": {
+  "code": "3.4",
+  "title": "Motion along a vector path: velocity and acceleration",
+  "book": "c3",
+  "book_name": "Calculus Volume 3",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/calculus-volume-3_-_WEB.pdf",
+  "ranges": [
+   [
+    283,
+    303
+   ]
+  ]
+ },
+ "tud-p4.4": {
+  "code": "4.4",
+  "title": "Newton's third law",
+  "book": "ph",
+  "book_name": "Physics (High School)",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/Physics_-_WEB.pdf",
+  "ranges": [
+   [
+    146,
+    152
+   ]
+  ]
+ },
+ "tud-p5.4": {
+  "code": "5.4",
+  "title": "Inclined planes and friction (free-body diagrams)",
+  "book": "ph",
+  "book_name": "Physics (High School)",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/Physics_-_WEB.pdf",
+  "ranges": [
+   [
+    191,
+    197
+   ]
+  ]
+ },
+ "tud-p5.5": {
+  "code": "5.5",
+  "title": "Simple harmonic motion, mass-spring systems",
+  "book": "ph",
+  "book_name": "Physics (High School)",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/Physics_-_WEB.pdf",
+  "ranges": [
+   [
+    198,
+    204
+   ]
+  ]
+ },
+ "tud-p7.1": {
+  "code": "7.1",
+  "title": "Kepler's laws and planetary orbits",
+  "book": "ph",
+  "book_name": "Physics (High School)",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/Physics_-_WEB.pdf",
+  "ranges": [
+   [
+    247,
+    254
+   ]
+  ]
+ },
+ "tud-p9.3": {
+  "code": "9.3",
+  "title": "Simple machines and efficiency",
+  "book": "ph",
+  "book_name": "Physics (High School)",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/Physics_-_WEB.pdf",
+  "ranges": [
+   [
+    310,
+    315
+   ]
+  ]
+ },
+ "tud-p19.2": {
+  "code": "19.2-19.3",
+  "title": "Series and parallel circuits",
+  "book": "ph",
+  "book_name": "Physics (High School)",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/Physics_-_WEB.pdf",
+  "ranges": [
+   [
+    644,
+    663
+   ]
+  ]
+ },
+ "tud-p19.4": {
+  "code": "19.4",
+  "title": "Electric power",
+  "book": "ph",
+  "book_name": "Physics (High School)",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/Physics_-_WEB.pdf",
+  "ranges": [
+   [
+    664,
+    669
+   ]
+  ]
+ },
+ "tud-p20.3": {
+  "code": "20.3",
+  "title": "Electromagnetic induction and magnetic flux",
+  "book": "ph",
+  "book_name": "Physics (High School)",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/Physics_-_WEB.pdf",
+  "ranges": [
+   [
+    704,
+    712
+   ]
+  ]
+ },
+ "tud-p13.3": {
+  "code": "13.3",
+  "title": "Superposition and interference",
+  "book": "ph",
+  "book_name": "Physics (High School)",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/Physics_-_WEB.pdf",
+  "ranges": [
+   [
+    427,
+    433
+   ]
+  ]
+ },
+ "tud-cp5.1": {
+  "code": "5.1-5.2",
+  "title": "Friction and drag forces",
+  "book": "cp",
+  "book_name": "College Physics 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/college-physics-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    218,
+    228
+   ]
+  ]
+ },
+ "tud-cp7.4": {
+  "code": "7.4",
+  "title": "Conservative forces and elastic (spring) potential energy",
+  "book": "cp",
+  "book_name": "College Physics 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/college-physics-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    304,
+    307
+   ]
+  ]
+ },
+ "tud-cp16.7": {
+  "code": "16.7-16.8",
+  "title": "Damped oscillations, forced oscillations and resonance",
+  "book": "cp",
+  "book_name": "College Physics 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/college-physics-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    723,
+    729
+   ]
+  ]
+ },
+ "tud-cp21.3": {
+  "code": "21.3",
+  "title": "Kirchhoff's rules",
+  "book": "cp",
+  "book_name": "College Physics 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/college-physics-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    952,
+    956
+   ]
+  ]
+ },
+ "tud-cp22.4": {
+  "code": "22.4-22.5",
+  "title": "Lorentz force on a moving charge in a magnetic field",
+  "book": "cp",
+  "book_name": "College Physics 2e",
+  "pdf": "https://assets.openstax.org/oscms-prodcms/media/documents/college-physics-2e_-_WEB.pdf",
+  "ranges": [
+   [
+    992,
+    998
+   ]
+  ]
+ }
+}

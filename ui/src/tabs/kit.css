@@ -1,0 +1,56 @@
+/* Shared styles for React tabs */
+.k-page { max-width: 1180px; display: flex; flex-direction: column; gap: 16px; }
+.k-head-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.k-sec { padding: 18px 20px; }
+.k-sec-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+.k-sec-head h2 { margin: 0; font-size: 16px; font-weight: 650; letter-spacing: -0.01em; }
+.k-sec p { margin: 0 0 8px; line-height: 1.55; color: var(--k-text-2); max-width: 75ch; }
+.k-grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; align-items: start; }
+.k-grid3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; align-items: start; }
+.k-lvl, .k-tag { display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 9px; border-radius: 99px; font-size: 12.5px; font-weight: 600; white-space: nowrap; }
+.k-lvl[data-l="ok"] { background: var(--k-pill-review); color: var(--k-pill-review-t); }
+.k-lvl[data-l="warn"] { background: var(--k-warn-bg); color: var(--k-warn-t); }
+.k-lvl[data-l="bad"] { background: var(--k-pill-relearning); color: var(--k-pill-relearning-t); }
+.k-lvl[data-l="mid"] { background: var(--k-accent-soft); color: var(--k-accent); }
+.k-tag { background: var(--k-badge); color: var(--k-text-2); font-weight: 500; }
+.k-tag[data-tone="accent"] { background: var(--k-accent-soft); color: var(--k-accent); }
+.k-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; font-size: 13.5px; }
+.k-field-label { color: var(--k-text-2); font-weight: 500; overflow-wrap: anywhere; }
+.k-field-hint { color: var(--k-muted); font-size: 12.5px; line-height: 1.45; }
+.k-input, .k-field input:not([type="checkbox"]):not([type="radio"]):not([type="range"]), .k-field select, .k-field textarea {
+  width: 100%; min-height: 38px; padding: 8px 12px; border: 1px solid var(--k-line); border-radius: 9px; background: var(--k-panel); color: var(--k-text); font: inherit; font-size: 14.5px; box-sizing: border-box;
+  transition: border-color 150ms var(--k-ease), box-shadow 150ms var(--k-ease);
+}
+.k-field textarea, textarea.k-input { min-height: 80px; resize: vertical; line-height: 1.5; }
+.k-input:focus, .k-field input:focus, .k-field select:focus, .k-field textarea:focus { outline: none; border-color: var(--k-accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--k-accent) 22%, transparent); }
+.k-check input, .k-field input[type="checkbox"], .k-field input[type="radio"] { accent-color: var(--k-accent); }
+.k-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+.k-kpi { background: var(--k-panel); border: 1px solid var(--k-line); border-radius: 12px; padding: 14px 16px; box-shadow: var(--k-shadow); }
+.k-kpi-label { font-size: 13px; color: var(--k-muted); }
+.k-kpi-value { font-size: 26px; font-weight: 700; letter-spacing: -0.02em; margin-top: 4px; line-height: 1.15; }
+.k-kpi-sub { font-size: 12.5px; color: var(--k-muted); margin-top: 2px; }
+.k-table-wrap { overflow-x: auto; border: 1px solid var(--k-line); border-radius: 10px;
+  background:
+    linear-gradient(to right, var(--k-panel) 30%, transparent) left / 40px 100% no-repeat local,
+    linear-gradient(to left, var(--k-panel) 30%, transparent) right / 40px 100% no-repeat local,
+    radial-gradient(farthest-side at 0 50%, color-mix(in srgb, var(--k-text) 16%, transparent), transparent) left / 12px 100% no-repeat scroll,
+    radial-gradient(farthest-side at 100% 50%, color-mix(in srgb, var(--k-text) 16%, transparent), transparent) right / 12px 100% no-repeat scroll,
+    var(--k-panel); }
+.k-table { width: 100%; border-collapse: collapse; font-size: 13.5px; font-variant-numeric: tabular-nums; }
+.k-table th { text-align: left; font-weight: 600; font-size: 12.5px; color: var(--k-muted); padding: 10px 12px; border-bottom: 1px solid var(--k-line); white-space: nowrap; background: var(--k-tile); }
+.k-table td { padding: 9px 12px; border-top: 1px solid var(--k-line); vertical-align: middle; }
+.k-table tr:first-child td { border-top: 0; }
+.k-table td.num, .k-table th.num { text-align: right; }
+.k-subtabs { display: inline-flex; padding: 3px; gap: 2px; border: 1px solid var(--k-line); border-radius: 10px; background: var(--k-tile); flex-wrap: wrap; }
+.k-subtabs button { position: relative; height: 32px; padding: 0 14px; border: 0; border-radius: 7px; background: transparent; color: var(--k-muted); font: inherit; font-size: 14px; font-weight: 550; cursor: pointer; }
+.k-subtabs button[aria-selected="true"] { color: var(--k-text); }
+.k-subtabs-bg { position: absolute; inset: 0; border-radius: 7px; background: var(--k-panel); box-shadow: var(--k-shadow); }
+.k-subtabs button > span:last-child { position: relative; }
+.k-bar { height: 6px; border-radius: 99px; background: var(--k-tile); overflow: hidden; }
+.k-bar span { display: block; height: 100%; border-radius: inherit; background: var(--k-accent-fill); transform-origin: left; }
+.k-bar[data-tone="good"] span { background: var(--k-good); }
+.k-bar[data-tone="warn"] span { background: var(--k-hard); }
+.k-btn[data-armed="1"] { background: var(--k-again); border-color: var(--k-again); color: var(--k-rate-text); }
+.k-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.k-mono { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: 13px; }
+.k-formula { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: 13px; line-height: 1.6; padding: 10px 14px; border-radius: 9px; background: var(--k-tile); border: 1px solid var(--k-line); overflow-x: auto; white-space: pre; }
