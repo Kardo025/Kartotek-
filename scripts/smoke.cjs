@@ -439,21 +439,30 @@ async function main() {
         await page.$eval('.pm', (d) => { d.open = true; });
         const nodes = await page.$$eval('.pm .gv-node', (l) => l.length);
         await page.click('.pb button:has-text("Rate myself instead")');
-        await page.click('.pm-self-row >> nth=0 >> button:has-text("Yes")');
+        const rows = await page.$$eval('.pm-self-row', (l) => l.length);
+        for (let i = 0; i < rows; i++) await page.click('.pm-self-row >> nth=' + i + ' >> button:has-text("Yes")');
         await page.click('.pb button:has-text("Save my rating")');
         await page.waitForTimeout(500);
         await page.$eval('.pm', (d) => { d.open = true; });
-        const label = await page.$eval('.pm .gv-node >> nth=0', (n) => n.getAttribute('aria-label'));
-        await page.click('.pm .gv-node >> nth=0');
+        const labels = await page.$$eval('.pm .gv-node', (l) => l.map((n) => n.getAttribute('aria-label')));
+        // every topic was rated held; a topic earlier blocks answered wrongly is redrawn from that evidence as "gap found" and cannot be skipped
+        const gapAt = labels.findIndex((l) => /gap found in Applying/.test(l)), heldAt = labels.findIndex((l) => /, held/.test(l));
+        let gapOk = true;
+        if (gapAt >= 0) {
+          await page.click('.pm .gv-node >> nth=' + gapAt);
+          gapOk = (await page.$$('.pm-detail button:has-text("Skip this topic")')).length === 0 && /show a gap/.test(await page.$eval('.pm-detail', (d) => d.innerText));
+        }
+        if (heldAt < 0) throw new Error('no topic is coloured held after the rating: ' + labels.join(' | '));
+        const k = await page.evaluate(({ id, i }) => window.KGraph.topicsOf(window.App.S.etuts[id].package)[i].kid, { id: SID, i: heldAt });
+        await page.click('.pm .gv-node >> nth=' + heldAt);
         await page.click('.pm-detail button:has-text("Skip this topic")');
         await page.waitForTimeout(400);
-        const after = await page.evaluate(({ id, k }) => { const S = window.App.S, et = S.etuts[id]; return { probes: et.progress.probes.length, source: et.progress.probes.slice(-1)[0].source, skipped: !!et.progress.skipped[k], done: window.KCycle.cycleDone(et, k), reviews: S.reviews.length, chip: !!document.querySelector('.cy-nav-skip') }; }, { id: SID, k: before.first });
+        const after = await page.evaluate(({ id, k }) => { const S = window.App.S, et = S.etuts[id]; return { probes: et.progress.probes.length, source: et.progress.probes.slice(-1)[0].source, skipped: !!et.progress.skipped[k], done: window.KCycle.cycleDone(et, k), reviews: S.reviews.length, chip: !!document.querySelector('.cy-nav-skip') }; }, { id: SID, k });
         if (nodes !== before.topics) problems.push('F3: the plan map shows ' + nodes + ' topics, the study has ' + before.topics);
-        // held by the rating; earlier blocks answered this topic wrongly, so the map is redrawn from that evidence as "gap found"
-        if (!/held|gap found in Applying/.test(label)) problems.push('F3: the rated topic is not coloured from the rating: ' + label);
+        if (!gapOk) problems.push('F3: a topic with a gap in Applying could still be skipped, or no reason was shown');
         if (after.probes < 1 || after.source !== 'self' || !after.skipped || !after.done || !after.chip || after.reviews !== before.reviews) problems.push('F3: self-rating or skipping went wrong: ' + JSON.stringify(after));
-        await page.evaluate(({ id, k }) => { const et = window.App.S.etuts[id]; window.KPlan.unskip(et, k); window.App.EtutUI.commit(et); window.App.render(); }, { id: SID, k: before.first });
-        console.log('Find my level and plan map: Priming showed both; a self-rating was stored as a probe, coloured the map, the topic was skipped (complete for End) and the reviews did not change');
+        await page.evaluate(({ id, k }) => { const et = window.App.S.etuts[id]; window.KPlan.unskip(et, k); window.App.EtutUI.commit(et); window.App.render(); }, { id: SID, k });
+        console.log('Find my level and plan map: Priming showed both; a self-rating was stored as a probe and coloured the map; a held topic was skipped (complete for End), ' + (gapAt >= 0 ? 'a topic with a gap in Applying could not be' : 'no topic had a gap') + '; the reviews did not change');
       } catch (e) { problems.push('F3: Priming, Find my level or the plan map failed: ' + e.message); }
     }
 

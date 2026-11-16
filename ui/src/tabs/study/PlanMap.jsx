@@ -96,7 +96,7 @@ export function PlanMapPanel({ et, open: startOpen }) {
     pkg.parts.forEach((p, pi) => (p.kazanimlar || []).forEach((k, ti) => { if (k.kazanim_id === kid) K.goto(et, pi, ti, "priming"); }));
     save(et);
   };
-  const doSkip = (kid) => { try { PL().skip(et, kid, Date.now()); save(et); } catch (e) { A().toast(e.message); } };
+  const doSkip = (kid) => { try { PL().skip(et, kid, Date.now(), extrasOf(et)); save(et); } catch (e) { A().toast(e.message); } };
   const undo = (kid) => { PL().unskip(et, kid); save(et); };
   return (
     <details className="k-panel k-sec pm" open={startOpen}>
@@ -113,7 +113,8 @@ export function PlanMapPanel({ et, open: startOpen }) {
           {node.outcomes.length > 0 && <ul className="k-small">{node.outcomes.map((o) => <li key={o.id}>{o.performance}</li>)}</ul>}
           <div className="cy-actions">
             <Btn size="sm" onClick={() => jump(node.id)}>Open this topic<ArrowRight size={14} weight="bold" aria-hidden="true" /></Btn>
-            {PL().canSkip(et, node.id) && <Btn size="sm" onClick={() => doSkip(node.id)} title="Counts as complete for opening End; the final test still checks it."><SkipForward size={14} aria-hidden="true" />Skip this topic</Btn>}
+            {node.probe_status === "held" && !node.skipped && PL().skipBlock(et, node.id, extrasOf(et)) && <span className="k-small k-muted">{PL().skipBlock(et, node.id, extrasOf(et))}</span>}
+            {PL().canSkip(et, node.id, extrasOf(et)) && <Btn size="sm" onClick={() => doSkip(node.id)} title="Counts as complete for opening End; the final test still checks it."><SkipForward size={14} aria-hidden="true" />Skip this topic</Btn>}
             {node.skipped && <Btn size="sm" onClick={() => undo(node.id)}><ArrowCounterClockwise size={14} aria-hidden="true" />Stop skipping</Btn>}
           </div>
         </div>

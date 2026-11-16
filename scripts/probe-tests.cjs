@@ -446,7 +446,7 @@ async function mapTests() {
       const m = KPl.packagedMap(et, null);
       eq(m.nodes.map((n) => n.status), ['held', 'edge']);
       assert.ok(KPl.canSkip(et, kids[0]) && !KPl.canSkip(et, kids[1]));
-      assert.throws(() => KPl.skip(et, kids[1], NOW), /Only a topic the probe found held/);
+      assert.throws(() => KPl.skip(et, kids[1], NOW), /Only a topic Find my level found held/);
       KPl.skip(et, kids[0], NOW);
       assert.ok(K.cycleDone(et, kids[0]) && !K.topicsLeft(et).some((t) => t.kid === kids[0]));
       const blueprint = JSON.stringify(K.blueprint(et.package));
@@ -461,7 +461,7 @@ async function mapTests() {
       KPl.unskip(et, kids[0]);
       assert.ok(!KPl.isSkipped(et, kids[0]) && et.progress.skip_log.length === 1, 'stopping a skip keeps the record');
     });
-    await t(ok, 'the map is redrawn from real evidence: a topic the probe found held whose Applying answers need work shows "gap found"', () => {
+    await t(ok, 'the map is redrawn from real evidence: a topic the probe found held whose Applying answers need work shows "gap found" and can no longer be skipped', () => {
       const idx = K.itemIndex(et.package, null);
       const item = Object.values(idx).find((it) => it.use !== 'final' && it.kazanim_id === kids[0] && (it.validation || 'unverified') === 'verified' && it.format === 'mcq_single');
       assert.ok(item, 'the sample has a verified item on topic 1');
@@ -470,6 +470,9 @@ async function mapTests() {
       K.commit(et, a, { choice: [wrong], confidence: 'sure', confidence_pct: 90 }, item, NOW + 10);
       const m = KPl.packagedMap(et, null);
       assert.strictEqual(m.nodes[0].status, 'gap_found');
+      // owner decision (2026-11-16): a topic whose Applying answers show a gap cannot be skipped, whatever the probe said
+      assert.ok(!KPl.canSkip(et, kids[0]) && /show a gap/.test(KPl.skipBlock(et, kids[0])));
+      assert.throws(() => KPl.skip(et, kids[0], NOW), /show a gap/);
     });
     await t(ok, 'nothing of the probe reaches the scheduler: no review event, no card, no memory change, and the probe is in the progress as generated material', () => {
       assert.strictEqual(st.reviews.length, before.reviews);

@@ -39,12 +39,20 @@
   function addProbe(et, probe) { probesOf(et).push(probe); return probe; }
 
   // ------------------------------------------------------------------ packaged: skipping a held topic (D5)
-  function canSkip(et, kid) {
+  // Why a topic cannot be skipped, or null when it can. Owner decision (2026-11-16): a topic whose Applying answers show a gap (an outcome
+  // that needs work) cannot be skipped, whatever the probe said; real evidence outranks the probe.
+  function skipBlock(et, kid, extras) {
+    if ((et.progress.skipped || {})[kid]) return 'Already skipped.';
     var s = probeStatus(et)[kid];
-    return !!s && s.status === 'held' && !(et.progress.skipped || {})[kid];
+    if (!s || s.status !== 'held') return 'Only a topic Find my level found held can be skipped.';
+    var t = KG().topicsOf(et.package).filter(function (x) { return x.kid === kid; })[0];
+    if (t && KC().topicEvidence(et, t.pi, t.ti, KC().itemIndex(et.package, extras)).needs_work > 0) return 'Your Applying answers on this topic show a gap, so it cannot be skipped.';
+    return null;
   }
-  function skip(et, kid, now) {
-    if (!canSkip(et, kid)) throw new Error('Only a topic the probe found held can be skipped.');
+  function canSkip(et, kid, extras) { return !skipBlock(et, kid, extras); }
+  function skip(et, kid, now, extras) {
+    var why = skipBlock(et, kid, extras);
+    if (why) throw new Error(why);
     var s = probeStatus(et)[kid];
     et.progress.skipped = et.progress.skipped || {};
     et.progress.skipped[kid] = { at: now || Date.now(), after_probe: s.probe, source: s.source };
@@ -283,7 +291,7 @@
 
   global.KPlan = {
     probesOf: probesOf, openProbe: openProbe, lastProbe: lastProbe, probeStatus: probeStatus, addProbe: addProbe,
-    canSkip: canSkip, skip: skip, unskip: unskip, isSkipped: isSkipped, packagedMap: packagedMap,
+    canSkip: canSkip, skipBlock: skipBlock, skip: skip, unskip: unskip, isSkipped: isSkipped, packagedMap: packagedMap,
     sessionsOf: sessionsOf, newSession: newSession, listSessions: listSessions, countCall: countCall, probeDone: probeDone,
     checkPlan: checkPlan, addPlanVersion: addPlanVersion, currentPlan: currentPlan, acceptPlan: acceptPlan, setPosition: setPosition,
     insertGap: insertGap, liveMap: liveMap, plannerInputs: plannerInputs, attachedMaterial: attachedMaterial, unitSet: unitSet
