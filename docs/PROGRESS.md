@@ -815,7 +815,15 @@ I did not spend your Claude Code subscription or an API key on a real call. To c
 | `KARTOTEK_BACKUP=<your export> npm test` | Everything passes. **Engine:** 79/79 (2 new scenarios: an open item without its key and the side panel as help; requests filled by a job, a brief without sources not a verdict). **Side and researcher tests:** 9/9 with a fake provider and a fake search service: contexts, answer checks, dropped refs, the job in both modes, brief checks and the repair, link checks, hidden without either mode. **Your backup:** unchanged. |
 | `npm run smoke`, real Electron window | Passes. A new F7 block: opening the panel during an attempt is recorded as help, never in the final test; an open item goes without its key; Settings shows research as "Not available". |
 | **Done when (1): a side question during a lesson is answered from the lesson's own content** | Yes, in the preview with gpt-oss:20b on this PC. dsd-1, topic k1, Learn & digest: "Which three design levels are there, and where do gates sit?" was answered with Architecture, Logic and Digital circuits, gates on the digital-circuits level, citing "block 1", not beyond the source. On Applying, opening the panel recorded `side_panel` help and the attempt became assisted. |
-| **Done when (2): "Check this" on one explanation returns a brief with working links** | **Not verified yet.** The preview has no web search: the local model has none, and there is no Anthropic key in the strong slot and no Brave key. I do not enter keys myself. |
+| **Done when (2): "Check this" on one explanation returns a brief with working links** | Yes, in the preview with your Brave key (you entered it) and gpt-oss:20b. dsd-1, the noise-margin item, Explain, then **Check this** on the explanation's first sentence: "VIH is the minimum input voltage that a digital receiver must see to interpret the signal as a logical 1." **Brief:** Supported, two findings, two sources (National Instruments documentation, SparkFun Learn "Logic Levels"), each with a short quote, both marked "link answers" (HTTP 200). About 1.5 minutes. |
+
+### Honest notes (what the real run showed and what I fixed)
+- **A key saved in another window was not seen:** the research status was read once per window, so "Check this" stayed hidden after you saved the key in Opera. It is now read again on every screen and when the window gets focus.
+- **Search errors said only "answered 422":** they now give the service's reason. Brave's `SUBSCRIPTION_TOKEN_INVALID` is reported as a key problem; the key itself is never in the message.
+- **The default claim was the heading** ("# What are VIH…?"). It is now the first sentence that states something (`KSide.firstClaim`, tested).
+- **Saves that silently went nowhere (preview only):** the bridge preview made a new token at each restart, so a page left open from before was refused on every call; the Models panel hung on "Reading…" and "Save key" did nothing. The token is now kept in the preview profile, a refused call says "Reload the page", the panel shows a failed save, and the preview logs each key save (never the key).
+- **Long failure messages overflowed** the explanation panel (a pill style with a fixed height). Briefs now use their own warning style and wrap.
+- **Your first keys:** Brave refused them (`SUBSCRIPTION_TOKEN_INVALID`); the one that worked was saved at 00:26.
 
 ### How you can test it
 1. `npm start`, open a study topic, Learn & digest → **Ask about this**, ask something about the lesson.
@@ -823,5 +831,4 @@ I did not spend your Claude Code subscription or an API key on a real call. To c
 3. Settings → Models → **Research**: add a Brave Search API key, or use an Anthropic key in the strong slot. Then on an explanation press **Check this**, and look at the brief in place (and in Settings, Jobs).
 
 ### Open questions
-- **The real brief:** which web search do you want for the first real check (your Brave key, or the Anthropic strong slot, which is a paid call with web search)?
 - **Still open from earlier:** the "Generated questions" calibration view, photos in practice, the C4 draft release, the placeholder author email, and the Anthropic key you pasted in chat.

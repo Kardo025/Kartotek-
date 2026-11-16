@@ -1,5 +1,6 @@
 /* researcher briefs and the side-question panel (task F7) */
-.rs { display: inline-flex; flex-direction: column; gap: 6px; max-width: 100%; }
+.rs { display: inline-flex; flex-direction: column; gap: 6px; max-width: 100%; min-width: 0; }
+.rs > .rs-brief { white-space: normal; overflow-wrap: anywhere; max-width: 100%; box-sizing: border-box; }
 .rs-form { display: flex; flex-direction: column; gap: 6px; min-width: min(520px, 100%); }
 .rs-brief { display: flex; flex-direction: column; gap: 4px; padding: 10px 12px; border: 1px solid var(--k-line); border-left: 3px solid var(--k-line-strong); border-radius: 10px; background: var(--k-raised); }
 .rs-brief[data-v="supported"] { border-left-color: var(--k-pill-review-t); }
@@ -25,3 +26,5 @@
 .sp-a .st-md p { margin: 4px 0; }
 .sp-uses { display: flex; flex-wrap: wrap; gap: 4px; }
 .sp-uses span { padding: 0 7px; border-radius: 999px; background: var(--k-pill-new); font-size: 11px; color: var(--k-text-2); }
+.rs-brief[data-v="failed"] { border-left-color: var(--k-pill-learning-t); color: var(--k-text-2); }
+.rs-warn { display: flex; align-items: center; gap: 5px; color: var(--k-pill-learning-t); }

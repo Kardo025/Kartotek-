@@ -101,7 +101,7 @@ const VERDICT = { supported: { label: "Supported", Icon: CheckCircle }, contradi
 export function BriefView({ r }) {
   if (r.status === "starting" || r.status === "running") return <div className="rs-brief k-small"><CircleNotch size={13} className="mc-spin" aria-hidden="true" /> Checking “{r.claim}” on the web…</div>;
   if (r.status === "paused") return <div className="rs-brief k-small">The check of “{r.claim}” is paused (Settings, Jobs).</div>;
-  if (r.status === "failed") return <div className="rs-brief k-small k-lvl" data-l="warn">The check of “{r.claim}” failed: {r.error}</div>;
+  if (r.status === "failed") return <div className="rs-brief k-small" data-v="failed">The check of “{r.claim}” failed: {r.error}</div>;
   const b = r.brief || {}, v = VERDICT[b.verdict] || VERDICT.unclear, srcs = b.sources || [];
   return (
     <div className="rs-brief" data-v={b.verdict}>
@@ -118,7 +118,7 @@ export function BriefView({ r }) {
             </li>
           ))}
         </ol>
-      ) : <p className="k-small k-lvl" data-l="warn"><Warning size={13} aria-hidden="true" /> No sources were found, so this is not a verdict.</p>}
+      ) : <p className="k-small rs-warn"><Warning size={13} aria-hidden="true" /> No sources were found, so this is not a verdict.</p>}
       <p className="k-small k-muted">Researched {r.mode === "key" ? "with your search key" : "with your provider's web search"}{r.by ? " · " + r.by : ""} · generated, check the sources yourself.</p>
     </div>
   );
