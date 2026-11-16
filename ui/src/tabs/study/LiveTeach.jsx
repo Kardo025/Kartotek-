@@ -228,13 +228,17 @@ function EndPanel({ s, commit }) {
 
 function Transcript({ s, pkg, nodeLabel }) {
   const steps = (s.steps || []).filter((x) => x.closed_at || s.status === "done" || s.status === "review");
+  // task F6: "Open the session message" from the knowledge graph opens the transcript at that step
+  const focus = window.App.liveFocus;
+  const [keepOpen] = useState(!!focus);   // stays open after the focus is used
+  React.useEffect(() => { if (focus) { const el = document.getElementById("lt-step-" + focus); if (el) { el.scrollIntoView({ block: "center" }); el.classList.add("lt-focus"); } window.App.liveFocus = null; } }, [focus]);
   if (!steps.length) return null;
   return (
-    <details className="k-panel k-sec lt-tr">
+    <details className="k-panel k-sec lt-tr" open={keepOpen || undefined}>
       <summary className="k-small"><ChatCircleText size={14} aria-hidden="true" /> <b>Transcript</b> · {steps.length} finished step{steps.length === 1 ? "" : "s"}</summary>
       <ol>
         {steps.map((st) => (
-          <li key={st.n}>
+          <li key={st.n} id={"lt-step-" + st.n}>
             <p className="lt-label">Step {st.n} · {nodeLabel(st.node)} · {st.outcome === "right" ? "checked right" : st.outcome === "right_after_repair" ? "right after " + st.repairs + " repair" + (st.repairs === 1 ? "" : "s") : st.outcome === "gap" ? "a missing foundation was added" : "open"}</p>
             <Md src={st.predict.stem} className="st-md" />
             <YourAnswer q={st.predict} a={st.predict.answer} graded={false} />

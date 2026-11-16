@@ -542,6 +542,30 @@ async function main() {
       } catch (e) { problems.push('F5: the practice screen failed: ' + e.message); }
     }
 
+    // Knowledge graph (F6): the Maps entry opens the seeded graph of the content folder's studies; a node shows its origin, evidence and
+    // memory; "Open the lesson" lands on the topic's Learn & digest; hiding keeps the record
+    {
+      try {
+        await page.evaluate(() => { window.App.liveOpen = null; window.App.practiceOpen = null; window.App.etutOpen = null; });
+        await page.click('.k-nav-item[data-tab="graph"]');
+        await page.waitForSelector('#tab-graph .gv-node', { timeout: 10000, state: 'attached' });
+        const counts = await page.evaluate(() => { const g = window.KGraph.build(window.App.S, { filter: 'all' }); return { nodes: g.nodes.length, chains: g.chains.length, svg: document.querySelectorAll('#tab-graph .gv-node').length, studies: window.KGraph.studiesOf(window.App.S).length }; });
+        const first = await page.evaluate(() => window.KGraph.build(window.App.S, { filter: 'all' }).nodes[0]);
+        // KARTOTEK_SHOTS=<folder>: keep a picture of the graph screen
+        if (process.env.KARTOTEK_SHOTS) { await page.waitForTimeout(1500); await page.screenshot({ path: path.join(process.env.KARTOTEK_SHOTS, 'knowledge-graph.png') }); }
+        await page.$eval('#tab-graph .gv-node[aria-label]', (el) => el.dispatchEvent(new MouseEvent('click', { bubbles: true })));
+        await page.waitForSelector('.kg-detail', { timeout: 5000 });
+        const detail = await page.$eval('.kg-detail', (d) => d.innerText);
+        await page.click('.kg-detail button:has-text("Open the lesson")');
+        await page.waitForTimeout(800);
+        const landed = await page.evaluate(() => ({ tab: window.App.tab, open: window.App.etutOpen, stage: window.App.etutOpen && window.App.S.etuts[window.App.etutOpen].progress.stage }));
+        if (!counts.nodes || counts.svg < counts.nodes) problems.push('F6: the graph did not draw every idea: ' + JSON.stringify(counts));
+        if (!/Comes from/.test(detail) || !/Evidence/.test(detail) || !/Memory/.test(detail)) problems.push('F6: the node detail is incomplete: ' + detail.slice(0, 200));
+        if (landed.tab !== 'etut' || !landed.open || landed.stage !== 'work') problems.push('F6: "Open the lesson" did not land on Learn & digest: ' + JSON.stringify(landed));
+        console.log('Knowledge graph: ' + counts.nodes + ' ideas and ' + counts.chains + ' chains from ' + counts.studies + ' studies drawn; a node showed its origin, evidence and memory; "Open the lesson" opened Learn & digest' + (first ? ' (' + first.study + ')' : ''));
+      } catch (e) { problems.push('F6: the knowledge graph failed: ' + e.message); }
+    }
+
     // Planning home and Euro apply without a folder (D2): Kartotek's own rows, what is missing, and a setup row instead of the app
     await clickMode('planning');
     await page.click('.k-nav-item[data-tab="home"]');

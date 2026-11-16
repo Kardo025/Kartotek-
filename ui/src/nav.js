@@ -8,7 +8,7 @@
 //   lesson                        End-of-lesson test (not exam-scoped)
 //   home                          Planning home (combined timeline)
 //   cents, tud                    exam overviews                               tud-apply   TU Delft application plan
-//   stats, euroapply              Planning                                     mindmaps, career, settings, algo   always visible
+//   stats, euroapply              Planning                                     mindmaps, graph, career, settings, algo   always visible
 
 export const EXAMS = [
   { id: "cents", label: "CEnT-S" },
@@ -26,7 +26,8 @@ export const STUDY_ITEMS = [
 
 // Planning mode entries (tab ids). The home page (combined timeline), the overview of each exam, its application page, Euro apply and Stats.
 export const PLANNING_IDS = ["home", "cents", "tud", "tud-apply", "euroapply", "stats"];
-export const ALWAYS_IDS = ["mindmaps", "career"];
+// "Maps" (decision D10): Mind maps and the Knowledge graph (task F6), visible in both modes like Career
+export const ALWAYS_IDS = ["mindmaps", "graph", "career"];
 export const SYSTEM_IDS = ["settings", "algo"];
 
 const SCOPED_RE = /^(cents|tud)-(study|etut|cards|mock)$/;

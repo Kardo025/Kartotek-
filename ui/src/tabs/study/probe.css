@@ -103,3 +103,5 @@
 .pr-levels li[data-o="given_up"], .pr-levels li[data-o="moved_on"] { background: var(--k-pill-relearning-t); border-color: var(--k-pill-relearning-t); }
 .pr-levels li[data-retest] { border-style: dashed; }
 .pr-levels li[data-disputed] { opacity: .35; }
+
+.lt-tr li.lt-focus { outline: 2px solid var(--k-accent); outline-offset: 6px; border-radius: 8px; }

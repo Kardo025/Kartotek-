@@ -63,7 +63,8 @@ export function createSession({ goal, et, kids, files }) {
   const S = App().S;
   const s = PL().newSession(S, { title: goal, goal_words: goal, attached: et ? { etut_id: et.etut_id, topics: kids } : null, now: Date.now() });
   if (files) s.files = files;
-  s.probe = KP().newProbe({ mode: "live", session_id: s.id, goal_words: goal, scope: et ? { kind: "topics", kids } : null, strands: et ? KP().strandsFor(et.package, { kind: "topics", kids }) : [] });
+  s.probe = KP().newProbe({ mode: "live", session_id: s.id, goal_words: goal, scope: et ? { kind: "topics", kids } : null, strands: et ? KP().strandsFor(et.package, { kind: "topics", kids }) : [],
+    known: et ? window.KGraph.topicEvidence(S, et) : {} });
   return s;
 }
 

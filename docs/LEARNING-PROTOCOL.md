@@ -431,6 +431,15 @@ What LearnHarness does not have and Kartotek keeps: the audited package and sour
 
 ## 13. As built
 
+### F6: knowledge graph (2026-11-19)
+
+Built as 3.10 says, with these choices inside it (code: `src\graph-core.js`; details in `docs\ARCHITECTURE.md` 10.0m):
+- **Seeding** without a model, computed at run time from every Study v2 package; ids stay stable across package updates. A relation whose units no other outcome covers has no premises (shown as a labelled self-link, so not drawn as an edge).
+- **Growth** from live sessions and notes (D15): the extractor proposes, the learner accepts, edits, links ("same idea") or rejects each idea and accepts or rejects each chain; nothing is saved without a decision. New ideas link to the existing records they are about; a chain with several premises is drawn through an implication node.
+- **View** (sidebar "Maps", D10): pan and zoom, "Foundations at the bottom" (layers by chain depth) or "By study" (columns), a filter by study, exam or "only my own ideas", search, and "Open the lesson" (the topic's Learn & digest) or "Open the session message" (the transcript at that step).
+- **Kartotek's addition:** each package node is coloured by its outcome's evidence state and shows its topic card's memory strength; learner nodes show session evidence and no memory.
+- **Entry points:** "Practise these" (F5) and the probe (F3) reads the evidence so that held topics need no question.
+
 ### F5: adaptive practice (2026-11-18)
 
 Built as 3.8 and 3.9 say, with these choices inside them (code: `src\practice-core.js`; details in `docs\ARCHITECTURE.md` 10.0l):
