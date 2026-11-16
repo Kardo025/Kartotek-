@@ -364,6 +364,46 @@ async function main() {
       }
     }
 
+    // Thinking and confidence (F1): answer through the screen with the slider and the thinking box; "I don't know" is a separate choice
+    {
+      const SID = 'c2-first';
+      const startOn = async (q) => {
+        await page.evaluate(({ id, q }) => {
+          const App = window.App, et = App.S.etuts[id], K = window.KCycle;
+          K.goto(et, 0, 0, 'apply', Date.now());
+          const idx = K.itemIndex(et.package, App.studyExtras && App.studyExtras[et.etut_id]);
+          et.progress.current = null;
+          K.startAttempt(et, idx[q], 'practice', Date.now());
+          App.EtutUI.commit(et); App.switchTab('etut'); App.goStudy(id); App.render();
+        }, { id: SID, q });
+        await page.waitForSelector('.cy-answer', { timeout: 8000 });
+      };
+      const last = () => page.evaluate((id) => { const S = window.App.S, a = S.etuts[id].progress.attempts.slice(-1)[0]; return { thinking: a.thinking, pct: a.confidence_pct, band: a.confidence, dk: a.dont_know, correct: a.result && a.result.correct, dsr: a.dsr && a.dsr.rating, reviews: S.reviews.length, miscon: !!(S.etuts[id].progress.misconceptions || {}).k1 }; }, SID);
+      try {
+        await startOn('i2');
+        const nothing = await page.$eval('.cy-answer .k-btn.primary', (b) => b.disabled).catch(() => null);
+        await page.click('.cy-opt >> nth=0');
+        await page.fill('.th textarea', 'I looked for the rule about both switches.');
+        const still = await page.$eval('.cy-answer .k-btn.primary', (b) => b.disabled);
+        await page.focus('.cf-range');
+        await page.keyboard.press('3');
+        const shown = await page.$eval('.cf-val', (e) => e.innerText);
+        await page.click('.cy-answer .k-btn.primary');
+        await page.waitForTimeout(600);
+        const a = await last();
+        if (nothing !== true || still !== true) problems.push('F1: the Check button was enabled before a confidence was set');
+        if (!/90/.test(shown)) problems.push('F1: key 3 did not set 90: ' + shown);
+        if (a.thinking !== 'I looked for the rule about both switches.' || a.pct !== 90 || a.band !== 'sure') problems.push('F1: the attempt did not store thinking and a numeric confidence: ' + JSON.stringify(a));
+        await startOn('i4');
+        await page.click('.cf button[data-act="dontknow"]');
+        await page.click('.cy-answer .k-btn.primary');
+        await page.waitForTimeout(600);
+        const d = await last();
+        if (!d.dk || d.correct !== false || d.pct !== null || d.band !== null || d.dsr !== 'again' || d.miscon) problems.push('F1: "I don\'t know" was not recorded as a gap sent as Again: ' + JSON.stringify(d));
+        console.log('Thinking and confidence: an answer stored its thinking text and 90 (Sure); "I don\'t know" was kept as a gap and sent as Again without a misconception flag');
+      } catch (e) { problems.push('F1: the answer screen failed: ' + e.message); }
+    }
+
     // Planning home and Euro apply without a folder (D2): Kartotek's own rows, what is missing, and a setup row instead of the app
     await clickMode('planning');
     await page.click('.k-nav-item[data-tab="home"]');

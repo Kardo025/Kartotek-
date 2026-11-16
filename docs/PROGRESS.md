@@ -494,7 +494,30 @@ D1 generated questions never move the seven states (shown as "session evidence")
 - The answer to **Ask about this card** is not saved. Say if you want a note per card.
 - Still open from earlier: the C4 draft release is unpublished, the placeholder commit-author email, and D1 and D2 are pushed but not tagged.
 
-## 2026-11-16 · Task F1: thinking fields, confidence 0-100 (branch `task/f1-thinking-confidence-prompts`) - UNFINISHED
+## 2026-11-16 · Task F1: thinking fields, confidence 0-100, editable prompts (branch `task/f1-thinking-confidence-prompts`)
 
-Stopped at the usage limit. **Done:** decisions D1-D17 recorded (all recommendations accepted) in `docs/LEARNING-PROTOCOL.md`; the ten agreed changes applied to `STUDY-RULES.md`; engine (`confBand`, `confidenceOf`, thinking, "I don't know", help log, progress `cv 3` migration, reading thinking); calibration (`KMeta.confidenceRecords`, `confidenceCurve`); UI (confidence slider and thinking box in Applying and the final test, "Thinking while reading" tab, slider in lesson tests and the legacy runner, banded and fine calibration in Stats); prompt files now read with CRLF. `npm test`: engine 65/65 and every other suite pass (without the real backup). Also merged the unmerged E2 branch into `main` first (E3/F0 had been merged without it).
-**Not done:** run `KARTOTEK_BACKUP=<export> npm test` (the E2 and content tests were adjusted for cv 3 but not yet run on your real data); `npm run smoke`; check the Settings, Models, Prompts panel (built in E1, so item 3 should already be met); check the slider and thinking box in the real window; the `Explain` snapshot fixture was regenerated ("My thinking"); README/CLAUDE.md notes.
+### What changed
+- Before starting: merged `task/f0-learning-protocol` into `main`; `task/e2-model-in-study` had never been merged (E3 and F0 went in without it), so I merged it too (conflicts were only "keep both" in the docs; the built `ui.js` and `ui.css` were rebuilt).
+- **Decisions:** you accepted every recommendation (D1-D17); recorded in `docs\LEARNING-PROTOCOL.md` section 11, and the ten proposed changes of its section 9 are applied to `STUDY-RULES.md` (v2.1, v2.1a, v2.2 rule 8, v2.4, v2.5, v2.8, v2.9, v2.11, v2.13; the Feynman-feedback rule 4 and the stale "Get feedback is disabled" text are corrected). D16 (shared prompt fragments, `includes:`) is still not built: E2 did not do it; it stays open for the first F task that needs one.
+- **Thinking fields:** an optional "Your thinking" box (collapsible, remembers open/closed, a Dictate button that focuses it and shows `Win + H`) on every answer in Applying and the final test, free recall included. Saved as `attempt.thinking` (and mirrored into `response.working`, 4000 characters at most), never required, never evidence, in exports with the rest of the state. A "Thinking while reading" tab in Learn & digest saves notes as versions per topic (`progress.reading_thinking`). The priming box is labelled as thinking. The component (`ui\src	abs\study\Thinking.jsx`) is the one probe and practice will use.
+- **Confidence 0-100** (`ConfidenceSlider.jsx`): no default position; keys 1, 2, 3 set 20, 60, 90; arrows move by 5. Used in Applying, the final test, lesson tests and the legacy v1 runner. The number is stored in `confidence_pct` and its band in `confidence` (Sure 80-100, Unsure 40-79, Guess 0-39), so the scheduler and the lesson scores read exactly what they read before (tested for all 101 values). Old records keep their word and get no number.
+- **"I don't know"** (D13): a button beside the slider (Applying and final test, not free recall). Counted as not correct, no confidence, eligible as Again without the misconception flag, left out of calibration. Lesson tests keep their own "Don't know" (score 0).
+- **Help log:** `attempt.help[]` records every hint, step, solution and lesson with its time; the old counters are still written.
+- **Migration:** progress `cv 2 -> 3` in `KCycle.migrate`: adds `reading_thinking`, `topic_mode`, `live`, `skipped` (the last three are for F3/F4) and copies an attempt's non-empty `working` to `thinking`. Nothing is removed or rewritten.
+- **Stats:** the banded table now counts legacy answers, Study v2 items (verified, graded, not follow-ups) and lesson tests together; a new panel shows the fine view for answers with a number and no help: ten-point bins with numerators and denominators, mean confidence, accuracy and the Brier score.
+- **Editable prompts:** already built in E1 (item 3): Settings, Models, Prompts lists every file, shows the default, edits, resets, flags a changed default, overrides live in the user-data folder. One fix: prompt files with Windows line endings now read the same as Unix ones.
+- The Explain request for Claude Code now says "My thinking" (and the stated confidence or "I don't know"); its snapshot test was regenerated.
+
+### Verification
+| Check | Result |
+| --- | --- |
+| `KARTOTEK_BACKUP=<your export> npm test` | everything passes: engine 65/65 (7 new F1 scenarios), whole state identical on your backup, review queue identical, **13 Study v2 progress records migrate with only `cv` 2 -> 3 and added `thinking` differing**; your file's SHA-256 is unchanged |
+| `npm run smoke`, real Electron window | passes, with a new block: an answer given through the screen stored its thinking text and 90 (Sure); Check stayed disabled until a confidence was set; key 3 set 90; "I don't know" was kept as a gap and sent as Again with no misconception flag; Algorithm tab 65/65; 0 unexpected console errors |
+
+### How you can test it
+`npm start`, Study, Applying: write in "Your thinking", move the slider (or press 1, 2, 3), Check. Try "I don't know" on another question. Learn & digest, "Thinking while reading". Stats, Metacognition: the new calibration panel fills as you answer with the slider. Your real data opens unchanged.
+
+### Open questions
+- Old confidence words never get a number, so the fine panel starts empty for your existing answers.
+- Calibration for generated questions (a separate view in the protocol) has nothing to show until F3 and later add generated questions.
+- Still open from earlier: the C4 draft release, the placeholder author email, tagging, and the Anthropic key you pasted in chat (replace it in the Console).
