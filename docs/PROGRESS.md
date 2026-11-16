@@ -620,7 +620,7 @@ I did not spend your Claude Code subscription or an API key on a real call. To c
 5. For a live session: Study library, **Live sessions**, **New live session**.
 
 ### Open questions
-- **Checking keys:** should the probe check each key with a second call before showing the question? The model would solve its own question without the key, as the writing jobs do. It roughly doubles the calls per probe; with a strong Claude model it may not be worth it.
+- **Checking keys (decided 2026-11-16: not for now).** You chose not to add a second call that checks each key; "The key is wrong" stays the safeguard. The original question was: should the probe check each key with a second call before showing the question? The model would solve its own question without the key, as the writing jobs do. It roughly doubles the calls per probe; with a strong Claude model it may not be worth it.
 - **Skipping after a gap:** should "Skip this topic" stay allowed when Applying has already shown a gap on that topic after the probe? It is allowed now, and the map shows "gap found". D5 does not cover this case.
 - **Exam scope:** live sessions are offered in the Study library only, not inside the CEnT-S / TU Delft scope. Sessions attached to exam studies can be started from the Study library (D12).
 - **Still open from earlier:** the C4 draft release, the placeholder author email, and the Anthropic key you pasted in chat (replace it in the Console).
