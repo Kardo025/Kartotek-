@@ -784,5 +784,5 @@ I did not spend your Claude Code subscription or an API key on a real call. To c
 3. With a model in the strong slot: under "Grow the graph", press **Propose ideas** for one of your live sessions (or **Add from notes**), review, then **Save my decisions**. Your new ideas appear with dashed links to the study's ideas.
 
 ### Open questions
-- **Default view:** "All studies" in layers is a dense overview (most outcomes have no chain yet). Should the screen open on the study you used last instead?
+- **Default view (decided 2026-11-19: keep "All studies").** The screen keeps opening on all studies; the filter narrows it to one study or exam.
 - **Still open from earlier:** the "Generated questions" calibration view, photos in practice, the C4 draft release, the placeholder author email, and the Anthropic key you pasted in chat.
