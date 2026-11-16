@@ -4,8 +4,25 @@
     {
       "name": "kartotek",
       "runtimeExecutable": "python",
-      "runtimeArgs": ["-m", "http.server", "8765", "--bind", "127.0.0.1"],
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8765",
+        "--bind",
+        "127.0.0.1"
+      ],
       "port": 8765
+    },
+    {
+      "name": "kartotek-preview",
+      "runtimeExecutable": "node",
+      "runtimeArgs": [
+        "scripts/bridge-preview.cjs",
+        "--persist",
+        "--port",
+        "8770"
+      ],
+      "port": 8770
     }
   ]
 }
