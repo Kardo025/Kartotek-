@@ -930,6 +930,55 @@
     }]
   );
 
+  // ------------------------------------------------------------------ live teaching (task F4)
+  function liveReady() {
+    var PL = global.KPlan, st = KStore.emptyState(), s = PL.newSession(st, { goal_words: 'Understand x', now: NOW });
+    var node = function (id, kind, deps) { return { id: id, label: 'Node ' + id, kind: kind, depends_on: deps, units: [], why: '', mode: 'socratic' }; };
+    s.status = 'plan';
+    PL.addPlanVersion(s, { approach: 'a', nodes: [node('held', 'held', []), node('step', 'learn', ['held']), node('goal-x', 'goal', ['step'])], uncertain: [] }, { now: NOW });
+    PL.acceptPlan(s, NOW);
+    return { st: st, s: s };
+  }
+  var LT_EMPTY = { resolves: '', md: '', refs: [], uncertain: [], gap: { label: '', why: '', before: '' } };
+  function ltPredict(node, stem) { return { phase: 'predict', node: node, question: { kind: 'open', stem: stem, options: [], key: '', why: '' }, teach: LT_EMPTY, check: { stem: '', options: [], key: '' }, done_summary: '' }; }
+  function ltTeach(node, n) { return { phase: 'teach', node: node, question: { kind: 'open', stem: '', options: [], key: '', why: '' }, done_summary: '', teach: { resolves: 'About your idea.', md: 'The step ' + n + '.', refs: [], uncertain: [], gap: { label: '', why: '', before: '' } }, check: { stem: 'Check ' + n, options: [{ id: 'A', text: 'yes', wrong_model: '' }, { id: 'B', text: 'no', wrong_model: 'w' }], key: 'A' } }; }
+  tests.push(
+    ['Live teaching: predict → teach → check in turns; the check waits for "read"; a miss is repaired before the step closes; the position follows; nothing reaches the scheduler', function () {
+      var KL = global.KLive, r = liveReady(), s = r.s, st = r.st, ph = [];
+      ph.push(KL.phase(s));
+      KL.applyReply(s, 'predict', ltPredict('step', 'What has to give?'), { now: NOW });
+      ph.push(KL.phase(s));
+      KL.answerPredict(s, { text: 'the rule', confidence_pct: 50, thinking: 't' }, NOW);
+      ph.push(KL.phase(s));
+      KL.applyReply(s, 'teach', ltTeach('step', 1), { now: NOW, rng: function () { return 0.1; } });
+      ph.push(KL.phase(s));
+      KL.markRead(s, NOW);
+      var a = KL.attemptOf(KL.lastStep(s));
+      KL.answerCheck(s, { choice: a.options.filter(function (o) { return o.id !== a.key; })[0].id, confidence_pct: 80 }, NOW);
+      KL.continueStep(s, NOW);
+      ph.push(KL.phase(s));
+      KL.applyReply(s, 'repair', ltTeach('step', 2), { now: NOW });
+      KL.markRead(s, NOW);
+      var b = KL.attemptOf(KL.lastStep(s));
+      KL.answerCheck(s, { choice: b.key, confidence_pct: 90 }, NOW);
+      KL.continueStep(s, NOW);
+      ph.push(KL.phase(s));
+      var stp = KL.lastStep(s);
+      return { pass: ph.join() === 'predict,answer_predict,teach,read,repair,predict' && stp.outcome === 'right_after_repair' && stp.repairs === 1 && s.plan.position === 'step' && st.reviews.length === 0 && Object.keys(st.cards).length === 0,
+        detail: 'phases: ' + ph.join(' → ') + ' · outcome ' + stp.outcome + ' · position ' + s.plan.position };
+    }],
+    ['Live teaching: "done" is refused until the goal node is checked; pausing keeps the phase and resuming returns to it', function () {
+      var KL = global.KLive, s = liveReady().s;
+      var early = KL.checkReply(s, 'predict', { phase: 'done' }, {});
+      KL.applyReply(s, 'predict', ltPredict('step', 'Q1'), { now: NOW });
+      KL.pause(s, NOW + 1);
+      var paused = KL.phase(s), call = KL.needsCall(s);
+      KL.resume(s, NOW + 2);
+      return { pass: !early.ok && paused === 'paused' && call === null && KL.phase(s) === 'answer_predict',
+        detail: 'done refused: ' + !early.ok + ' · paused phase ' + paused + ' · after resume ' + KL.phase(s) };
+    }]
+  );
+
   // ------------------------------------------------------------------ Find my level and the plan map (task F3)
   // A two-part package (p2 builds on p1), as plain data for KProbe / KPlan (no import needed)
   function probePkg() {

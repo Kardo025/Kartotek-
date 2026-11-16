@@ -65,3 +65,32 @@
 .pb-q-opts { list-style: none; margin: 4px 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
 .pb-q-opts li[data-key] { color: var(--k-pill-review-t); }
 .pb-qs li[data-disputed] > .st-md { text-decoration: line-through; text-decoration-color: var(--k-muted); }
+
+/* step-by-step teaching (task F4) */
+.lt-step { display: flex; flex-direction: column; gap: 14px; }
+.lt-block { display: flex; flex-direction: column; gap: 8px; padding: 12px 14px; border: 1px solid var(--k-line); border-radius: 12px; background: var(--k-raised); }
+.lt-teach { border-left: 3px solid var(--k-accent); }
+.lt-check { border-left: 3px solid var(--k-line-strong); }
+.lt-label { display: inline-flex; align-items: center; gap: 6px; margin: 0; font-size: 12.5px; font-weight: 650; color: var(--k-muted); text-transform: uppercase; letter-spacing: .02em; }
+.lt-stem { font-size: 1.02rem; }
+.lt-md { font-size: 1rem; line-height: 1.6; max-width: 70ch; }
+.lt-resolves { padding: 8px 10px; border-radius: 8px; background: var(--k-tile); font-size: .95rem; }
+.lt-resolves b { display: block; font-size: 12px; color: var(--k-muted); margin-bottom: 2px; }
+.lt-refs { margin: 0; }
+.lt-your { padding: 6px 0; }
+.lt-quote { font-style: italic; }
+.lt-thinking { margin-top: 2px; white-space: pre-wrap; }
+.lt-mark { margin-left: 6px; color: var(--k-pill-relearning-t); font-weight: 600; }
+.lt-mark.ok { color: var(--k-pill-review-t); }
+.lt-verdict { display: flex; flex-direction: column; gap: 4px; margin: 0; }
+.lt-verdict p { margin: 0; display: flex; gap: 6px; align-items: baseline; flex-wrap: wrap; }
+.lt-verdict.ok { flex-direction: row; align-items: center; gap: 6px; color: var(--k-pill-review-t); font-weight: 600; }
+.lt-verdict.bad svg { color: var(--k-pill-relearning-t); }
+.lt-unsure { padding: 8px 10px; border-radius: 8px; border: 1px dashed var(--k-line-strong); }
+.lt-unsure p { display: flex; gap: 6px; align-items: center; margin: 0 0 4px; }
+.lt-unsure ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
+.lt-tr ol { display: flex; flex-direction: column; gap: 14px; padding-left: 20px; }
+.lt-tr-teach { margin: 6px 0 0; padding-left: 10px; border-left: 2px solid var(--k-line); }
+.lt-tr .st-md p { margin: 2px 0; }
+.cy-live-switch { display: flex; justify-content: flex-end; }
+.cy-live-mode { border-left: 3px solid var(--k-accent); }

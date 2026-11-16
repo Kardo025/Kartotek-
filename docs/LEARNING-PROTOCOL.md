@@ -431,6 +431,17 @@ What LearnHarness does not have and Kartotek keeps: the audited package and sour
 
 ## 13. As built
 
+### F4: step-by-step teaching (2026-11-17)
+
+Built as 3.7 says, with these choices inside it (code: `src\live-core.js`; details in `docs\ARCHITECTURE.md` 10.0k):
+- **Start live session** (Study library) with three sources: a topic in the learner's words (free), the learner's own files (read locally; the session stores names, SHA-256 and page counts; the text is cached in the user-data folder, never in the learner data or backups), or a study (attached; the teacher may use only the chosen topics' units and cites them). "Study this topic live" in Learn & digest starts an attached session on one topic (1.3).
+- **The check is written with the teaching** and shown only after "I've read it"; checks are closed and graded in code; a miss is always repaired (taught another way, a new case) before the next step; a repair may report a missing foundation, which `KPlan.insertGap` adds to the map as a new version, taught next.
+- **The map follows the position:** each prediction names its node; nodes with a checked step are drawn as "taught and checked".
+- **The end:** "done" is accepted only after the goal node has a step whose check was right; then the self-report of D14 ("Does the goal now feel obviously true?"): yes ends the session, "not yet" continues teaching and tells the teacher so.
+- **Evidence (D1):** no step creates or rates a card or changes an outcome's state; the report of an attached study lists each session as "session evidence" (steps, checks right without help, after repair, missing foundations added).
+- **Unsure facts:** the teacher lists them per explanation; the screen shows them as "The teacher is not sure about" and "Check this later" queues them for the researcher (F7).
+- **Pause and resume** are explicit (`session.pauses`), and the current turn is derived from the saved data, so a restart in the middle of any turn resumes there.
+
 ### F3: probe and plan map (2026-11-16)
 
 Built as 3.5 and 3.6 say, with these choices inside them (code: `src\probe-core.js`, `src\plan-core.js`, `src\graph-core.js`; details in `docs\ARCHITECTURE.md` 10.0j):

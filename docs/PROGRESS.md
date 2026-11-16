@@ -624,3 +624,58 @@ I did not spend your Claude Code subscription or an API key on a real call. To c
 - **Skipping after a gap (decided 2026-11-16: not allowed).** You decided that a topic whose Applying answers show a gap cannot be skipped, whatever the probe said. Built the same day: `KPlan.skipBlock` refuses it, the map detail shows the reason instead of "Skip this topic", and both the probe tests and the smoke test check it.
 - **Exam scope:** live sessions are offered in the Study library only, not inside the CEnT-S / TU Delft scope. Sessions attached to exam studies can be started from the Study library (D12).
 - **Still open from earlier:** the C4 draft release, the placeholder author email, and the Anthropic key you pasted in chat (replace it in the Console).
+
+## 2026-11-17 · Task F4: step-by-step teaching (branch `task/f4-live-teaching`)
+
+### What changed
+- **Before starting:** merged `task/f3-probe-plan-map` into `main` (your prompt is the OK) and branched from `main`.
+- **Start live session** (Study library, "Live sessions"). Your goal goes in your own words, grounded in one of three sources:
+  - **Nothing:** your own topic.
+  - **Your own files:** PDF, .pptx, .docx or text, read on this PC. Only the file names, fingerprints and page counts are saved with your data; the text is cached in the app's own folder and never goes into backups.
+  - **A study:** the chosen topics. The teacher may use only their source units and cites their pages.
+  - The probe and the plan come first, as in F3.
+- **Study this topic live** (Learn & digest of any Study v2 topic): starts a live session on that topic's units. The lesson stays visible; Applying and Evaluating are unchanged. "Back to reading" keeps the session.
+- **The loop, one reasoning step per turn:**
+  1. **Predict:** a question about the next step before it is taught. You answer multiple choice or in your own words, with thinking and the 0–100 confidence slider, or "I don't know".
+  2. **Teach:** a short explanation that first resolves your prediction, then teaches one step, citing its sources. Code refuses anything over 220 words; the prompt asks for about 150.
+  3. **Check:** shown only after "I've read it". It is a closed question that applies the step to a new case, and Kartotek grades it against the key fixed in advance.
+  - **A miss** shows which wrong idea your choice fits. "Teach it another way" then repairs the step: a new explanation and a new case, before anything is built on it.
+  - **A missing foundation:** if a repair finds one, it is added to the map as a new version and taught first.
+- **The map follows you:** "You are here" moves with each step, and checked nodes turn "taught and checked". "Change the plan" opens the planner again; "Back to teaching" returns without a change.
+- **The end:** the teacher can finish only after the goal node has a check answered right. You are then asked "Does the goal now feel obviously true?" (D14). "Not yet" keeps teaching.
+- **Pause and Resume:** in the session header and in the Study library. Every turn is saved as it happens, so closing the app in the middle of a turn resumes at that turn; a model request lost in the restart is simply asked again.
+- **The transcript:** every finished step with its prediction, your answer, thinking and confidence, the explanations, the checks and your answers, and who wrote each part.
+- **Rules kept:**
+  - nothing from a live session reaches the scheduler or the outcome states (D1);
+  - the study's report lists each attached session as "session evidence" (steps, checks right without help, after a repair);
+  - claims the teacher is unsure of are shown as "The teacher is not sure about…", with **Check this later**, which queues them for the researcher of F7 (`session.research`, status "queued").
+- **Prompt:** `prompts\teacher.md` version 3, with a schema. It includes the shared voice, accuracy, thinking, confidence and side-conversation fragments.
+
+### Verification
+| Check | Result |
+| --- | --- |
+| `KARTOTEK_BACKUP=<your export> npm test` | Everything passes. **Engine:** 73/73 (2 new scenarios). **Live teaching tests:** 10/10. They cover a whole session of ten steps through the prompt file and the model service with a fake provider, including a repair, a missing foundation inserted, the position, "done" only after the goal, the self-report, nothing in the reviews and no learner text in the usage log. They also cover refusals, a restart in the middle of every phase, pause and resume, own files (read, cached, cited by page label), the research hook and the report row. **Your backup:** unchanged (same SHA-256), whole state identical. |
+| `npm run smoke`, real Electron window | Passes. A new F4 block answers a prediction on screen (its text, thinking and 60 % were saved), pauses, **reloads the window** (the data files are read again) and resumes at the same turn. Algorithm tab 73/73; 0 unexpected console errors. |
+| **Done when (verified with a scripted learner, see below)** | **Setup:** your dsd-1 study (DSD lectures 1–3), topic "Theorems of several variables, proofs and counterexamples", started with **Study this topic live** and run through the real screen in the preview (its own profile, never your data). Model: **gpt-oss:20b on this PC**, free. **Probe and plan:** 9 probe questions, then the planner's map (4 held nodes, 6 to learn, the goal). One planner reply failed the unit check twice; "Try again" worked. **Teaching:** **10 steps**, 9 checks right the first time and 1 right after a repair (I missed step 2 on purpose). Explanations were 78–144 words, each citing the study's units (U38–U43). **Restart:** after step 5 I **stopped the preview server** (the app quit), started it again and opened the session from the Study library ("Teach · 5 steps", Continue). It resumed at the same turn, with the transcript and "You are here" intact, and the request lost in the restart was asked again. **End:** the session finished with "Yes", and the report of dsd-1 shows it as session evidence: 10 steps, 9 without help, 1 after a repair. 34 model calls, free; no review event. |
+
+### Honest notes
+- **The learner was scripted, not you:** the done-when asks that you complete a session; I proved the loop, the saving and the restart, not how the teaching feels. Please run one yourself (below).
+- **Teaching quality with a 20B local model:**
+  - The steps were correct but plain.
+  - The first prediction was a meta question ("what should we teach next?").
+  - One check used A + B = 1 as if it were an identity.
+  - Steps 8–10 repeated the absorption law after my "not yet". That exposed a real bug, now fixed and tested: the "not yet" note went to the teacher on every step, so it never finished.
+  - A stronger model (Claude in the strong slot) should do much better. The plan and teaching rules do not change.
+- **Not tested on screen:** reading your own files. The picker is a native dialog that the automation cannot drive. The reading, caching and page citations are covered by the tests, using a text file.
+
+### How you can test it
+1. `npm start`, then Study, Live sessions, **Start live session**, and choose **A study** (or **My own files** with a lecture PDF). Alternatively: open a topic, Learn & digest, **Study this topic live**.
+2. Answer the probe, accept the plan, and go through at least eight steps, writing your thinking.
+3. Press **Pause**, close the app, start it again, and press **Resume** in the Study library.
+4. The study's report (End) lists the session under "How you learned".
+
+### Open questions
+- **Side questions:** not built yet (F7). The teacher prompt already reads them when they exist.
+- **Calibration view:** the "Generated questions" calibration view is still not built. Probe, prediction and check answers with confidence are stored for it (`KLive.confidenceRecords`).
+- **Lost file text:** if the cached text of an own-files session is deleted, the session asks you to start again on the files. Re-choosing the same files for the same session could be added if you need it.
+- **Still open from earlier:** the C4 draft release, the placeholder author email, and the Anthropic key you pasted in chat (replace it in the Console).

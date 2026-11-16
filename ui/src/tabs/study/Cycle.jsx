@@ -14,6 +14,7 @@ import { QuestionsList } from "./QList.jsx";
 import Item from "./cycle/Item.jsx";
 import { FinalPlan, FinalRun, Report } from "./cycle/Final.jsx";
 import { FindMyLevel, PlanMapPanel } from "./PlanMap.jsx";
+import { createSession, openSession } from "./Live.jsx";
 import { A, KC, KE, EU, extrasOf, itemsOf, partOf, save, refsText, criterionText, when } from "./cycle/lib.js";
 import "./cycle/cycle.css";
 
@@ -276,6 +277,7 @@ function Workspace({ et }) {
   return (
     <div className="cy-work">
       <div className="cy-lesson">
+        <LiveSwitch et={et} k={k} />
         <section className="k-panel k-sec cy-objective">
           <p className="cy-kicker">Part {pr.part + 1} · Topic {ti + 1} of {part.kazanimlar.length} · Learn & digest</p>
           <div className="cy-obj-head">
@@ -632,5 +634,44 @@ function Evaluate({ et }) {
       <p className="k-small k-muted">Topic cycles complete: <b className="k-num">{done}/{all.length}</b>{K.cycleDone(et, k.kazanim_id) ? " (this one included)" : ""}. The final test opens when all are complete.</p>
       <Btn kind="primary" onClick={() => go(et)}>{label}<ArrowRight size={17} weight="bold" aria-hidden="true" /></Btn>
     </section>
+  );
+}
+
+// The topic mode (task F4, LEARNING-PROTOCOL 1.3): a topic can be studied live instead of by reading. "Study this topic live" opens a
+// session attached to this topic (its units and what it builds on); the lesson stays here, Applying and Evaluating are unchanged, and
+// switching back to the cycle keeps the session and its transcript.
+function LiveSwitch({ et, k }) {
+  const App = A(), S = App.S, pr = et.progress, kid = k.kazanim_id;
+  const mr = useModelReady("strong");
+  pr.topic_mode = pr.topic_mode || {}; pr.live = pr.live || {};
+  const s = pr.live[kid] && S.sessions && S.sessions[pr.live[kid]];
+  const keep = () => App.store.commit({ meta: true, etuts: [et.etut_id] });
+  if (pr.topic_mode[kid] === "live" && s) {
+    const sum = window.KLive.summary(s);
+    return (
+      <section className="k-panel k-sec cy-live-mode">
+        <p className="cy-kicker">This topic is studied live</p>
+        <p className="k-small">{s.status === "done" ? "The session is complete" : s.status === "paused" ? "The session is paused" : "Session in progress"}{sum.steps ? ": " + sum.steps + " step" + (sum.steps === 1 ? "" : "s") + ", " + sum.right_first + " checks right the first time" : ""}. The lesson below stays available; Applying comes next as usual.</p>
+        <div className="cy-actions">
+          <Btn size="sm" kind="primary" onClick={() => openSession(s.id, et.etut_id)}>{s.status === "done" ? "Open the session" : "Continue the session"}<ArrowRight size={14} weight="bold" aria-hidden="true" /></Btn>
+          <Btn size="sm" onClick={() => { pr.topic_mode[kid] = "cycle"; keep(); App.render(); }} title="The session and its transcript are kept.">Back to reading</Btn>
+        </div>
+      </section>
+    );
+  }
+  if (!mr.ready) return null;
+  const start = () => {
+    let sess = s;
+    if (!sess) { sess = createSession({ goal: "Understand \"" + k.title + "\" well enough to apply it", et, kids: [kid] }); pr.live[kid] = sess.id; }
+    pr.topic_mode[kid] = "live";
+    keep();
+    openSession(sess.id, et.etut_id);
+  };
+  return (
+    <div className="cy-live-switch">
+      <Btn size="sm" onClick={start} title="A live session on this topic's source units: a short probe, a plan, then one reasoning step at a time with your predictions and checks. Nothing goes to your reviews.">
+        {s ? "Continue this topic live" : "Study this topic live"}<ArrowRight size={14} weight="bold" aria-hidden="true" />
+      </Btn>
+    </div>
   );
 }

@@ -136,6 +136,7 @@ export function Report({ et }) {
           <li>{p.feynman_versions} saved explanation version{p.feynman_versions === 1 ? "" : "s"}; {p.maps} linked mind map{p.maps === 1 ? "" : "s"}.</li>
           <li>{p.attempts} answers, {p.assisted} with help ({p.hints} hint{p.hints === 1 ? "" : "s"}); {p.explains} explanation request{p.explains === 1 ? "" : "s"}; {p.disputed} reported question{p.disputed === 1 ? "" : "s"}.</li>
           <li>{p.sent} answer{p.sent === 1 ? "" : "s"} sent to your reviews.</li>
+          {(p.live || []).map((x) => <li key={x.id}>Live session "{x.title}": {x.steps} step{x.steps === 1 ? "" : "s"}, {x.right_first} check{x.right_first === 1 ? "" : "s"} right without help, {x.after_repair} after a repair{x.gaps ? ", " + x.gaps + " missing foundation" + (x.gaps === 1 ? "" : "s") + " added" : ""} (session evidence: not in the states above, not sent to your reviews).</li>)}
         </ul>
         <p className="k-small k-muted">This describes the path; it does not show which technique caused a result.</p>
       </section>

@@ -193,7 +193,7 @@ export function ProbeResult({ probe, title, compact, onChange }) {
           </motion.li>
         ))}
       </ol>
-      {probe.source !== "self" && probe.questions.length > 0 && (
+      {probe.source !== "self" && (probe.questions || []).length > 0 && (
         <details className="k-small pb-qs" onToggle={(e) => setOpenQ(e.currentTarget.open)}>
           <summary>The questions and your answers</summary>
           {openQ && (
