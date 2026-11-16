@@ -786,3 +786,42 @@ I did not spend your Claude Code subscription or an API key on a real call. To c
 ### Open questions
 - **Default view (decided 2026-11-19: keep "All studies").** The screen keeps opening on all studies; the filter narrows it to one study or exam.
 - **Still open from earlier:** the "Generated questions" calibration view, photos in practice, the C4 draft release, the placeholder author email, and the Anthropic key you pasted in chat.
+
+## 2026-11-20 · Task F7: side questions and the researcher (branch `task/f7-side-research`)
+
+### What changed
+- **Before starting:** merged `task/f6-knowledge-graph` into `main` (your prompt is the OK); branched from `main`.
+- **Side questions ("Ask about this"):** a floating button opens a drawer on Learn & digest, Applying (Practice mode), the live teaching step and the practice problem.
+  - **Context:** what is on screen. Learn & digest sends the topic's blocks with their refs ("block 1", …) and the cited units. An open item, check or problem goes without its key or solution; they are added only once it is answered.
+  - **Answers** are brief (at most 260 words), cite only refs that were on screen (others are dropped), and are kept in your data (`progress.side`, or the session's `side`). An answer that goes beyond the source or that the model is unsure of carries a warning and a "Check this".
+  - **Help:** opening the drawer during an open attempt counts exactly like opening the lesson pane (`side_panel` help, assisted, not DSR-eligible; the reason says "side questions open"). It is not offered in "Check without help" or the final test.
+  - It never changes the main flow: no step, answer or phase moves because of it.
+- **The researcher ("Check this"):** a background job (Settings, Jobs) that checks one claim against the web and returns a brief: a verdict (supported, contradicted, unclear), a short summary, findings with numbered sources, and each source with its title, link and a short quote.
+  - **How it searches:** the strong slot's web search when its provider has one (Anthropic), else a **Brave Search API key** you set in Settings → Models → Research (stored encrypted like the model keys; never shown again, logged or backed up). With a key, Kartotek runs three searches itself and the brief may cite only those results.
+  - **Links:** every source link is opened from your PC and marked "link answers" or "link did not answer".
+  - **Rules:** no source, no verdict: a brief without sources is shown as "no sources". A verdict other than "unclear" needs a source; quotes are at most 25 words. A reply that breaks a rule gets one repair.
+  - **Hidden** everywhere when neither a web-searching provider nor a key is set.
+- **Where "Check this" appears:**
+  - Explain (each explanation, the claim editable);
+  - live teaching: the explanation, and each claim the teacher marks unsure (without research the old "keep to check later" queue stays);
+  - practice: the coach's new "unsure" list and the solution;
+  - side answers beyond the source or unsure;
+  - writing jobs: "Check a fact in this draft" on a saved draft.
+- **Requests and briefs** are kept in your data (`state.research.requests`) and filled in when the job ends, also after a restart.
+
+### Verification
+| Check | Result |
+| --- | --- |
+| `KARTOTEK_BACKUP=<your export> npm test` | Everything passes. **Engine:** 79/79 (2 new scenarios: an open item without its key and the side panel as help; requests filled by a job, a brief without sources not a verdict). **Side and researcher tests:** 9/9 with a fake provider and a fake search service: contexts, answer checks, dropped refs, the job in both modes, brief checks and the repair, link checks, hidden without either mode. **Your backup:** unchanged. |
+| `npm run smoke`, real Electron window | Passes. A new F7 block: opening the panel during an attempt is recorded as help, never in the final test; an open item goes without its key; Settings shows research as "Not available". |
+| **Done when (1): a side question during a lesson is answered from the lesson's own content** | Yes, in the preview with gpt-oss:20b on this PC. dsd-1, topic k1, Learn & digest: "Which three design levels are there, and where do gates sit?" was answered with Architecture, Logic and Digital circuits, gates on the digital-circuits level, citing "block 1", not beyond the source. On Applying, opening the panel recorded `side_panel` help and the attempt became assisted. |
+| **Done when (2): "Check this" on one explanation returns a brief with working links** | **Not verified yet.** The preview has no web search: the local model has none, and there is no Anthropic key in the strong slot and no Brave key. I do not enter keys myself. |
+
+### How you can test it
+1. `npm start`, open a study topic, Learn & digest → **Ask about this**, ask something about the lesson.
+2. On Applying (Practice mode), open the panel before answering: the answer is then marked as given with help.
+3. Settings → Models → **Research**: add a Brave Search API key, or use an Anthropic key in the strong slot. Then on an explanation press **Check this**, and look at the brief in place (and in Settings, Jobs).
+
+### Open questions
+- **The real brief:** which web search do you want for the first real check (your Brave key, or the Anthropic strong slot, which is a paid call with web search)?
+- **Still open from earlier:** the "Generated questions" calibration view, photos in practice, the C4 draft release, the placeholder author email, and the Anthropic key you pasted in chat.
