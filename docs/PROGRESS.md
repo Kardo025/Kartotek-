@@ -421,7 +421,7 @@ Fixed after the run (tested): unit ids removed from learner text at save; "numbe
 5. `npm test`: all suites, including 15 writing-job tests (fake model) and the Ollama native-path test.
 
 ### Open questions
-- **Keep or delete `studies\dsd-lecture1-local`?** It is in your content folder as the evidence of this run; delete the folder if you do not want it in the library.
+- **`studies\dsd-lecture1-local` stays** in the content folder as the evidence of this run (your answer, 2026-11-16).
 - **Ollama on the NVIDIA GPU permanently:** setting the user environment variable `HIP_VISIBLE_DEVICES=-1` (and restarting Ollama) makes the tray app use the RTX 5070. That is your setting to make. The two models take about 37 GB (`ollama rm qwen3.6:35b-a3b` / `gpt-oss:20b` frees it).
 - **Smart App Control** blocked `electron.exe` again this afternoon (it allowed it this morning); `npm start` and `npm run smoke` cannot run while it does.
 - Not verified with a real provider: the lesson-test, mock-exam and mind-map jobs (tested with the fake model only), and an API-key provider.
