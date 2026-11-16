@@ -137,7 +137,7 @@ const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 // from an attempt's "working"); nothing else may differ
 const noE2 = (p) => {
   const c = JSON.parse(JSON.stringify(p));
-  ['followups', 'feynman_feedback', 'reading_thinking', 'topic_mode', 'live', 'skipped'].forEach((k) => { if (c && c[k] && !Object.keys(c[k]).length) delete c[k]; });
+  ['followups', 'feynman_feedback', 'reading_thinking', 'topic_mode', 'live', 'skipped', 'probes'].forEach((k) => { if (c && c[k] && !Object.keys(c[k]).length) delete c[k]; });
   if (c) delete c.cv;
   ((c && c.attempts) || []).forEach((a) => { delete a.thinking; });
   return c;

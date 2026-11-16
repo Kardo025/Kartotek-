@@ -1,8 +1,7 @@
 ---
 id: shared-accuracy
-title: Shared fragment: accuracy (draft)
+title: Shared fragment: accuracy
 version: 1
-status: draft
 adapted_from: LearnHarness 0.6.0, src/agent/prompts/shared/15-accuracy.md (Amos Blomqvist, AGPL-3.0-only)
 ---
 ## Accuracy: non-negotiable

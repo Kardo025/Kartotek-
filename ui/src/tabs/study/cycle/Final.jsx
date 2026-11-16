@@ -82,11 +82,13 @@ export function FinalRun({ et }) {
   );
 }
 
+// task F3: the probe column (LEARNING-PROTOCOL 3.5: "Probe before studying: held / edge / missing")
+const PROBE_WORD = { held: "held", edge: "first miss", missing: "not held", fragile: "shaky", gap: "missed below the floor", open: "not located" };
 const TONE = { not_assessed: "mid", uncertain: "warn", needs_work: "bad", assisted: "warn", independent: "ok", retained: "ok", transfer: "ok" };
 
 export function Report({ et }) {
   const App = A(), K = KC(), S = App.S, pkg = et.package, r = K.report(S, et, Date.now(), extrasOf(et)), p = r.process;
-  const partTitle = {};
+  const partTitle = {}, probed = r.rows.some((x) => x.probe || x.skipped);
   pkg.parts.forEach((x, i) => { partTitle[x.part_id] = "Part " + (i + 1); });
   return (
     <div className="cy-col">
@@ -100,11 +102,12 @@ export function Report({ et }) {
         <h3 className="cy-h3">What you learned</h3>
         <div className="k-table-wrap">
           <table className="k-table cy-report">
-            <thead><tr><th>Outcome</th><th>Criteria</th><th>Evidence</th><th>Next</th></tr></thead>
+            <thead><tr><th>Outcome</th>{probed && <th title="What Find my level found before you studied this topic. Shown beside the evidence, never part of it.">Before studying</th>}<th>Criteria</th><th>Evidence</th><th>Next</th></tr></thead>
             <tbody>
               {r.rows.map((row) => (
                 <tr key={row.id}>
                   <td><span className="k-small k-muted">{partTitle[row.part_id]} · {row.id}</span><br />{row.performance}</td>
+                  {probed && <td className="k-small">{row.probe ? PROBE_WORD[row.probe] || row.probe : <span className="k-muted">not probed</span>}{row.skipped ? <><br /><span className="k-muted">skipped after probe (held)</span></> : null}</td>}
                   <td className="k-small">{row.criteria.map((c) => (
                     <div key={c.id} className="cy-crit-res">
                       <span>{c.text}</span>
@@ -129,7 +132,7 @@ export function Report({ et }) {
       <section className="k-panel k-sec">
         <h3 className="cy-h3">How you learned</h3>
         <ul className="k-small cy-process">
-          <li>{p.topics != null ? p.topics + " topic" + (p.topics === 1 ? "" : "s") + " in " : ""}{p.parts} part{p.parts > 1 ? "s" : ""}; Evaluating deferred in {p.deferred} topic{p.deferred === 1 ? "" : "s"}.{p.left_final ? " You left the final test for a lesson " + p.left_final + " time" + (p.left_final > 1 ? "s" : "") + "; answers after that count as with help." : ""}</li>
+          <li>{p.topics != null ? p.topics + " topic" + (p.topics === 1 ? "" : "s") + " in " : ""}{p.parts} part{p.parts > 1 ? "s" : ""}; Evaluating deferred in {p.deferred} topic{p.deferred === 1 ? "" : "s"}.{p.skipped && p.skipped.length ? " " + p.skipped.length + " topic" + (p.skipped.length === 1 ? "" : "s") + " skipped after Find my level found " + (p.skipped.length === 1 ? "it" : "them") + " held." : ""}{p.probes ? " Find my level ran " + p.probes + " time" + (p.probes === 1 ? "" : "s") + " (generated questions, never evidence)." : ""}{p.left_final ? " You left the final test for a lesson " + p.left_final + " time" + (p.left_final > 1 ? "s" : "") + "; answers after that count as with help." : ""}</li>
           <li>{p.feynman_versions} saved explanation version{p.feynman_versions === 1 ? "" : "s"}; {p.maps} linked mind map{p.maps === 1 ? "" : "s"}.</li>
           <li>{p.attempts} answers, {p.assisted} with help ({p.hints} hint{p.hints === 1 ? "" : "s"}); {p.explains} explanation request{p.explains === 1 ? "" : "s"}; {p.disputed} reported question{p.disputed === 1 ? "" : "s"}.</li>
           <li>{p.sent} answer{p.sent === 1 ? "" : "s"} sent to your reviews.</li>

@@ -1,8 +1,7 @@
 ---
 id: shared-thinking
-title: Shared fragment: the thinking fields (draft)
+title: Shared fragment: the thinking fields
 version: 1
-status: draft
 adapted_from: LearnHarness 0.6.0, src/agent/prompts/shared/16-mental-model.md (Amos Blomqvist, AGPL-3.0-only)
 ---
 ## The thinking fields: the learner's understanding, out loud

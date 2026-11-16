@@ -545,3 +545,82 @@ I did not spend your Claude Code subscription or an API key on a real call. To c
 - Semantic leaks (a hint that is too revealing without copying anything) can only be reduced by the prompt and a stronger model; there is no code check for them.
 - The "rung needed" readout for adaptive practice (protocol 3.8) is stored (`model_hints`) but nothing uses it yet; F5 does.
 - Still open: shared prompt fragments (D16), the C4 draft release, the placeholder author email, the pasted Anthropic key.
+
+## 2026-11-16 · Task F3: Find my level and the plan map (branch `task/f3-probe-plan-map`)
+
+### What changed
+- Before starting: merged `task/f2-hint-ladder` into `main` (your prompt is the OK); branched from `main`.
+- **Find my level** (Priming of every Study v2 topic; optional, no score, no gate): up to 15 multiple-choice questions, one at a time, each chosen from your last answer, its confidence and your thinking.
+  - **Strands:** the study's parts in prerequisite order. Each part's topics are its levels, from easiest to hardest. The relations add extra "builds on" links.
+  - **Two scopes:** this part with every part it builds on (the default), or the whole study.
+  - **How the next question is chosen:** the code keeps, for each part, the hardest topic you reliably get right and the first one you get wrong. It recommends the next question by the prober rules:
+    - enter near the top;
+    - jump up after a confident right answer, step up after a hesitant one;
+    - ask once more after a right answer under 40 %;
+    - narrow down after a miss;
+    - ask one more question after a confident miss.
+  - **The model** writes the question. It may choose another allowed topic when your thinking gives a reason, but it can never ask inside territory already bracketed.
+  - **Grading:** the code grades every answer against the key fixed before you answered. Kartotek shuffles the options.
+  - **Inference:** a part whose every prerequisite is not held at all is marked "not held yet (inferred)" without a question.
+  - **The goal first:** the probe starts by making your goal concrete (one question in a study, up to two in a live session).
+- **The result per strand:**
+  - status: held / edge found / not held yet / not located;
+  - "holds up to" and "ends at";
+  - misunderstandings seen, taken only from wrong answers given at 40 % confidence or more (a guess is a gap);
+  - shaky topics.
+  - After the probe you see every question with its key and can press **"The key is wrong"**. A generated key is not verified, so that question leaves the result. It stays in the record, and you can withdraw the report.
+  - Without a model: **Rate myself instead** (yes / not sure / no per topic), stored the same way, marked as your own rating.
+- **Your plan map** (Priming):
+  - **What it shows:** every topic of the study, with parts as columns and the foundations at the bottom. "Needed first" edges come from topic order and part prerequisites; dashed edges are relations. "You are here" marks the current topic, and the colours come from the latest probe.
+  - **Skipping:** you can skip a topic the probe found held. It stays in the navigator marked "skipped", counts as complete for opening End and stays in the final test. "Stop skipping" undoes it, and the record is kept.
+  - **Redrawn from real evidence:** if the probe called a topic held and your Applying answers then need work, it shows "gap found in Applying".
+  - **Report:** a "Before studying" column, and a line saying which topics were skipped.
+- **Live sessions, first half** (Study library, "Live sessions"; needs a model):
+  1. Your goal in your own words, either free or attached to chosen topics of a study.
+  2. The probe. You cannot skip it, but you can stop it.
+  3. The planner's map from what you hold to the goal. The code checks it: no cycles, exactly one goal, and every node to learn cites the study's units.
+  4. **Accept this plan** or **Ask for changes**. Each change is a new version; old versions stay and you can view them.
+  - Teaching itself is F4. The redraw when teaching finds a gap is built and tested (`KPlan.insertGap`) for F4 to call.
+- **The graph view** (`ui\src\graph\GraphView.jsx`):
+  - pan and zoom;
+  - two layouts: columns for a study, layers for any dependency graph;
+  - statuses, "You are here" and a legend;
+  - keyboard selection, and a text list for screen readers.
+  - F6 reuses it for the knowledge graph. The seeding of that graph from packages (one idea per outcome, one chain per relation) is in `src\graph-core.js`; it has no UI yet.
+- **Shared prompt fragments (D16) built:**
+  - `includes:` in a prompt's front matter inserts the files in `prompts\shared\` (voice, accuracy, thinking, confidence) before the prompt's closing JSON paragraph.
+  - Each fragment is listed in Settings, Prompts as `shared-<name>` and can be edited on its own.
+  - `prober.md` and `planner.md` (both version 3) are now in use, with schemas.
+- **Saved data (additive, lossless):**
+  - `progress.probes[]`, `progress.skipped` and `progress.skip_log`;
+  - `state.sessions{}` and `state.graph{}` (the graph stays empty until F6);
+  - three new rows in the import report.
+  - Nothing is rewritten. Probe answers never reach the scheduler or the seven evidence states.
+
+### Verification
+| Check | Result |
+| --- | --- |
+| `KARTOTEK_BACKUP=<your export> npm test` | Everything passes. **Engine:** 71/71 (3 new scenarios). **Probe tests:** 28/28 with the backup. They cover the selection loop, the results per strand for four learner profiles, grading and refusals, and the whole loop through the prompt file and the model service with a fake provider. They also cover the retry with the failed checks, no learner text in the usage log, the planner checks and versions, skipping, no scheduler change and the store containers. **Your backup:** the import report shows the three new rows at 0 → 0 and the whole state identical. Its 13 Study v2 progress records migrate with only the empty probe list added, and the file's SHA-256 is unchanged. |
+| `npm run smoke`, real Electron window | Passes; Electron starts again on this PC. A new F3 block checks that Priming shows Find my level and the map. In it, a self-rating is stored as a probe and colours the map, and the skipped topic counts as complete with no review event. Algorithm tab 71/71; 0 unexpected console errors. |
+| **Done when: a real probe on one of your studies** | **Setup:** `dsd-1`, the whole study, through the real screen (preview profile, never your data). Questions by **gpt-oss:20b on this PC (free)**, answered by a scripted learner with a known profile: all of Part 1, the first two topics of Part 2, the first topic of Part 3, nothing later. **Result: 11 questions** (1 goal + 10), matching the profile exactly. Part 1: held. Part 2: holds up to "From a specification to a truth table", ends at "The seven gates, notation and precedence". Part 3: holds up to "Logic operations on bit vectors", ends at "From expression to circuit and back". Part 4: not held. Part 5: not held (inferred). The questions were on the right topics and correctly keyed (for example, 0–23 needs 5 bits with 8 codes unused; 0110 1011 = 107). |
+| A live session, end to end (same model) | **Probe:** attached to two dsd-1 topics; 2 goal questions + 9 probe questions; the result again matched the profile exactly. **Plan:** the planner drew 12 nodes (4 held, 7 to learn, the goal), each citing the study's units. "Ask for changes" gave a version 2 without the node I asked to drop. Accept moved the session to Teach, with "You are here" on the first node to learn. 13 calls, free. |
+
+### What the real runs showed (honest notes)
+- **The learner was scripted, not you.** The runs prove the loop, the bracketing and the result, not how the questions feel. When you hold a whole part, one question at its top is enough, so a strong learner finishes in about 6 questions.
+- **A wrong key happened.** In the live run gpt-oss:20b keyed (A + B)·(Ā + B̄) as AB + ĀB̄; it is XOR, AB̄ + ĀB. That is why "The key is wrong" now exists. A stronger model makes this rarer, but no code check can judge whether a key's meaning is right.
+- **Guesses labelled as misunderstandings.** In the first run the model called guesses given at 20 % confidence misunderstandings. The rule "a guess is a gap" is now enforced in code and stated in the prompt. The stored result of that first preview run still shows those labels.
+- **Small format slips.** The model repeated "Something else." among the goal options and put letter prefixes ("A. ...") in options. Both are now caught or cleaned.
+- **Speed:** with this local model a question takes about 40–70 seconds.
+
+### How you can test it
+1. `npm start`, Study, open a Study v2 study, Priming.
+2. Press **Find my level** (needs a model in the strong slot; otherwise use **Rate myself instead**).
+3. Answer a few questions with the slider and your thinking, read the result, and open **The questions and your answers**.
+4. In **Your plan map**, click a green topic and press **Skip this topic**; the navigator now shows it as "skipped".
+5. For a live session: Study library, **Live sessions**, **New live session**.
+
+### Open questions
+- **Checking keys:** should the probe check each key with a second call before showing the question? The model would solve its own question without the key, as the writing jobs do. It roughly doubles the calls per probe; with a strong Claude model it may not be worth it.
+- **Skipping after a gap:** should "Skip this topic" stay allowed when Applying has already shown a gap on that topic after the probe? It is allowed now, and the map shows "gap found". D5 does not cover this case.
+- **Exam scope:** live sessions are offered in the Study library only, not inside the CEnT-S / TU Delft scope. Sessions attached to exam studies can be started from the Study library (D12).
+- **Still open from earlier:** the C4 draft release, the placeholder author email, and the Anthropic key you pasted in chat (replace it in the Console).

@@ -1,8 +1,7 @@
 ---
 id: shared-voice
-title: Shared fragment: voice (draft)
+title: Shared fragment: voice
 version: 1
-status: draft
 adapted_from: LearnHarness 0.6.0, src/agent/prompts/shared/10-voice.md (Amos Blomqvist, AGPL-3.0-only)
 ---
 ## Voice

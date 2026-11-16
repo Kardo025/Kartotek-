@@ -315,7 +315,9 @@
       // task E2: kept in the learner data; migrate() adds the empty defaults to older progress, nothing else changes
       followups: {}, feynman_feedback: {},
       // task F1 (cv 3, LEARNING-PROTOCOL 2.6): thinking while reading per topic; the other three are filled by the later F tasks
-      reading_thinking: {}, topic_mode: {}, live: {}, skipped: {} };
+      reading_thinking: {}, topic_mode: {}, live: {}, skipped: {},
+      // task F3 (LEARNING-PROTOCOL 3.5): Find my level probes, append-only (generated questions, never the scheduler)
+      probes: [] };
   }
   // migrate(progress[, pkg]): fills missing fields; with the package it also turns part-level cycle progress into topic progress
   function migrate(p, pkg) {
@@ -370,7 +372,8 @@
 
   // ------------------------------------------------------------------ the stage machine (per topic) and navigation
   function curTopic(et) { return topicAt(et.package, et.progress.part, et.progress.topic || 0); }
-  function cycleDone(et, kid) { return !!(et.progress.evaluating || {})[kid]; }
+  // A topic skipped after a probe (task F3, decision D5) counts as complete for opening End; it stays in the final test
+  function cycleDone(et, kid) { return !!(et.progress.evaluating || {})[kid] || !!(et.progress.skipped || {})[kid]; }
   function topicsLeft(et) { return topicsOf(et.package).filter(function (t) { return !cycleDone(et, t.kid); }); }
   // End (final test + report) opens when every topic's cycle is complete, or once a final test was planned
   function endOpen(et) { return !!et.progress.final || topicsLeft(et).length === 0; }
@@ -400,7 +403,8 @@
       var k = curTopic(et);
       if (k) pr.evaluating[k.kazanim_id] = 'deferred_by_user';
       var all = topicsOf(pkg), here = k ? all.filter(function (t) { return t.kid === k.kazanim_id; })[0] : null;
-      var after = here ? all[here.n + 1] : null;
+      var skipped = pr.skipped || {};
+      var after = here ? all.slice(here.n + 1).filter(function (t) { return !skipped[t.kid]; })[0] : null;
       if (after) { pr.part = after.pi; pr.topic = after.ti; pr.stage = 'priming'; }
       else if (endOpen(et)) pr.stage = endStage(et);
       else { var first = topicsLeft(et)[0]; pr.part = first.pi; pr.topic = first.ti; pr.stage = 'priming'; }
@@ -834,6 +838,8 @@
     var pkg = et.package, pr = et.progress, idx = itemIndex(pkg, extras), aud = audit(pkg);
     now = now || Date.now();
     var delayed = !!(pr.final && !pr.final.immediate && pr.final.delay_days >= 1);
+    // task F3: what Find my level found before studying (shown beside the evidence, never part of it)
+    var probeAt = global.KPlan ? global.KPlan.probeStatus(et) : {}, skippedK = pr.skipped || {};
     var rows = (pkg.outcomes || []).map(function (lo) {
       var fin = outcomeEvidence(et, idx, lo.id, 'final'), prac = outcomeEvidence(et, idx, lo.id, 'practice');
       var st = fin.attempts ? stateOf(fin, delayed) : stateOf(prac, false);
@@ -846,7 +852,8 @@
         return { id: c.id, text: c.text, results: res };
       });
       var next = { not_assessed: 'Attempt it in Applying or the final test', uncertain: 'Resolve the uncertain grading or the reported question', needs_work: 'Go back to its lesson, then try a new item', assisted: 'Try a new item without help later', independent: 'Check it again after a delay', retained: 'Keep it in your reviews', transfer: 'Keep it in your reviews' }[st];
-      return { id: lo.id, part_id: lo.part_id, performance: lo.performance, status: lo.status || 'covered', state: st, label: STATE_LABEL[st], criteria: crit, final: fin, practice: prac, next: next };
+      return { id: lo.id, part_id: lo.part_id, kazanim_id: lo.kazanim_id, performance: lo.performance, status: lo.status || 'covered', state: st, label: STATE_LABEL[st], criteria: crit, final: fin, practice: prac, next: next,
+        probe: probeAt[lo.kazanim_id] ? probeAt[lo.kazanim_id].status : null, skipped: !!skippedK[lo.kazanim_id] };
     });
     var cards = kazanimlarOf(pkg).map(function (k) {
       var cid = et.card_map && et.card_map[k.kazanim_id], m = cid && state.mem[cid];
@@ -864,6 +871,8 @@
       process: {
         parts: pkg.parts.length, topics: topicsOf(pkg).length,
         deferred: topicsOf(pkg).filter(function (t) { return (pr.evaluating || {})[t.kid]; }).length,
+        skipped: topicsOf(pkg).filter(function (t) { return (pr.skipped || {})[t.kid]; }).map(function (t) { return t.kid; }),
+        probes: (pr.probes || []).filter(function (p) { return p.status === 'done' || p.status === 'stopped'; }).length,
         feynman_versions: Object.keys(pr.feynman || {}).reduce(function (a, k) { return a + (pr.feynman[k] || []).length; }, 0),
         maps: Object.keys(pr.maps || {}).map(function (k) { return pr.maps[k]; }).filter(function (v, i, a) { return v && a.indexOf(v) === i; }).length,
         left_final: pr.final && pr.final.left_n || 0,

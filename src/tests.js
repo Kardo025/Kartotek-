@@ -930,6 +930,73 @@
     }]
   );
 
+  // ------------------------------------------------------------------ Find my level and the plan map (task F3)
+  // A two-part package (p2 builds on p1), as plain data for KProbe / KPlan (no import needed)
+  function probePkg() {
+    var outs = [], parts = [], n = 0;
+    [['p1', 3, []], ['p2', 4, ['p1']]].forEach(function (d) {
+      var ks = [];
+      for (var i = 0; i < d[1]; i++) { n++; outs.push({ id: 'LO-' + n, part_id: d[0], kazanim_id: 'k' + n, performance: 'Do k' + n, units: ['U' + n], criteria: [{ id: 'C-' + n, text: 'Can do k' + n }] }); ks.push({ kazanim_id: 'k' + n, title: 'Topic ' + n }); }
+      parts.push({ part_id: d[0], title: 'Part ' + d[0], prerequisites: d[2], kazanimlar: ks });
+    });
+    return { etut_id: 'pp', schema_version: 2, workflow: 'cycle-v2', units: [], outcomes: outs, relations: [], parts: parts };
+  }
+  // The prober's reply when it follows Kartotek's recommendation; the learner holds `holds[strand]` levels from the bottom
+  function probeStep(KP, p, holds, n) {
+    var r = KP.recommend(p);
+    var q = KP.applyReply(p, { kind: 'question', goal_concrete: '', goal_question: { stem: '', options: [] }, strands: [], last_answer: { misconception: '', note: '' },
+      question: { strand: r.strand, level: r.level, intent: r.intent, stem: 'Probe ' + n, options: [{ id: 'A', text: 'right', wrong_model: '' }, { id: 'B', text: 'wrong', wrong_model: 'a wrong model' }], key: 'A', why: r.why, difficulty: 3 } }, { now: NOW + n, rng: function () { return 0.6; } });
+    var s = p.strands.filter(function (x) { return x.id === q.strand; })[0], L = 0;
+    s.levels.forEach(function (l, i) { if (l.id === q.level) L = i; });
+    var knows = L < holds[q.strand];
+    KP.answer(p, q.id, knows ? { choice: q.key, confidence_pct: 90 } : { choice: q.key === 'a' ? 'b' : 'a', confidence_pct: 30 }, NOW + n);
+    return q;
+  }
+  tests.push(
+    ['Find my level: strands come from the parts in prerequisite order; questions bracket each strand to its first miss in few questions; every answer is graded in code', function () {
+      var KP = global.KProbe, pkg = probePkg(), strands = KP.strandsFor(pkg, { kind: 'study' });
+      var p = KP.newProbe({ mode: 'packaged', strands: strands, now: NOW });
+      p.goal.concrete = 'Do part p2';
+      var levels = [], n = 0;
+      while (KP.phase(p) === 'question' && n < 20) levels.push(probeStep(KP, p, { p1: 3, p2: 2 }, ++n).level);
+      var res = KP.finish(p, NOW + 99);
+      var a = res.strands[0], b = res.strands[1];
+      return { pass: strands.map(function (s) { return s.id; }).join() === 'p1,p2' && strands[1].after.join() === 'p1' && a.status === 'held' && b.status === 'edge' && b.held_up_to.id === 'k5' && b.first_miss.id === 'k6'
+        && res.asked < 15 && p.questions.every(function (q) { return q.correct === (q.answer.choice === q.key) && q.origin === 'generated'; }) && levels[0] === 'k3',
+        detail: 'asked ' + levels.join(' → ') + ' · ' + res.closing };
+    }],
+    ['Find my level never reaches the scheduler; a topic it found held can be skipped, counts as complete for End and keeps its place in the final test', function () {
+      var K = global.KCycle, KP = global.KProbe, PL = global.KPlan, st = KStore.emptyState(), et = KEtut.importPackage(st, miniV2(), { now: NOW }).etut;
+      K.migrate(et.progress, et.package);
+      var reviews = st.reviews.length, mem = JSON.stringify(st.mem);
+      var p = PL.addProbe(et, KP.newProbe({ mode: 'packaged', strands: KP.strandsFor(et.package, { kind: 'study' }), etut_id: et.etut_id, now: NOW }));
+      p.goal.concrete = 'x';
+      var n = 0;
+      while (KP.phase(p) === 'question' && n < 10) probeStep(KP, p, { p1: 1 }, ++n);
+      KP.finish(p, NOW + 50);
+      var canBefore = PL.canSkip(et, 'k1'), endBefore = K.endOpen(et);
+      PL.skip(et, 'k1', NOW + 60);
+      var fin = K.finalItems(et.package).filter(function (it) { return it.kazanim_id === 'k1'; }).length;
+      return { pass: canBefore && !endBefore && K.cycleDone(et, 'k1') && K.endOpen(et) && fin === 1 && st.reviews.length === reviews && JSON.stringify(st.mem) === mem && PL.packagedMap(et, null).nodes[0].skipped,
+        detail: 'skippable after the probe: ' + canBefore + ' · End open after skipping: ' + K.endOpen(et) + ' · final items on the topic: ' + fin + ' · review events added: ' + (st.reviews.length - reviews) };
+    }],
+    ['Live plan map: a cycle, an unknown dependency or a map without a goal is refused; accepting starts teaching; a gap found while teaching adds a version and keeps the old ones', function () {
+      var PL = global.KPlan, st = KStore.emptyState(), s = PL.newSession(st, { goal_words: 'Understand x', now: NOW });
+      var node = function (id, kind, deps) { return { id: id, label: 'Node ' + id, kind: kind, depends_on: deps, units: [], why: '', mode: 'socratic' }; };
+      var cyc = PL.checkPlan({ approach: 'a', nodes: [node('a', 'learn', ['b']), node('b', 'goal', ['a'])] }, null);
+      var unk = PL.checkPlan({ approach: 'a', nodes: [node('a', 'learn', ['zz']), node('b', 'learn', ['a'])] }, null);
+      var good = { approach: 'From what you hold to x.', nodes: [node('held', 'held', []), node('step', 'learn', ['held']), node('goal-x', 'goal', ['step'])], uncertain: [] };
+      s.status = 'plan';
+      PL.addPlanVersion(s, good, { now: NOW });
+      PL.acceptPlan(s, NOW + 1);
+      var id = PL.insertGap(s, { before: 'step', label: 'Missing basics', why: 'a check failed' }, NOW + 2);
+      var v = PL.currentPlan(s);
+      return { pass: /cycle/.test(cyc.join(' ')) && /"zz"/.test(unk.join(' ')) && /goal/.test(unk.join(' ')) && s.status === 'teach' && s.plan.versions.length === 2 && s.plan.versions[0].nodes.length === 3
+        && v.nodes.length === 4 && v.nodes.filter(function (x) { return x.id === 'step'; })[0].depends_on.indexOf(id) >= 0 && s.plan.position === id && PL.checkPlan({ approach: 'a', nodes: v.nodes }, null).length === 0 && st.sessions[s.id] === s,
+        detail: 'refused: ' + cyc.length + ' + ' + unk.length + ' problems · versions kept: ' + s.plan.versions.length + ' · inserted ' + id + ' before "step"' };
+    }]
+  );
+
   tests.push(
     ['Backup file: the export is the whole saved state and survives a round trip; inspectBackup rejects foreign or newer files', function () {
       var st = KStore.buildSampleState(NOW);
