@@ -60,8 +60,82 @@ function netError(e, label) {
   return new ModelError('network', 'Kartotek could not reach ' + label + '. ' + String((e && e.cause && e.cause.code) || (e && e.message) || ''));
 }
 
+// Ollama's own chat endpoint (task E3): the OpenAI-compatible one cannot set the context length (Ollama then keeps a short default
+// window and cuts long prompts without an error) and has no schema-constrained output. /api/chat takes options.num_ctx and
+// `format: <JSON Schema>`, which constrains the answer to the schema while it is generated. Streaming is newline-delimited JSON.
+const CTX_MIN = 8192, CTX_DEFAULT_MAX = 65536;
+function contextFor(req, maxCtx) {
+  let chars = String(req.system || '').length;
+  req.messages.forEach((m) => { chars += typeof m.content === 'string' ? m.content.length : m.content.reduce((s, c) => s + (c.type === 'text' ? c.text.length : 3000), 0); });
+  if (req.schema) chars += JSON.stringify(req.schema).length;
+  const need = Math.ceil(chars / 3) + (req.maxOutputTokens || 8000) + 1024;
+  const cap = Math.max(CTX_MIN, maxCtx || CTX_DEFAULT_MAX);
+  return Math.min(cap, Math.max(CTX_MIN, Math.ceil(need / 4096) * 4096));
+}
+async function readNdjson(body, onData) {
+  const decoder = new TextDecoder();
+  let buf = '';
+  const handle = (line) => { const l = line.trim(); if (!l) return; let j; try { j = JSON.parse(l); } catch (e) { return; } onData(j); };
+  for await (const chunk of body) {
+    buf += decoder.decode(chunk, { stream: true });
+    let i;
+    while ((i = buf.indexOf('\n')) >= 0) { handle(buf.slice(0, i)); buf = buf.slice(i + 1); }
+  }
+  if (buf) handle(buf);
+}
+function ollamaNative(cfg, p, base, label, doFetch, headers) {
+  const host = base.replace(/\/v1$/i, '');
+  const jsonOnly = cfg.structured === 'json-mode';
+  return {
+    kind: 'local',
+    capabilities() { return { stream: true, structured: jsonOnly ? 'json-mode' : 'native', images: true, webSearch: false }; },
+    async listModels() {
+      let res;
+      try { res = await doFetch(host + '/api/tags', { headers: headers() }); } catch (e) { throw netError(e, label); }
+      if (!res.ok) throw await httpError(res, label);
+      const j = await res.json();
+      return (j.models || []).map((m) => ({ id: m.name || m.model, label: (m.name || m.model) + (m.details && m.details.parameter_size ? ' · ' + m.details.parameter_size : '') })).filter((m) => m.id);
+    },
+    async run(req, { signal, onEvent }) {
+      const messages = [];
+      if (req.system) messages.push({ role: 'system', content: req.system });
+      req.messages.forEach((m) => {
+        if (typeof m.content === 'string') { messages.push({ role: m.role, content: m.content }); return; }
+        const text = m.content.filter((c) => c.type === 'text').map((c) => c.text).join('\n\n');
+        const images = m.content.filter((c) => c.type === 'image').map((c) => c.data);
+        messages.push(images.length ? { role: m.role, content: text, images } : { role: m.role, content: text });
+      });
+      // thinking tokens count against num_predict and the context: leave room for them, or a long answer is cut off
+      const thinks = /^gpt-oss/i.test(req.model || '') || (!!req.effort && req.effort !== 'low');
+      const predict = (req.maxOutputTokens || 16000) + (thinks ? 8000 : 0);
+      const numCtx = contextFor(Object.assign({}, req, { maxOutputTokens: predict }), cfg.maxContext);
+      const body = { model: req.model, messages, stream: true, options: { num_ctx: numCtx, num_predict: predict } };
+      if (req.schema) body.format = jsonOnly ? 'json' : req.schema;
+      // Thinking: gpt-oss takes a level, other thinking models on/off; "low" effort turns it off where that is possible
+      if (/^gpt-oss/i.test(req.model || '')) body.think = req.effort === 'high' || req.effort === 'max' ? 'high' : req.effort === 'low' ? 'low' : 'medium';
+      else if (req.effort) body.think = req.effort !== 'low';
+      let res;
+      try { res = await doFetch(host + '/api/chat', { method: 'POST', headers: headers(), body: JSON.stringify(body), signal }); } catch (e) { throw netError(e, label); }
+      if (!res.ok) throw await httpError(res, label);
+      let text = '', model = req.model, input = 0, output = 0, finish = null, thinking = false, reported = false;
+      try {
+        await readNdjson(res.body, (j) => {
+          if (j.error) throw new ModelError('provider', label + ': ' + String(j.error).slice(0, 300));
+          if (j.model) model = j.model;
+          const msg = j.message || {};
+          if (msg.thinking && !thinking) { thinking = true; onEvent({ type: 'status', text: 'Thinking' }); }
+          if (typeof msg.content === 'string' && msg.content) { text += msg.content; onEvent({ type: 'text', delta: msg.content }); }
+          if (j.done) { finish = j.done_reason || 'stop'; input = j.prompt_eval_count || 0; output = j.eval_count || 0; reported = j.prompt_eval_count != null; }
+        });
+      } catch (e) { throw e instanceof ModelError ? e : netError(e, label); }
+      if (finish === 'length') onEvent({ type: 'status', text: 'The answer reached the output limit' });
+      return { text, usage: { input, output, cacheRead: 0, cacheWrite: 0 }, usageReported: reported, model, stopReason: finish === 'length' ? 'max_tokens' : finish, costKind: 'free-local', contextTokens: numCtx };
+    },
+  };
+}
+
 function createOpenAICompat(cfg) {
-  // cfg: { preset, baseUrl?, apiKey?, structured?, tokenParam?, label?, fetch? (tests) }
+  // cfg: { preset, baseUrl?, apiKey?, structured?, tokenParam?, label?, maxContext? (Ollama), fetch? (tests) }
   const p = Object.assign({}, PRESETS[cfg.preset] || PRESETS.custom);
   const base = trimBase(cfg.baseUrl || p.baseUrl);
   const structured = cfg.structured || p.structured;
@@ -73,6 +147,7 @@ function createOpenAICompat(cfg) {
     if (cfg.apiKey) h.Authorization = 'Bearer ' + cfg.apiKey;
     return h;
   };
+  if (cfg.preset === 'ollama' && cfg.native !== false) return ollamaNative(cfg, p, base, label, doFetch, headers);
   return {
     kind: cfg.preset === 'ollama' ? 'local' : 'api',
     capabilities() { return { stream: true, structured: structured === 'json_schema' ? 'native' : 'json-mode', images: true, webSearch: false }; },
@@ -129,4 +204,4 @@ function createOpenAICompat(cfg) {
   };
 }
 
-module.exports = { createOpenAICompat, PRESETS, readSse };
+module.exports = { createOpenAICompat, PRESETS, readSse, contextFor };

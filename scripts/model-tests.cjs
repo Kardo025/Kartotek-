@@ -12,7 +12,7 @@ const { validate, parseJsonLoose } = require('../desktop/models/schema');
 const { createPrompts, fence } = require('../desktop/models/prompts');
 const { createModelService } = require('../desktop/models/service');
 const { createAnthropic } = require('../desktop/models/anthropic');
-const { createOpenAICompat } = require('../desktop/models/openai-compat');
+const { createOpenAICompat, contextFor } = require('../desktop/models/openai-compat');
 const { createCli, resolveExecutable, splitArgs } = require('../desktop/models/cli');
 const { ModelError } = require('../desktop/models/errors');
 
@@ -304,6 +304,16 @@ async function openaiTests() {
   const server = http.createServer(async (req, res) => {
     let body = ''; for await (const c of req) body += c;
     got.push({ url: req.url, auth: req.headers.authorization || null, body: body ? JSON.parse(body) : null });
+    if (req.url === '/api/tags') { res.writeHead(200, { 'content-type': 'application/json' }); res.end(JSON.stringify({ models: [{ name: 'qwen3.6:35b-a3b', details: { parameter_size: '35B' } }] })); return; }
+    if (req.url === '/api/chat') {
+      res.writeHead(200, { 'content-type': 'application/x-ndjson' });
+      const line = (o) => JSON.stringify(o) + String.fromCharCode(10);
+      res.write(line({ model: 'qwen3.6:35b-a3b', message: { role: 'assistant', content: '', thinking: 'hm' }, done: false }));
+      res.write(line({ model: 'qwen3.6:35b-a3b', message: { role: 'assistant', content: '{"reply":' }, done: false }));
+      res.write(line({ model: 'qwen3.6:35b-a3b', message: { role: 'assistant', content: '"ok"}' }, done: false }));
+      res.end(line({ model: 'qwen3.6:35b-a3b', message: { role: 'assistant', content: '' }, done: true, done_reason: 'stop', prompt_eval_count: 812, eval_count: 7 }));
+      return;
+    }
     if (req.url === '/v1/models') { res.writeHead(200, { 'content-type': 'application/json' }); res.end(JSON.stringify({ data: [{ id: 'llama3' }, { id: 'qwen' }] })); return; }
     if (mode === '429') { res.writeHead(429, { 'content-type': 'application/json' }); res.end(JSON.stringify({ error: { message: 'slow down' } })); return; }
     if (mode === '401') { res.writeHead(401, { 'content-type': 'application/json' }); res.end(JSON.stringify({ error: { message: 'bad key' } })); return; }
@@ -319,7 +329,7 @@ async function openaiTests() {
   const base = 'http://127.0.0.1:' + server.address().port + '/v1';
   try {
     await t(ok, 'OpenAI-compatible (local server): streaming text, usage with cached tokens split, JSON mode for local, no key header', async () => {
-      const a = createOpenAICompat({ preset: 'ollama', baseUrl: base });
+      const a = createOpenAICompat({ preset: 'ollama', baseUrl: base, native: false });
       const deltas = [];
       const r = await a.run({ model: 'llama3', system: 'S', schema: { type: 'object' }, messages: [{ role: 'user', content: 'hi' }] }, { signal: new AbortController().signal, onEvent: (e) => deltas.push(e.delta) });
       assert.strictEqual(r.text, 'Hello'); assert.deepStrictEqual(deltas, ['Hel', 'lo']);
@@ -329,6 +339,29 @@ async function openaiTests() {
       assert.deepStrictEqual(b.response_format, { type: 'json_object' });
       assert.ok(b.stream && b.stream_options.include_usage && b.max_tokens && b.messages[0].role === 'system' && got[got.length - 1].auth === null);
       assert.deepStrictEqual((await a.listModels()).map((m) => m.id), ['llama3', 'qwen']);
+    });
+    await t(ok, 'Ollama native endpoint (task E3): schema-constrained format, a context window sized to the prompt, images, NDJSON stream, usage', async () => {
+      const a = createOpenAICompat({ preset: 'ollama', baseUrl: base, maxContext: 32768 });
+      const events = [];
+      const schema = { type: 'object', properties: { reply: { type: 'string' } }, required: ['reply'], additionalProperties: false };
+      const r = await a.run({ model: 'qwen3.6:35b-a3b', system: 'S', schema, effort: 'low', maxOutputTokens: 3000, messages: [{ role: 'user', content: [{ type: 'text', text: 'x'.repeat(60000) }, { type: 'image', mime: 'image/png', data: 'AAAA' }] }] }, { signal: new AbortController().signal, onEvent: (e) => events.push(e) });
+      assert.strictEqual(r.text, '{"reply":"ok"}');
+      assert.deepStrictEqual(r.usage, { input: 812, output: 7, cacheRead: 0, cacheWrite: 0 });
+      assert.strictEqual(r.costKind, 'free-local');
+      assert.ok(events.some((e) => e.type === 'status' && e.text === 'Thinking'));
+      const b = got[got.length - 1];
+      assert.strictEqual(b.url, '/api/chat');
+      assert.deepStrictEqual(b.body.format, schema);
+      assert.strictEqual(b.body.think, false);
+      assert.strictEqual(b.body.options.num_ctx, 28672, 'about 60000/3 + 3000 + overhead, rounded up to 4096s');
+      assert.strictEqual(b.body.options.num_predict, 3000);
+      assert.deepStrictEqual(b.body.messages[1].images, ['AAAA']);
+      assert.ok(contextFor({ messages: [{ role: 'user', content: 'x'.repeat(900000) }] }, 32768) === 32768, 'capped at the provider maximum');
+      assert.strictEqual(contextFor({ messages: [{ role: 'user', content: 'hi' }], maxOutputTokens: 100 }), 8192, 'never below 8192');
+      assert.deepStrictEqual((await a.listModels()).map((m) => m.id), ['qwen3.6:35b-a3b']);
+      const g = createOpenAICompat({ preset: 'ollama', baseUrl: base });
+      await g.run({ model: 'gpt-oss:20b', effort: 'high', messages: [{ role: 'user', content: 'x' }] }, { signal: new AbortController().signal, onEvent: () => {} });
+      assert.strictEqual(got[got.length - 1].body.think, 'high', 'gpt-oss takes a thinking level');
     });
     await t(ok, 'OpenAI preset: json_schema response format, max_completion_tokens, bearer key, image as data URL', async () => {
       const a = createOpenAICompat({ preset: 'openai', baseUrl: base, apiKey: 'k-1' });

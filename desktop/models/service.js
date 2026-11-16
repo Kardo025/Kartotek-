@@ -102,6 +102,12 @@ function createModelService(opts) {
       if (!/^https?:\/\/[^\s]+$/i.test(out.baseUrl)) throw new ModelError('invalid', 'The address must start with http:// or https://.');
       if (/^http:\/\//i.test(out.baseUrl) && !/^http:\/\/(localhost|127\.0\.0\.1|\[::1\])(:\d+)?(\/|$)/i.test(out.baseUrl)) throw new ModelError('invalid', 'Use https:// for anything that is not on this PC.');
       if (p.structured === 'json_schema' || p.structured === 'json-mode') out.structured = p.structured;
+      // Ollama: the largest context window Kartotek asks for (it grows with the prompt up to this; more needs more memory)
+      if (out.preset === 'ollama' && p.maxContext != null && p.maxContext !== '') {
+        const n = Math.round(Number(p.maxContext));
+        if (!(n >= 8192 && n <= 262144)) throw new ModelError('invalid', 'The context window must be between 8192 and 262144 tokens.');
+        out.maxContext = n;
+      }
     }
     if (p.kind === 'anthropic' && p.baseUrl) {
       out.baseUrl = String(p.baseUrl).trim();
@@ -248,7 +254,7 @@ function createModelService(opts) {
     if (provider.kind === 'openai-compatible') {
       const preset = PRESETS[provider.preset] || PRESETS.custom;
       if (preset.needsKey && !key) throw new ModelError('not-configured', 'No API key is stored for ' + provider.label + '.');
-      return factories['openai-compatible']({ preset: provider.preset, baseUrl: provider.baseUrl, apiKey: key || undefined, structured: provider.structured, label: provider.label });
+      return factories['openai-compatible']({ preset: provider.preset, baseUrl: provider.baseUrl, apiKey: key || undefined, structured: provider.structured, label: provider.label, maxContext: provider.maxContext });
     }
     return factories.cli({ profile: provider.profile, command: provider.command, args: provider.args, workDir: path.join(dir, 'cli-work'), timeoutMs: opts.cliTimeoutMs });
   }
@@ -391,6 +397,20 @@ function createModelService(opts) {
     return adapter.listModels();
   }
 
+  // A cost estimate before a job starts (task E3): which provider and model a slot or target uses and what the tokens would cost
+  async function estimate(targetOrSlot, usage) {
+    const c = readConfig();
+    let t;
+    try { t = resolveTarget(targetOrSlot && targetOrSlot.providerId ? { target: targetOrSlot } : { slot: targetOrSlot && targetOrSlot.slot || 'strong' }, c); } catch (e) {
+      return { configured: false, providerLabel: null, model: null, costKind: null, costUsd: null };
+    }
+    const p = t.provider;
+    const costKind = p.kind === 'cli' ? 'subscription-estimate' : (p.kind === 'openai-compatible' && (PRESETS[p.preset] || {}).costKind === 'free-local') ? 'free-local' : 'api';
+    const u = { input: usage.input || 0, output: usage.output || 0, cacheRead: 0, cacheWrite: 0 };
+    const cost = costKind === 'free-local' ? 0 : costOf(u, t.model, c);
+    return { configured: true, provider: p.id, providerLabel: p.label, providerKind: p.kind, model: t.model || null, costKind, costUsd: cost, budget: budgetState(c) };
+  }
+
   // The window's question "is any model set up for this slot?" without exposing anything else
   async function status() {
     const c = readConfig();
@@ -403,7 +423,7 @@ function createModelService(opts) {
     return { configured: SLOTS.some((s) => slots[s]), slots, budget: budgetState(c) };
   }
 
-  return { publicConfig, saveProvider, setKey, clearKey, removeProvider, setSlot, setBudget, allowOverBudget, setPrice, run, test, cancel, listModels, usageSummary, status,
+  return { publicConfig, saveProvider, setKey, clearKey, removeProvider, setSlot, setBudget, allowOverBudget, setPrice, run, test, cancel, listModels, usageSummary, status, estimate,
     _dir: dir, _readKeysRaw: () => { try { return fs.readFileSync(keysFile); } catch (e) { return null; } } };
 }
 

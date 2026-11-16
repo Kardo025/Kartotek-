@@ -8,6 +8,7 @@ import { motion } from "motion/react";
 import { Check, Plus, FilePdf, ArrowSquareOut, BookOpenText, Play, Copy, Exam, Compass, Timer, Stack, ClipboardText, VideoCamera } from "@phosphor-icons/react";
 import { PageHead, Panel, Btn, Kpi, Bar } from "./kit.jsx";
 import "./cents.css";
+import { jobsAvailable, createStudyJobs, JobsPanel } from "./Jobs.jsx";
 
 const App = () => window.App;
 const K = () => window.KCents;
@@ -95,6 +96,27 @@ function stats(S, sec, now) {
 export function makePrep(exam) {
   return function Prep() { return <PrepPage exam={exam} />; };
 }
+// "Write next N studies" in the app (task E3): one study job per syllabus topic, written from its page extract in the content
+// folder's sources by the strong slot; the jobs run one after another and show their estimates first
+function WriteNextInApp({ rows, exam }) {
+  const [busy, setBusy] = useState(false);
+  const run = async () => {
+    setBusy(true);
+    try {
+      const C = window.KCents;
+      const list = rows.map((r) => {
+        const f = C.find(r.id), label = f.item[1] + " " + f.item[2];
+        return { id: C.etutId(r.id), extract: C.etutId(r.id) + ".pdf", title: (C.examsOf(r.id).indexOf("cents") >= 0 ? "CEnT-S" : "TU Delft AE") + ": " + label + " (" + f.book.name + ")",
+          scope: "This extract is " + f.book.name + ", printed pages " + C.printedText(f.book, f.item[4]) + " (PDF pages " + C.pdfText(f.item[4]) + "); cite printed page numbers." };
+      });
+      const out = await createStudyJobs(list, null);
+      const bad = out.filter((x) => !x || !x.ok);
+      window.App.toast(bad.length ? bad.length + " of " + out.length + " could not be prepared: " + (bad[0] && bad[0].error) : out.length + " study jobs prepared. Check their estimates in the Study library, then start them.");
+    } finally { setBusy(false); }
+  };
+  return <Btn size="sm" disabled={busy} onClick={run} title={"Kartotek writes the studies for " + rows.map((b) => b.num).join(", ") + " with your writing model, one after another, from the page extracts in your content folder."}><Stack size={14} aria-hidden="true" />{busy ? "Preparing…" : "Write next " + rows.length + " in the app"}</Btn>;
+}
+
 export default makePrep("cents");
 
 // Exam date and study pace of an exam for the Planning home: the same numbers as the Plan panel of its overview
@@ -249,6 +271,7 @@ function PrepPage({ exam }) {
         <div className="k-row-btns">
           {batchS.length > 1 && <AskPair prompt={C.batchPrompt(batchS, "study", g)} icon={<Stack size={14} aria-hidden="true" />} label={"Write next " + batchS.length + " studies"} copyLabel="Copy the batch study prompt"
             title={"One Claude Code session writes the studies for " + batchS.map((b) => b.num).join(", ") + ", then builds once."} />}
+          {batchS.length > 1 && jobsAvailable() && <WriteNextInApp rows={batchS} exam={exam} />}
           {batchT.length > 1 && <AskPair prompt={C.batchPrompt(batchT, "test", g)} icon={<Stack size={14} aria-hidden="true" />} label={"Write next " + batchT.length + " tests"} copyLabel="Copy the batch test prompt"
             title={"One Claude Code session writes the end-of-lesson tests for " + batchT.map((b) => b.num).join(", ") + "."} />}
           <button type="button" className="k-btn sm" aria-pressed={hideDone} onClick={() => setHideDone(!hideDone)}>Hide covered</button>

@@ -6,6 +6,7 @@ import { EASE, PageHead, Btn, Seg, Bar, TableWrap, ConfirmBtn } from "../kit.jsx
 import { Confirm, Callout, Inl, Chip } from "./common.jsx";
 import { AskPair } from "../Cents.jsx";
 import { ReloadButton } from "../ContentPanel.jsx";
+import { NewJob, JobsPanel, jobsAvailable } from "../Jobs.jsx";
 import { A, KE, KM, EU, activeEtuts, progressFraction, progressLabel, dueCount, YN_TR, signed } from "./util.js";
 
 // Same as the legacy importFromObject: validate, import, commit, toast
@@ -72,6 +73,7 @@ export default function Library() {
         )}
       </AnimatePresence>
       <div><Seg label="study-lib" value={tab} options={TABS} onChange={(v) => { App.etutLibTab = v; App.render(); }} /></div>
+      {tab !== "gunluk" && tab !== "hatalar" && <JobsPanel kinds={["study"]} title="Studies being written" />}
       {tab !== "gunluk" && tab !== "hatalar" && <NewWithClaude />}
       <motion.div key={tab} className="st-lib-body" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.28, ease: EASE }}>
         {tab === "gunluk" ? <JournalList /> : tab === "hatalar" ? <ErrorList /> : <StudyList />}
@@ -139,7 +141,7 @@ function StudyList() {
             <motion.article key={et.etut_id} layout className="k-panel st-item" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.98, transition: { duration: 0.15 } }} transition={{ duration: 0.3, ease: EASE }}>
               <div className="st-item-top">
                 <div className="st-item-text">
-                  <h2>{pkg.title}{pkg.sample && <Chip>sample</Chip>}{v2 && <Chip tone="accent" title="Priming → Learn & digest → Applying, then the final test and report">study cycle v2</Chip>}{draft && <Chip title="The coverage audit found gaps (open the study, then Coverage)">draft</Chip>}</h2>
+                  <h2>{pkg.title}{pkg.sample && <Chip>sample</Chip>}{v2 && <Chip tone="accent" title="Priming → Learn & digest → Applying, then the final test and report">study cycle v2</Chip>}{draft && <Chip title="The coverage audit found gaps (open the study, then Coverage)">draft · not certified</Chip>}{pkg.generated_by && <Chip title={"Written in Kartotek by " + (pkg.generated_by.writers || []).map((w) => w.writer).join(", ") + ". " + (pkg.generated_by.verification ? pkg.generated_by.verification.verified + " of " + pkg.generated_by.verification.items + " items verified by an independent solution." : "")}>written by {((pkg.generated_by.writers || [])[0] || {}).writer || "a model"}</Chip>}</h2>
                   <p className="k-small k-muted">
                     {src.file || "source not given"}{src.type ? " · " + src.type.toUpperCase() : ""}
                     {src.slide_count ? " · " + src.slide_count + (src.unit === "page" ? (src.slide_count === 1 ? " page" : " pages") : (src.slide_count === 1 ? " slide" : " slides")) : ""}
@@ -182,23 +184,35 @@ function StudyList() {
   );
 }
 
-// A new Study v2 module from the learner's own material: Claude Code reads the files on this PC and writes studies/<id>/etut.json
+// A new Study v2 module from the learner's own material (task E3): written in the app by any configured model as a background job,
+// or, as before, by Claude Code from a prompt (Claude Code stays one of the routes, not a requirement)
 function NewWithClaude() {
   const [f, setF] = useState({ title: "", files: "", scope: "", goal: "" });
   const [open, setOpen] = useState(false);
-  const id = f.title.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/ı/g, "i").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40);
+  const [route, setRoute] = useState(jobsAvailable() ? "app" : "claude");
+  const id = f.title.toLowerCase().normalize("NFKD").replace(/[̀-ͯ]/g, "").replace(/ı/g, "i").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40);
   const prompt = window.KCycle ? window.KCycle.newStudyPrompt({ title: f.title, id, files: f.files, scope: f.scope, goal: f.goal }) : "";
   return (
-    <details className="k-panel k-sec st-new-claude" open={open} onToggle={(e) => setOpen(e.currentTarget.open)}>
-      <summary className="k-sec-head"><h2>New study with Claude</h2></summary>
-      <p className="k-small k-muted">Claude Code reads your slides, notes or book pages on this PC and writes a study in the new cycle: Priming → Learn &amp; digest (lesson, your mind map, your explanation) → Applying → final test and report. Every outcome is taught, practised and tested; content comes only from your material.</p>
-      <div className="st-new-grid">
-        <label className="k-field"><span className="k-field-label">Title</span><input value={f.title} onChange={(e) => setF({ ...f, title: e.target.value })} placeholder="e.g. Linear algebra · lecture 3" /></label>
-        <label className="k-field"><span className="k-field-label">Files on this PC</span><input value={f.files} onChange={(e) => setF({ ...f, files: e.target.value })} placeholder="e.g. C:\\Users\\you\\Downloads\\lecture3.pdf" /></label>
-        <label className="k-field"><span className="k-field-label">Scope (optional)</span><input value={f.scope} onChange={(e) => setF({ ...f, scope: e.target.value })} placeholder="e.g. slides 1–24 only" /></label>
-        <label className="k-field"><span className="k-field-label">Your goal (optional)</span><input value={f.goal} onChange={(e) => setF({ ...f, goal: e.target.value })} placeholder="e.g. the midterm on 12 Nov" /></label>
-      </div>
-      <div className="k-row-btns">{f.title.trim() && f.files.trim() ? <AskPair what="writing a study" prompt={prompt} label="Write with Claude" primary /> : <span className="k-small k-muted">Give a title and the file path(s).</span>}</div>
+    <details className="k-panel k-sec st-new-claude" id="new-study" open={open} onToggle={(e) => setOpen(e.currentTarget.open)}>
+      <summary className="k-sec-head"><h2>New study from my files</h2></summary>
+      <p className="k-small k-muted">A study in the cycle: Priming → Learn &amp; digest (lesson, your mind map, your explanation) → Applying → final test and report. Every outcome is taught, practised and tested; content comes only from your material.</p>
+      {jobsAvailable() && <div><Seg label="new-study-route" value={route} options={[{ value: "app", label: "Write in the app" }, { value: "claude", label: "With Claude Code" }]} onChange={setRoute} /></div>}
+      {route === "app" ? (
+        <NewJob kind="study" intro="Your files are read on this PC. The model you choose writes the study step by step (units, outcomes and criteria, lessons, practice, final test, audit); every question is then solved again without its key. The result is saved as a draft in your content folder and stays “Not certified” until the audit reports 0 blockers."
+          fields={[{ key: "title", label: "Title", optional: true, placeholder: "e.g. Linear algebra · lecture 3" }, { key: "scope", label: "Scope", optional: true, placeholder: "e.g. slides 1–24 only" }, { key: "goal", label: "Your goal", optional: true, placeholder: "e.g. the midterm on 12 Nov" }]}
+          onCreated={() => A().toast("Files read. Check the estimate under “Studies being written”, then press Start.")} />
+      ) : (
+        <>
+          <p className="k-small k-muted">Claude Code reads your slides, notes or book pages on this PC and writes the study.</p>
+          <div className="st-new-grid">
+            <label className="k-field"><span className="k-field-label">Title</span><input value={f.title} onChange={(e) => setF({ ...f, title: e.target.value })} placeholder="e.g. Linear algebra · lecture 3" /></label>
+            <label className="k-field"><span className="k-field-label">Files on this PC</span><input value={f.files} onChange={(e) => setF({ ...f, files: e.target.value })} placeholder="e.g. C:\Users\you\Downloads\lecture3.pdf" /></label>
+            <label className="k-field"><span className="k-field-label">Scope (optional)</span><input value={f.scope} onChange={(e) => setF({ ...f, scope: e.target.value })} placeholder="e.g. slides 1–24 only" /></label>
+            <label className="k-field"><span className="k-field-label">Your goal (optional)</span><input value={f.goal} onChange={(e) => setF({ ...f, goal: e.target.value })} placeholder="e.g. the midterm on 12 Nov" /></label>
+          </div>
+          <div className="k-row-btns">{f.title.trim() && f.files.trim() ? <AskPair what="writing a study" prompt={prompt} label="Write with Claude" primary /> : <span className="k-small k-muted">Give a title and the file path(s).</span>}</div>
+        </>
+      )}
     </details>
   );
 }

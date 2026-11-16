@@ -70,6 +70,23 @@ contextBridge.exposeInMainWorld('kartotek', Object.freeze({
     test: (callId, id, model, onEvent) => withEvents(callId, onEvent, () => ipcRenderer.invoke('models:test', callId, id, model)),
     cancel: (callId) => ipcRenderer.invoke('models:cancel', callId),
   }),
+  // Writing jobs (task E3). Files are chosen in the main process's picker; the window only holds tokens.
+  jobs: Object.freeze({
+    pickFiles: (which) => ipcRenderer.invoke('jobs:pickFiles', which),
+    list: () => ipcRenderer.invoke('jobs:list'),
+    get: (id) => ipcRenderer.invoke('jobs:get', id),
+    create: (kind, request, choice) => ipcRenderer.invoke('jobs:create', kind, request, choice),
+    start: (id, choice) => ipcRenderer.invoke('jobs:start', id, choice),
+    pause: (id) => ipcRenderer.invoke('jobs:pause', id),
+    remove: (id) => ipcRenderer.invoke('jobs:remove', id),
+    openFolder: (id) => ipcRenderer.invoke('jobs:openFolder', id),
+    // { type: 'job', job } | { type: 'removed', id }. Returns a function that stops listening.
+    onEvent: (callback) => {
+      const handler = (e, ev) => { try { callback(ev); } catch (x) { /* listener error */ } };
+      ipcRenderer.on('jobs:event', handler);
+      return () => ipcRenderer.removeListener('jobs:event', handler);
+    },
+  }),
   prompts: Object.freeze({
     list: () => ipcRenderer.invoke('prompts:list'),
     get: (id) => ipcRenderer.invoke('prompts:get', id),
