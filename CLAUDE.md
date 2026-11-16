@@ -6,7 +6,7 @@ Kartotek is a spaced-repetition and study app. Plain-JS engine in `src\`, React 
 
 - My learner data is never deleted or rewritten in place. Every change to the saved-state format ships with a lossless migration that is tested on a copy of a real export.
 - Existing features keep working: the DSR scheduler, Study v2 topic cycles, the legacy v1 runner, end-of-lesson tests, mock exams, mind maps and the exam sections. The Algorithm-tab test suite passes before every commit, and tools\audit-study.py still certifies the existing studies.
-- LearnHarness (github.com/amosblomqvist/learnharness, AGPL-3.0) is a reference for ideas only. Never copy its code, prompt texts or assets into this project. Write everything originally.
+- LearnHarness (github.com/amosblomqvist/learnharness, AGPL-3.0-only, by Amos Blomqvist) may be read and adapted: Kartotek is licensed AGPL-3.0-only since 2026-11-16 (owner decision). Take what is good, adapt it to Kartotek's rules (the package is the source of truth, help is recorded, generated material never reaches the scheduler), and say in every adapted file which LearnHarness file it comes from. Do not take what conflicts with those rules (for example model error classification) or what the owner ruled out.
 - No secrets in the repository (API keys, tokens). No course material, book extracts, handwriting photos or personal records in commits.
 - One task per session, on its own git branch. Commit with clear messages. When I send the prompt for the next task, that is my OK for the previous one: first commit any pending change to CLAUDE.md, merge the previous task's branch into main, then start the new task on a new branch from main. Never push to a remote or publish a release without my explicit OK.
 - UI text is English. The visual design follows DESIGN.md. New UI is React in ui\src; engine logic lives in plain modules with tests. Phone layout is out of scope.
@@ -92,9 +92,9 @@ Script order is fixed by `src\index.html`: engine, store, cores, then the views,
 ### Other folders
 
 - `desktop\`: the Electron main process (`main.js`), the bridge (`preload.js`) and plain helpers (`euroapply.js` = the read-only Euro apply connection: folder check, one projected data file, server ping and launcher; Euro apply is the owner's separate app and its folder is never written to), (`serve.js`, `content.js` = content folder discovery, parsing and photo paths, `data.js` = learner-data files and backups, `data-api.js` = the checked data calls shared by `main.js` and the tests, `models\` = the model layer, `jobs\` = the writing jobs); `scripts\`: `start.cjs` (dev start with live reload), `run-tests.cjs` (`npm test`), `content-tests.cjs`, `data-tests.cjs`, `smoke.cjs` (`npm run smoke`), `bridge-preview.cjs` (the app in a normal browser with the real main-process modules). See `docs\ARCHITECTURE.md`.
-- `prompts\`: the shipped prompt files of the model layer (front matter: id, version, slot, schema, variables) and `schemas\`.
+- `prompts\`: the shipped prompt files of the model layer (front matter: id, version, slot, schema, variables) and `schemas\`; files with `status: draft` (the F0 agent drafts) are not used by any feature yet.
 - `samples\`: synthetic studies (CC BY 4.0) that a fresh clone builds with.
 - `ui\scripts\copy-build.cjs`: copies the Vite output to `src\` and adds the licence banner.
 - `tools\`: `audit-study.py`, `check-mindmap.py`, `kconfig.py` (content folder), book fetch scripts, CEnT-S PDF scripts, `cents-items.json`.
-- `README.md`, `LICENSE` (MIT), `LICENSE-CONTENT.md` (CC BY 4.0 for docs and samples), `THIRD-PARTY-NOTICES.md` (regenerate when dependencies change).
-- `docs\`: `PROGRESS.md` (session log). `ARCHITECTURE.md` and `LEARNING-PROTOCOL.md` are referenced by the rules but do not exist yet.
+- `README.md`, `LICENSE` (GNU AGPL v3, AGPL-3.0-only), `LICENSE-CONTENT.md` (CC BY 4.0 for docs and samples), `THIRD-PARTY-NOTICES.md` (regenerate when dependencies change).
+- `docs\`: `PROGRESS.md` (session log). `ARCHITECTURE.md` (the desktop app, with "as built" notes per task) and `LEARNING-PROTOCOL.md` (task F0: the packaged cycle and the live session, the thirteen ideas, schemas, evidence rules, decisions).
