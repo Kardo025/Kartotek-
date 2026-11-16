@@ -92,9 +92,9 @@ Script order is fixed by `src\index.html`: engine, store, cores, then the views,
 ### Other folders
 
 - `desktop\`: the Electron main process (`main.js`), the bridge (`preload.js`) and plain helpers (`euroapply.js` = the read-only Euro apply connection: folder check, one projected data file, server ping and launcher; Euro apply is the owner's separate app and its folder is never written to), (`serve.js`, `content.js` = content folder discovery, parsing and photo paths, `data.js` = learner-data files and backups, `data-api.js` = the checked data calls shared by `main.js` and the tests, `models\` = the model layer, `jobs\` = the writing jobs); `scripts\`: `start.cjs` (dev start with live reload), `run-tests.cjs` (`npm test`), `content-tests.cjs`, `data-tests.cjs`, `smoke.cjs` (`npm run smoke`), `bridge-preview.cjs` (the app in a normal browser with the real main-process modules). See `docs\ARCHITECTURE.md`.
-- `prompts\`: the shipped prompt files of the model layer (front matter: id, version, slot, schema, variables) and `schemas\`.
+- `prompts\`: the shipped prompt files of the model layer (front matter: id, version, slot, schema, variables) and `schemas\`; files with `status: draft` (the F0 agent drafts) are not used by any feature yet.
 - `samples\`: synthetic studies (CC BY 4.0) that a fresh clone builds with.
 - `ui\scripts\copy-build.cjs`: copies the Vite output to `src\` and adds the licence banner.
 - `tools\`: `audit-study.py`, `check-mindmap.py`, `kconfig.py` (content folder), book fetch scripts, CEnT-S PDF scripts, `cents-items.json`.
 - `README.md`, `LICENSE` (MIT), `LICENSE-CONTENT.md` (CC BY 4.0 for docs and samples), `THIRD-PARTY-NOTICES.md` (regenerate when dependencies change).
-- `docs\`: `PROGRESS.md` (session log). `ARCHITECTURE.md` and `LEARNING-PROTOCOL.md` are referenced by the rules but do not exist yet.
+- `docs\`: `PROGRESS.md` (session log). `ARCHITECTURE.md` (the desktop app, with "as built" notes per task) and `LEARNING-PROTOCOL.md` (task F0: the packaged cycle and the live session, the thirteen ideas, schemas, evidence rules, decisions).

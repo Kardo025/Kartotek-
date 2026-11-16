@@ -21,7 +21,8 @@ const { S } = require('../desktop/jobs/schemas');
 
 // ---------------------------------------------------------------- the fake model
 function textOf(req) { return req.messages.map((m) => (typeof m.content === 'string' ? m.content : m.content.filter((c) => c.type === 'text').map((c) => c.text).join('\n'))).join('\n'); }
-function firstText(req) { const m = req.messages[0]; return typeof m.content === 'string' ? m.content : m.content.filter((c) => c.type === 'text').map((c) => c.text).join('\n'); }
+// prompt files may have Windows line endings after a checkout (core.autocrlf): the fake model reads them with \n only
+function firstText(req) { const m = req.messages[0]; return (typeof m.content === 'string' ? m.content : m.content.filter((c) => c.type === 'text').map((c) => c.text).join('\n')).replace(/\r\n/g, '\n'); }
 const all = (re, s) => { const out = []; let m; const r = new RegExp(re.source, re.flags.indexOf('g') >= 0 ? re.flags : re.flags + 'g'); while ((m = r.exec(s))) out.push(m); return out; };
 
 function fakeModels(opt) {

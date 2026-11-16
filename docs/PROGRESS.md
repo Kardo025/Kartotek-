@@ -432,3 +432,18 @@ Fixed after the run (tested): unit ids removed from learner text at save; "numbe
 - **Anthropic API key** added by you in the desktop app (dev profile); the connection test passed (Opus 5.5, $0.0014). Slots set: strong and vision `claude-sonnet-5-5`, fast `claude-haiku-5-5`. No monthly budget is set yet (Settings, Models, Usage and budget).
 - **Please delete the API key that was pasted in the chat** (Console, API keys) if you have not yet; use only the one you pasted into Kartotek.
 - The Ollama server started for this session with only the NVIDIA GPU visible stops when this session ends; afterwards the tray app uses the AMD GPU again (see the open question above).
+
+## 2026-11-16 · Task F0: learning protocol design (branch `task/f0-learning-protocol`)
+
+### What changed
+- Before starting: merged `task/e3-content-jobs` into `main` (your prompt is the OK); no `CLAUDE.md` change was pending; branched from `main`. Reminded you about the API key pasted in the chat.
+- **`docs\LEARNING-PROTOCOL.md`** (design only, no code changed): the packaged cycle and the new live session (Probe → Plan → Teach → Practice) side by side, chosen per topic (a "live" topic replaces Learn & digest by an attached session; Applying with verified items stays the only path to DSR and the seven states); the shared data model (attempt fields `thinking`, `confidence_pct`, `help` log; progress `cv: 3`; new learner-data parts `sessions` and `graph`; two optional package fields) with a lossless migration; each of the thirteen ideas with where it appears, data, model request and reply, behaviour without a model, and its effect on DSR, the seven states, the calibration statistics and the report; an evidence summary table; the proposed STUDY-RULES.md changes (10 items, not applied); a build order; twelve decisions.
+- **Confidence:** proposed bands 0–39 Guess, 40–79 Unsure, 80–100 Sure, so the scheduler rule is unchanged; old records keep their word and are never given a number.
+- **Eight agent drafts** in `prompts\` (`prober`, `planner`, `teacher`, `practice-coach`, `hint-giver`, `graph-extractor`, `side-answerer`, `researcher`), written from scratch, marked `status: draft`, no schema yet. LearnHarness's prompt files were not opened. They already appear in Settings, Models, Prompts (the list shows every file); no feature uses them until its F task.
+- `CLAUDE.md`: the docs line no longer says LEARNING-PROTOCOL.md is missing; drafts in `prompts\` are explained.
+
+### How you can check it
+Read `docs\LEARNING-PROTOCOL.md`, sections 0 (principles), 1 (flows), 4 (evidence summary), 9 (STUDY-RULES changes), 10 (build order), 11 (decisions). `npm test` still passes (nothing in the code changed).
+
+### Open questions (section 11 of the protocol, with recommendations)
+D1 generated questions never move the seven states (shown as "session evidence"); D2 no review cards from live-session nodes in F; D3 the confidence bands; D4 probe budget 15; D5 a skipped topic counts for End and stays in the final test; D6 practice aims at about 80 % first-try success; D7 confidence recorded at commit with the hint level; D8 researcher only through the provider's web search; D9 dictation through Windows voice typing now; D10 the graph next to Mind maps; D11 the monthly budget as the cost guard; D12 exam topics only in attached sessions. Also: **E2 is still not built**; the build order puts it before F2.
