@@ -521,3 +521,27 @@ D1 generated questions never move the seven states (shown as "session evidence")
 - Old confidence words never get a number, so the fine panel starts empty for your existing answers.
 - Calibration for generated questions (a separate view in the protocol) has nothing to show until F3 and later add generated questions.
 - Still open from earlier: the C4 draft release, the placeholder author email, tagging, and the Anthropic key you pasted in chat (replace it in the Console).
+
+## 2026-11-16 · Task F2: the hint ladder (branch `task/f2-hint-ladder`)
+
+### What changed
+- Before starting: merged `task/f1-thinking-confidence-prompts` into `main` (your prompt is the OK); branched from `main`.
+- **Ask for a hint** (Applying, Practice mode, model set up): one rung of help per press, from the least to the most revealing: R0 look again, R1 the pattern, R2 a group of ideas, R3 the idea named, R4 the move outlined, R5 the worked step (LEARNING-PROTOCOL 3.4). The model (`prompts\hint-giver.md`, version 3, fast slot, editable in Settings, Prompts) reads the question, its key, solution and criteria, what you have answered so far and your thinking, finds the first point where you are stuck or wrong, and gives that rung only. Asking again gives the next rung, and the earlier rungs are sent along so it does not repeat. The screen shows the level that was given ("Level R1 · The pattern") and what it gives away. After R5 the button is disabled; the package solution is the last step.
+- **Guards in code, on top of the prompt:** a reply above the rung asked for, a hint that states the numeric answer (below R5) or copies a run of eight words of the solution or the key text (below R3), a statement repair that reveals anything, or an empty hint is refused and recorded nowhere; the app asks the model once more, telling it what was wrong, and then shows the error.
+- **Recording:** every rung is an entry in `attempt.help` (`kind: "model_hint"`, level, requested rung, text, what it revealed, provider, model, prompt version) and `attempt.model_hints` holds the highest rung (R0 = 0). Any rung, R0 too, makes the attempt assisted like a package hint: not DSR-eligible ("Assisted (model hint R2)"), kept as practice with help, shown in the attempt history and in the Explain request. The package's hints, steps and solution are unchanged and are the only help without a model. Check without help and the final test show no hint controls.
+- **"I don't understand what is asked"** (free statement repair): explains only the wording, is logged as `statement_repair` and does **not** count as help.
+
+### Verification
+| Check | Result |
+| --- | --- |
+| `KARTOTEK_BACKUP=<your export> npm test` | everything passes: engine **68/68** (3 new hint scenarios: the R0-R5 sequence and recording, assistance and eligibility with the statement repair, Check mode and answered attempts refused, every refusal case), **9/9** fake-provider tests (new: three requests through the model service give R0, R1, R2 in order, each recorded, the attempt no longer eligible, no learner text in the usage log); your backup unchanged, no saved-format change |
+| `npm run smoke`, real window | passes: "Ask for a hint" then "Ask for the next step" showed Level R0 and Level R1, recorded as assistance, nothing sent to the reviews |
+| Real local model (Ollama `llama3.2`, 3B) | the guards worked (it overshot the rung several times and was corrected by the retry), but its R0 nudge on the "display says OPEN" item was "Think about what a broken sensor can do", which already points at the answer. A 3B model is not reliable enough to hold a rung; the code only catches copying and numbers, not hints that are too revealing in meaning |
+
+### Not verified: the "done when"
+I did not spend your Claude Code subscription or an API key on a real call. To check "a real item gives me a first-level nudge that does not name the method": `npm start`, Settings, Models, set a stronger model for the fast slot, Study, Applying (Practice mode), answer nothing, press **Ask for a hint** on a question and read the R0 text. If it names the method, tell me which model and item and I will tighten the prompt.
+
+### Open questions
+- Semantic leaks (a hint that is too revealing without copying anything) can only be reduced by the prompt and a stronger model; there is no code check for them.
+- The "rung needed" readout for adaptive practice (protocol 3.8) is stored (`model_hints`) but nothing uses it yet; F5 does.
+- Still open: shared prompt fragments (D16), the C4 draft release, the placeholder author email, the pasted Anthropic key.

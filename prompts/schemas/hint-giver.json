@@ -1,0 +1,11 @@
+{
+  "type": "object",
+  "properties": {
+    "rung": { "type": "string", "enum": ["R0", "R1", "R2", "R3", "R4", "R5", "statement_repair"] },
+    "stuck_at": { "type": "string" },
+    "hint": { "type": "string" },
+    "reveals": { "type": "string" }
+  },
+  "required": ["rung", "stuck_at", "hint", "reveals"],
+  "additionalProperties": false
+}

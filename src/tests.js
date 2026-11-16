@@ -879,6 +879,57 @@
     }]
   );
 
+  // ------------------------------------------------------------------ the hint ladder (task F2)
+  function hintReply(rung, hint, reveals) { return { rung: rung, stuck_at: 'Which switch settings keep the gate closed', hint: hint, reveals: reveals || '' }; }
+  tests.push(
+    ['Hint ladder: each request is one rung higher (R0 to R5), every rung is recorded with its level, and the ladder ends after R5', function () {
+      var K = global.KCycle, st = KStore.emptyState(), et = KEtut.importPackage(st, typedV2(), { now: NOW }).etut, idx = K.itemIndex(et.package);
+      var a = K.startAttempt(et, idx.i1, 'practice', NOW), asked = [], texts = ['Re-read the rule.', 'Think about how the two switches relate.', 'It is one of the combining rules.', 'Use the rule that needs both conditions.', 'Check each setting against it.', 'With B off the second condition fails.'];
+      var seq = [], r;
+      for (var i = 0; i < 7; i++) {
+        var req = K.nextRung(a);
+        seq.push(req);
+        if (!req) break;
+        r = K.recordModelHint(a, idx.i1, hintReply(req, texts[i]), { requested: req, now: NOW + i, meta: META, prompt: PROMPT });
+        asked.push(r.ok);
+      }
+      var inp = K.hintInputs(et, a, idx.i1, { choice: ['a'], thinking: 'maybe it is open' }, 'R0');
+      return { pass: seq.join() === 'R0,R1,R2,R3,R4,R5,' && asked.every(Boolean) && a.help.length === 6 && a.help.map(function (h) { return h.level; }).join() === 'R0,R1,R2,R3,R4,R5' && a.model_hints === 5
+        && K.modelHintLevel(a) === 'R5' && a.help[2].by.model === 'fake-model-1' && a.help[0].text === 'Re-read the rule.' && /R4: Check each setting/.test(inp.given) && /R0: Re-read/.test(inp.given) && /maybe it is open/.test(inp.thinking) && inp.requested === 'R0',
+        detail: 'requests: ' + seq.join(' ') + ' · levels recorded: ' + a.help.map(function (h) { return h.level; }).join(' ') + ' · the next request lists the earlier rungs' };
+    }],
+    ['Hint ladder: any model hint (R0 too) makes the attempt assisted and not DSR-eligible like a package hint; a statement repair does not; Check mode and answered attempts get none', function () {
+      var K = global.KCycle, st = KStore.emptyState(), et = KEtut.importPackage(st, miniV2(), { now: NOW }).etut, idx = K.itemIndex(et.package);
+      var a = K.startAttempt(et, idx.i1, 'practice', NOW), r = K.recordModelHint(a, idx.i1, hintReply('R0', 'Look at the options again.'), { requested: 'R0', now: NOW, meta: META, prompt: PROMPT });
+      K.commit(et, a, { choice: ['b'], confidence_pct: 90 }, idx.i1, NOW + 1000);
+      var el = K.eligibility(a, idx.i1), sent = K.send(st, et, a, idx.i1, etutEnvAt(NOW + 1000));
+      var b = K.startAttempt(et, idx.i2, 'practice', NOW + 5000), rep = K.recordModelHint(b, idx.i2, { rung: 'statement_repair', stuck_at: 'The wording', hint: 'It asks which option states the rule; give one letter.', reveals: '' }, { requested: 'statement_repair', now: NOW + 5001, meta: META, prompt: PROMPT });
+      K.commit(et, b, { choice: ['a', 'b'], confidence_pct: 90 }, idx.i2, NOW + 6000);
+      var elb = K.eligibility(b, idx.i2);
+      var c = K.startAttempt(et, idx.i1, 'check', NOW + 7000), chk = K.recordModelHint(c, idx.i1, hintReply('R0', 'x y z'), { requested: 'R0' });
+      var d = K.startAttempt(et, idx.i1, 'practice', NOW + 8000); K.commit(et, d, { choice: ['b'], confidence_pct: 90 }, idx.i1, NOW + 9000);
+      var late = K.recordModelHint(d, idx.i1, hintReply('R0', 'x y z'), { requested: 'R0' });
+      return { pass: r.ok && K.assisted(a) && a.model_hints === 0 && !el.eligible && /Assisted \(.*model hint R0/.test(el.reason) && !sent.eligible && st.reviews.length === 0 && a.hints === 0
+        && rep.ok && !K.assisted(b) && b.help[0].kind === 'statement_repair' && b.model_hints === undefined && elb.eligible && !chk.ok && !late.ok,
+        detail: 'R0: ' + el.reason + ' · repair only: eligible ' + elb.eligible + ' · Check mode: ' + (chk.ok ? 'allowed' : 'refused') + ' · after answering: ' + (late.ok ? 'allowed' : 'refused') };
+    }],
+    ['Hint ladder: a reply above the requested rung, one that names the answer or copies the solution below R3, or a repair that reveals something is refused and recorded nowhere', function () {
+      var K = global.KCycle, st = KStore.emptyState(), et = KEtut.importPackage(st, miniV2(), { now: NOW }).etut, idx = K.itemIndex(et.package);
+      var num = { q_id: 'n1', format: 'numeric', stem: 'How many settings open the gate?', numeric: { value: 12, tol: 0, unit: '' }, solution: 'Count the settings where both switches are on and the gate is therefore open in the rule.' };
+      var a = K.startAttempt(et, idx.i1, 'practice', NOW), rec = function (reply, req, item) { return K.recordModelHint(a, item || idx.i1, reply, { requested: req, now: NOW, meta: META, prompt: PROMPT }); };
+      var high = rec(hintReply('R3', 'Use the rule that needs both.'), 'R1');
+      var number = rec(hintReply('R1', 'The answer is 12 in total.'), 'R1', num);
+      var copied = rec(hintReply('R2', 'Remember to count the settings where both switches are on and the gate is therefore open in the rule.'), 'R2', num);
+      var keyText = rec(hintReply('R1', 'The correct choice is B, as you can see.'), 'R1', Object.assign({}, idx.i1, { options: [{ id: 'a', md: 'A' }, { id: 'b', md: 'The correct choice is B' }, { id: 'c', md: 'C' }], key: ['b'] }));
+      var repair = rec({ rung: 'statement_repair', stuck_at: 'x', hint: 'It asks for a count.', reveals: 'the rule to use' }, 'statement_repair');
+      var empty = rec(hintReply('R0', '   '), 'R0');
+      var ok3 = rec(hintReply('R3', 'The answer is 12 in total.'), 'R3', num);   // at R3 the number is still not allowed
+      var fine = rec(hintReply('R1', 'Think about what makes the gate open.'), 'R1', num);
+      return { pass: !high.ok && !number.ok && /numeric answer/.test(number.problems[0]) && !copied.ok && /solution/.test(copied.problems[0]) && !keyText.ok && !repair.ok && !empty.ok && !ok3.ok && fine.ok && a.help.length === 1,
+        detail: 'refused: rung too high, the number, copied solution, the key text, a repair that reveals, an empty hint · kept: ' + a.help.length };
+    }]
+  );
+
   tests.push(
     ['Backup file: the export is the whole saved state and survives a round trip; inspectBackup rejects foreign or newer files', function () {
       var st = KStore.buildSampleState(NOW);

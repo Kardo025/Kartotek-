@@ -545,7 +545,7 @@
     attempt.disputed = true; attempt.dispute_note = cap(note || '');
     return true;
   }
-  function assisted(a) { return a.hints > 0 || a.steps > 0 || a.solution_shown || a.pane_open || (Array.isArray(a.help) && a.help.length > 0) || a.model_hints > 0; }
+  function assisted(a) { return a.hints > 0 || a.steps > 0 || a.solution_shown || a.pane_open || (Array.isArray(a.help) && a.help.some(function (h) { return h.kind !== 'statement_repair'; })) || a.model_hints > 0; }
 
   // The DSR adapter rule (03-design §7). Returns {eligible, reason, signal, rating?}
   function eligibility(attempt, item) {
@@ -555,7 +555,7 @@
     if (attempt.followup_of || item.followup_of) return { eligible: false, reason: 'A follow-up after an explanation (assisted context)' };
     if ((item.validation || 'unverified') !== 'verified') return { eligible: false, reason: 'The question is not verified' };
     if (attempt.disputed) return { eligible: false, reason: 'You reported a problem with this question' };
-    if (assisted(attempt)) return { eligible: false, reason: 'Assisted (' + [attempt.hints ? attempt.hints + ' hint' + (attempt.hints > 1 ? 's' : '') : '', attempt.steps ? 'steps' : '', attempt.solution_shown ? 'solution shown' : '', attempt.pane_open ? (attempt.left_final ? 'a lesson was opened during the final test' : 'lesson open') : ''].filter(Boolean).join(', ') + ')' };
+    if (assisted(attempt)) return { eligible: false, reason: 'Assisted (' + [attempt.hints ? attempt.hints + ' hint' + (attempt.hints > 1 ? 's' : '') : '', attempt.steps ? 'steps' : '', attempt.solution_shown ? 'solution shown' : '', attempt.pane_open ? (attempt.left_final ? 'a lesson was opened during the final test' : 'lesson open') : '', modelHints(attempt).length ? 'model hint ' + modelHintLevel(attempt) : ''].filter(Boolean).join(', ') + ')' };
     if (item.format === 'recall') {
       // A recall retried in the same visit, after its model answer was shown, is remediation, not a new retrieval
       if (attempt.prior_item_exposure && attempt.last_same_item_part_visit === attempt.visit) return { eligible: false, reason: 'Retried right after its answer was shown' };
@@ -909,7 +909,7 @@
     lines.push('My thinking: ' + ((attempt.thinking || resp.working) ? '"' + (attempt.thinking || resp.working) + '"' : 'not provided'));
     if (attempt.dont_know) lines.push('I chose "I do not know": a gap, not a wrong guess. Say what the question asks and how to start, and do not treat it as a mistake.');
     else if (attempt.confidence_pct != null) lines.push('My stated confidence that my answer is right: ' + attempt.confidence_pct + '%.');
-    lines.push('Assistance already used: ' + (assisted(attempt) ? [attempt.hints + ' hint(s)', attempt.steps + ' step(s)', attempt.solution_shown ? 'solution shown' : 'solution not shown', attempt.pane_open ? 'lesson open' : 'lesson closed'].join(', ') : 'none') + (attempt.followup_of ? '; this was a follow-up after an earlier explanation' : '') + '.');
+    lines.push('Assistance already used: ' + (assisted(attempt) ? [attempt.hints + ' hint(s)', attempt.steps + ' step(s)', attempt.solution_shown ? 'solution shown' : 'solution not shown', attempt.pane_open ? 'lesson open' : 'lesson closed'].concat(modelHintLevel(attempt) ? ['model hints up to ' + modelHintLevel(attempt)] : (modelHints(attempt).length ? ['a model hint'] : [])).join(', ') : 'none') + (attempt.followup_of ? '; this was a follow-up after an earlier explanation' : '') + '.');
     var status = attempt.disputed ? 'disputed by me' + (attempt.dispute_note ? ' ("' + attempt.dispute_note + '")' : '') : (item.validation || 'unverified') + (item.validation_note ? ' (' + item.validation_note + ')' : '');
     if (item.format === 'mcq_single' || item.format === 'mcq_multi') {
       var keyed = (item.key || []).map(function (id) { return optText(item, id) + ' [' + id + ']'; }).join('; ');
@@ -958,6 +958,95 @@
       'Write studies\\<id>\\etut.json with "schema_version": 2 and "workflow": "cycle-v2", run python tools\\audit-study.py studies\\<id> until it reports 0 blockers (list the warnings you leave), then run powershell -ExecutionPolicy Bypass -File build.ps1.',
       TAIL
     ].filter(Boolean).join('\n');
+  }
+
+  // ------------------------------------------------------------------ the hint ladder (task F2, LEARNING-PROTOCOL 3.4)
+  // "Ask for a hint" in Applying, Practice mode, with a model set up: one rung of help per request, least to most revealing. Every rung
+  // is recorded on the attempt in the help log (kind "model_hint"), which makes it assisted exactly like a package hint (assisted(),
+  // eligibility()). A statement repair ("what is asked?") is logged too but is not help. The package's own hints, steps and solution
+  // are untouched and stay the only help when no model is set up.
+  var RUNGS = ['R0', 'R1', 'R2', 'R3', 'R4', 'R5'];
+  var RUNG_LABEL = { R0: 'Look again', R1: 'The pattern', R2: 'A group of ideas', R3: 'The idea, named', R4: 'The move outlined', R5: 'The worked step', statement_repair: 'What is asked' };
+  var RUNG_GIVES = { R0: 'points at what to look at again, no idea named', R1: 'names the kind of situation, no idea named', R2: 'narrows to a group of ideas', R3: 'names the idea; applying it is yours', R4: 'outlines the move; the values are yours', R5: 'works the step', statement_repair: 'explains the wording only' };
+  function modelHints(a) { return (a && Array.isArray(a.help) ? a.help : []).filter(function (h) { return h.kind === 'model_hint'; }); }
+  // The rung to ask for next: one above the highest rung asked so far (R0 first); null when the ladder is used up
+  function nextRung(attempt) {
+    var hs = modelHints(attempt), top = -1;
+    hs.forEach(function (h) { var n = RUNGS.indexOf(h.requested || h.level); if (n > top) top = n; });
+    return top + 1 < RUNGS.length ? RUNGS[top + 1] : null;
+  }
+  // The highest rung actually given, e.g. "R2", or null (what the report and the explanation request show)
+  function modelHintLevel(attempt) {
+    var top = -1;
+    modelHints(attempt).forEach(function (h) { var n = RUNGS.indexOf(h.level); if (n > top) top = n; });
+    return top < 0 ? null : RUNGS[top];
+  }
+  function canAskHint(attempt) { return !!attempt && !attempt.committed_at && attempt.mode === 'practice'; }
+  // The values of the hint-giver prompt. `draft` is what the learner has entered so far: { choice, text, number, thinking }.
+  function hintInputs(et, attempt, item, draft, requested, problems) {
+    draft = draft || {};
+    var pkg = et.package, lines = ['Question: ' + item.stem, 'Response type: ' + (FORMAT_LABEL[item.format] || item.format) + '.'];
+    if (item.format === 'mcq_single' || item.format === 'mcq_multi') {
+      lines.push('Options: ' + (item.options || []).map(function (o) { return o.id + ') ' + o.md; }).join(' | '));
+      lines.push('Key: ' + (item.key || []).join(', ') + '.');
+      var notes = item.option_notes || {};
+      if (Object.keys(notes).length) lines.push('Why each option is right or wrong: ' + Object.keys(notes).map(function (k) { return k + ': ' + notes[k]; }).join(' | '));
+    } else if (item.format === 'numeric' && item.numeric) lines.push('Answer: ' + item.numeric.value + ' ± ' + item.numeric.tol + (item.numeric.unit ? ' ' + item.numeric.unit : '') + '.');
+    else if (item.format === 'typed' && item.rubric) {
+      lines.push('Criteria a good answer meets: ' + (item.rubric.criteria || []).map(function (c) { return c.text; }).join(' | '));
+      lines.push('Model answer: ' + (item.rubric.model || ''));
+    } else if (item.format === 'recall') lines.push('Model answer: ' + (item.model || ''));
+    if (item.solution) lines.push('Solution: ' + item.solution);
+    if ((item.criteria || []).length) lines.push('Outcome criteria:\n' + criteriaLines(pkg, item));
+    var resp = item.format === 'mcq_single' || item.format === 'mcq_multi'
+      ? ((draft.choice || []).map(function (id) { return optText(item, id) + ' [' + id + ']'; }).join('; '))
+      : item.format === 'numeric' ? String(draft.number == null ? '' : draft.number) : String(draft.text || '');
+    var given = modelHints(attempt).map(function (h) { return h.level + ': ' + h.text; }).join('\n');
+    return { item: lines.join('\n'), response: resp.trim() || 'nothing yet', thinking: String(draft.thinking || '').trim() || 'nothing written',
+      given: given || 'none', requested: requested, problems: problems && problems.length ? problems.join('\n') : 'none' };
+  }
+  // Would this hint give away more than its rung allows? Below R3 it may name neither the answer nor the solution text; at R3 and R4 it
+  // may not state the final answer. → a list of what is wrong (empty = fine)
+  function hintLeaks(item, rung, hint) {
+    var out = [], h = norm(hint), n = RUNGS.indexOf(rung);
+    if (n < 0) return out;
+    var texts = [];
+    if (n <= 4) {
+      if (item.format === 'numeric' && item.numeric) { var v = String(item.numeric.value); if (new RegExp('(^|[^0-9.])' + v.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '([^0-9]|$)').test(h)) out.push('the hint states the numeric answer'); }
+      if (n <= 2) {
+        if (item.solution) texts.push(item.solution);
+        if (item.rubric && item.rubric.model) texts.push(item.rubric.model);
+        if (item.model) texts.push(item.model);
+        (item.key || []).forEach(function (id) { var t = optText(item, id); if (norm(t).length >= 8) texts.push(t); });
+        texts.forEach(function (t) {
+          var s = norm(t).replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim(), words = s.split(' ');
+          // a run of eight words copied from the solution is a leak
+          for (var i = 0; i + 8 <= words.length; i++) { var run = words.slice(i, i + 8).join(' '); if (h.replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').indexOf(run) >= 0) { out.push('the hint repeats the solution'); return; } }
+          if (s.length >= 8 && s.length <= 80 && h.replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').indexOf(s) >= 0) out.push('the hint repeats an answer');
+        });
+      }
+    }
+    return out.filter(function (x, i, a) { return a.indexOf(x) === i; });
+  }
+  // Checks the model's reply and records it. ctx: { requested, now, meta, prompt }. → { ok, entry } or { ok: false, error, problems }
+  function recordModelHint(attempt, item, json, ctx) {
+    ctx = ctx || {};
+    if (!canAskHint(attempt)) return { ok: false, error: 'Hints are only given in Practice mode, before you answer.', problems: [] };
+    var req = ctx.requested, r = json && json.rung, hint = String(json && json.hint || '').trim();
+    if (!hint) return { ok: false, error: 'The hint was empty.', problems: ['the hint was empty'] };
+    var repair = req === 'statement_repair';
+    if (repair ? r !== 'statement_repair' : (RUNGS.indexOf(r) < 0 || RUNGS.indexOf(r) > RUNGS.indexOf(req))) {
+      return { ok: false, error: 'The model gave rung ' + r + ' although ' + req + ' was asked for, so the hint was not used.', problems: ['you gave ' + r + ' but only ' + req + ' may be given'] };
+    }
+    if (repair && String(json.reveals || '').trim()) return { ok: false, error: 'The repair of the wording revealed part of the solution, so it was not used.', problems: ['a statement repair must reveal nothing, but it reveals: ' + json.reveals] };
+    var leaks = hintLeaks(item, repair ? 'R0' : r, hint);
+    if (leaks.length) return { ok: false, error: 'The hint gave away more than ' + (repair ? 'the wording' : r) + ' allows (' + leaks.join('; ') + '), so it was not used.', problems: leaks };
+    var entry = { kind: repair ? 'statement_repair' : 'model_hint', level: repair ? 'statement_repair' : r, requested: req, at: ctx.now || Date.now(), text: hint.slice(0, 1200),
+      stuck_at: String(json.stuck_at || '').trim().slice(0, 300), reveals: String(json.reveals || '').trim().slice(0, 200), by: modelMeta(ctx.meta, ctx.prompt) };
+    (attempt.help = Array.isArray(attempt.help) ? attempt.help : []).push(entry);
+    // the highest rung given (R0 = 0): a readout of how hard the problem was for this learner (LEARNING-PROTOCOL 3.4)
+    if (!repair) attempt.model_hints = Math.max(attempt.model_hints || 0, RUNGS.indexOf(r));
+    return { ok: true, entry: entry };
   }
 
   // Thinking while reading (Learn & digest): versions per topic, like the Feynman explanation. Never required, never evidence.
@@ -1342,6 +1431,7 @@
     outcomeEvidence: outcomeEvidence, stateOf: stateOf, nextItem: nextItem, partEvidence: partEvidence,
     blueprint: blueprint, planFinal: planFinal, finalPosition: finalPosition, nextBlock: nextBlock, report: report,
     explainRequest: explainRequest, followupPrompt: followupPrompt, newStudyPrompt: newStudyPrompt,
+    RUNGS: RUNGS, RUNG_LABEL: RUNG_LABEL, RUNG_GIVES: RUNG_GIVES, modelHints: modelHints, nextRung: nextRung, modelHintLevel: modelHintLevel, canAskHint: canAskHint, hintInputs: hintInputs, hintLeaks: hintLeaks, recordModelHint: recordModelHint,
     saveReadingThinking: saveReadingThinking, lessonText: lessonText, sourcePassages: sourcePassages, topicSources: topicSources, quoteIn: quoteIn,
     explainInputs: explainInputs, saveExplanation: saveExplanation, explanationsOf: explanationsOf,
     followupInputs: followupInputs, buildFollowups: buildFollowups, storeFollowups: storeFollowups, withFollowups: withFollowups,

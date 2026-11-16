@@ -25,6 +25,7 @@ shipped file; "Reset to default" removes the edit.
 | `ask-card` | fast | Ask about this card (Review) |
 | `typed-grading` | strong | A model proposes the grading of a written answer |
 | `feynman-feedback` | strong | Feynman "Get feedback" |
+| `hint-giver` | fast | Ask for a hint in Applying, Practice mode (one rung per request) |
 
 Schemas stay in the strict common subset: every property required, `additionalProperties: false`, no length or pattern limits.
 `scripts\study-model-tests.cjs` checks that for every schema and that the engine's values match each prompt's placeholders.

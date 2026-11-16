@@ -595,7 +595,7 @@ function History({ et, attempts, idx }) {
                 <tr key={x.id}>
                   <td className="cy-clip">{K.FORMAT_LABEL[it.format] || ""}{K.isConnecting(it) ? " · connects topics" : ""} · {String(it.stem || x.q_id).replace(/[*`]/g, "").slice(0, 80)}</td>
                   <td>{x.disputed ? "reported" : r.rating ? r.rating : r.correct == null ? "uncertain" : r.correct ? "right" : "not right"}</td>
-                  <td>{K.assisted(x) ? [x.hints ? x.hints + " hint" : "", x.steps ? "steps" : "", x.solution_shown ? "solution" : "", x.pane_open ? "lesson" : ""].filter(Boolean).join(", ") : x.followup_of ? "follow-up" : "none"}</td>
+                  <td>{K.assisted(x) ? [x.hints ? x.hints + " hint" : "", x.steps ? "steps" : "", x.solution_shown ? "solution" : "", x.pane_open ? "lesson" : "", K.modelHints(x).length ? "model hint " + K.modelHintLevel(x) : ""].filter(Boolean).join(", ") : x.followup_of ? "follow-up" : "none"}</td>
                   <td>{x.dsr ? (x.dsr.status === "sent" ? x.dsr.rating : x.dsr.status === "withdrawn" ? <span className="k-muted" title={x.dsr.reason}>withdrawn</span> : <span className="k-muted" title={x.dsr.reason}>kept</span>) : "—"}</td>
                   <td><button type="button" className="k-btn sm" onClick={() => setOpen(open === x.id ? null : x.id)}>{open === x.id ? "Close" : "Open"}</button></td>
                 </tr>
