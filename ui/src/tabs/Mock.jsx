@@ -6,6 +6,7 @@ import { Timer, Play, ArrowRight, ArrowLeft, Flag, ArrowCounterClockwise, FileAr
 import { PageHead, Panel, Btn, Kpi, TableWrap, ConfirmBtn } from "./kit.jsx";
 import { Md } from "./study/common.jsx";
 import { AskPair } from "./Cents.jsx";
+import { NewJob, JobsPanel, jobsAvailable } from "./Jobs.jsx";
 import "./mock.css";
 
 const App = () => window.App;
