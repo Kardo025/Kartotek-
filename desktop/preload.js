@@ -76,6 +76,11 @@ contextBridge.exposeInMainWorld('kartotek', Object.freeze({
     setKey: (key) => ipcRenderer.invoke('research:setKey', key),
     clearKey: () => ipcRenderer.invoke('research:clearKey'),
   }),
+  // Dictation (task F8): Windows voice typing in the focused field; no audio or key passes through Kartotek
+  dictation: Object.freeze({
+    status: () => ipcRenderer.invoke('dictation:status'),
+    start: () => ipcRenderer.invoke('dictation:start'),
+  }),
   // Live sessions on the learner's own files (task F4): read picked files (tokens) for a session; get the cached text back
   live: Object.freeze({
     readFiles: (sessionId, tokens) => ipcRenderer.invoke('live:readFiles', sessionId, tokens),

@@ -386,6 +386,10 @@ handleModel('models:cancel', (e, callId) => models().cancel(String(callId)));
 handleModel('research:status', () => models().searchStatus());
 handleModel('research:setKey', (e, key) => { if (!isStr(key, 400)) throw new Error('Invalid key.'); return models().setSearchKey(key); });
 handleModel('research:clearKey', () => models().clearSearchKey());
+// Dictation (task F8): Windows voice typing, opened for the learner in the focused field (desktop\dictation.js)
+const dictation = require('./dictation').createDictation({ isFocused: () => !!(win && !win.isDestroyed() && win.isFocused()) });
+handleModel('dictation:status', () => { dictation.warm(); return dictation.status(); });
+handleModel('dictation:start', () => dictation.start());
 // Streaming calls: events go to the window as 'models:event' with the call id
 function sendModelEvent(event, callId, ev) { if (!event.sender.isDestroyed()) event.sender.send('models:event', { callId, event: ev }); }
 handleModel('models:run', (event, callId, request) => {
@@ -496,7 +500,7 @@ app.on('second-instance', () => {
   if (win) { if (win.isMinimized()) win.restore(); win.focus(); }
 });
 app.on('window-all-closed', () => app.quit());
-app.on('will-quit', () => { if (dataStore) dataStore.unlock(); });
+app.on('will-quit', () => { if (dataStore) dataStore.unlock(); dictation.stop(); });
 
 app.whenReady().then(() => {
   protocol.handle('app', serveApp);
