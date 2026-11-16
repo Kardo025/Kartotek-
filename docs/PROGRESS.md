@@ -728,3 +728,61 @@ I did not spend your Claude Code subscription or an API key on a real call. To c
 - **Photos of a problem** (the vision slot) are not read yet; text, PDF, .pptx and .docx are.
 - **The calibration view:** the "Generated questions" calibration view is still open (records exist for probe, live and practice answers).
 - **Still open from earlier:** the C4 draft release, the placeholder author email, and the Anthropic key you pasted in chat (replace it in the Console).
+
+## 2026-11-19 · Task F6: the knowledge graph (branch `task/f6-knowledge-graph`)
+
+### What changed
+- **Before starting:** merged `task/f5-adaptive-practice` into `main` (your prompt is the OK); branched from `main`.
+- **Data:** propositions (a short name, a precise statement, other phrasings) and reasoning chains (premises that together give one conclusion).
+  - **Package records** are computed from your packages every time; nothing of them is stored. Their origin is the study, topic and source pages. Ids are `pkg:<study>:<outcome or relation>`, so seeding again after a package update keeps them (tested with an updated package).
+  - **Your own records** live in your data (`state.graph`). Their origin is a live session and step, or a notes file; they also keep the review log.
+- **Growth:** Knowledge graph → "Grow the graph" → **Propose ideas** for a live session. The model reads the teaching of the steps not yet in the graph, together with the existing records most like it, and proposes ideas and chains.
+  - **Review:** you **Accept** each idea (name and statement editable, links tickable), mark it **Same idea as…** an existing record (its wording becomes another phrasing of that record), or **Reject** it. You accept or reject each chain; a chain whose idea you rejected is skipped. Nothing is saved before **Save my decisions**.
+  - **Add from notes** (D15) runs your pasted notes or a file through the same proposal and review.
+- **View:** sidebar **Maps → Knowledge graph** (D10; the old "AI Mind Mapping Assistant" heading is now "Maps", with Mind maps beside it).
+  - **Navigation:** pan and zoom; **Foundations at the bottom** (layers by chain depth) or **By study** (columns).
+  - **Finding ideas:** a filter by study, by exam or "only my own ideas", and a search that dims the rest.
+  - **Chains:** a chain with several premises meets in a small "∧" node.
+  - **Click-through:** click an idea for its origin, evidence and memory, then **Open the lesson** (the topic's Learn & digest) or **Open the session message** (the transcript, at that step).
+- **Kartotek's addition:** each study node is coloured by its outcome's evidence state (shown without help, only with help, needs work, not assessed) and shows its topic card's memory strength from the scheduler. Your own ideas show "session evidence" and have no card (D2).
+- **Entry points:**
+  - **Practise these:** Ctrl- or Shift-click several ideas, then press it. It opens a practice session (F5) on them, attached to the study when they all come from one.
+  - **The probe** (F3) reads your evidence: topics whose outcomes you have all shown without help count as held without a question, so it starts near your edge.
+- **Smoothness:** panning and zooming no longer re-render anything, and above 140 nodes a lighter drawing is used.
+
+### Node count (as you asked)
+| Where | Studies | Propositions | Chains | Nodes drawn |
+| --- | --- | --- | --- | --- |
+| Your content folder now | 14 Study v2 studies | 217 | 161 | 223 (6 of them "∧" nodes) |
+| Your backup of 2026-11-15 (a copy, read only) | 13 Study v2 studies | 209 | 147 | 212 |
+
+- **Measured on the preview with all 14 studies:**
+  - 0.013 ms per pan step (only one transform changes);
+  - 6 ms for a full re-render;
+  - 11 ms to rebuild the graph and search it;
+  - 26–49 ms to build it from your backup in the tests.
+- **Most chains have no edge:** 161 relations give only 54 edges, because most relations cover the units of only one outcome. Those are self-links, kept on the node rather than drawn.
+- **Evidence and memory on your backup:** every outcome is "not assessed" (no Study v2 answers yet), and 2 topics have a memory strength.
+
+### Verification
+| Check | Result |
+| --- | --- |
+| `KARTOTEK_BACKUP=<your export> npm test` | Everything passes. **Engine:** 77/77 (2 new scenarios). **Graph tests:** 10/10. They cover seeding, ids stable after an update, joint premises as "∧", filters and search, evidence and memory from a real answer, and the real-studies count. They also run extraction through the prompt file and the model service with a fake provider: refusals, review (accept, edit, same idea, reject, an unticked link), chains resolved, coverage, notes import and a small model's labels repaired. Finally they cover the "Practise these" targets and the probe starting above evidence-held topics. **Your backup:** unchanged. |
+| `npm run smoke`, real Electron window | Passes. A new F6 block opens the graph from the sidebar and draws every idea; a node shows its origin, evidence and memory; "Open the lesson" lands on Learn & digest. A picture of the screen was taken. Algorithm tab 77/77; 0 unexpected console errors. |
+| **Done when (1): the seeded graph of your real studies opens** | Yes, in the preview with your content folder: 217 ideas and 161 chains from 14 studies, smooth (numbers above). |
+| **Done when (2): extraction of one live session adds reviewed nodes linked to existing ones** | **Session:** the dsd-1 live session of F4 ("Theorems of several variables", 10 steps), with gpt-oss:20b on this PC. **Proposal:** 7 ideas and 4 chains. **My review:** I accepted all 7 with clearer names and rejected 1 chain (its text called X + 0 = X the null-element axiom). **Saved:** 7 ideas linked to the existing dsd-1 outcomes LO-12 (axioms, duality, one-variable theorems) and LO-13 (identities of several variables), and 3 chains. Example chain: "X + X·Y = X(1 + Y)" + "X·1 = X" ⇒ "Absorption law". Each idea keeps "step n" of the session as its origin; "Open the session message" opened the transcript at step 4. |
+
+### Honest notes (what the real run showed and what I fixed)
+- **Wrong ids:** the local model copied long ids wrongly ("pkg:dsd-12:LO-12"). The model now sees short handles (E1, E2, …), which the code maps back.
+- **Labels instead of names:** it named its ideas "new:0, new:4, …" and used those labels in the chains, which would have attached the chains to the wrong ideas. The code now detects this, reads the chains by label, and takes each name from its statement; the names it derives are still clumsy, so edit them in review.
+- **Over-linking:** it marked most ideas as the "same idea" as an outcome (they are parts of it). Review lets you choose Accept instead, which I did. It also linked a Boolean law to the CEnT-S arithmetic distributive outcome. That is why links can now be unticked in review; this was added after my review, so that one link is still in the preview data.
+- **The first proposal:** it was made before these fixes. I removed it (model output, not your data) and ran the extraction again.
+
+### How you can test it
+1. `npm start`, then Maps → **Knowledge graph**. Filter to one study, try both layouts and search, click an idea, then **Open the lesson**.
+2. Ctrl-click two ideas, then press **Practise these**.
+3. With a model in the strong slot: under "Grow the graph", press **Propose ideas** for one of your live sessions (or **Add from notes**), review, then **Save my decisions**. Your new ideas appear with dashed links to the study's ideas.
+
+### Open questions
+- **Default view:** "All studies" in layers is a dense overview (most outcomes have no chain yet). Should the screen open on the study you used last instead?
+- **Still open from earlier:** the "Generated questions" calibration view, photos in practice, the C4 draft release, the placeholder author email, and the Anthropic key you pasted in chat.

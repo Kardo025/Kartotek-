@@ -930,6 +930,38 @@
     }]
   );
 
+  // ------------------------------------------------------------------ knowledge graph (task F6)
+  tests.push(
+    ['Knowledge graph: the seed is one proposition per outcome and one chain per relation; ids survive a package update; joint premises meet in an implication node', function () {
+      var KG = global.KGraph, st = KStore.emptyState(), pkg = probePkg();
+      pkg.units = [{ id: 'U1', loc: 'p. 1' }, { id: 'U5', loc: 'p. 5' }, { id: 'U6', loc: 'p. 6' }];
+      pkg.relations = [{ id: 'R1', from: 'k1 and k5', to: 'k6', type: 'dependency', units: ['U1', 'U5', 'U6'] }];
+      pkg.outcomes[5].relations = ['R1'];
+      st.etuts.pp = { etut_id: 'pp', package: pkg, progress: global.KCycle.newProgress() };
+      var g = KG.build(st, { filter: 'all' }), vm = KG.viewModel(g, {});
+      var before = g.nodes.map(function (n) { return n.id; }).join();
+      var upd = JSON.parse(JSON.stringify(pkg)); upd.version = 2; upd.outcomes.forEach(function (o) { o.performance += ' (new wording)'; });
+      st.etuts.pp.package = upd;
+      var after = KG.build(st, { filter: 'all' }).nodes.map(function (n) { return n.id; }).join();
+      var and = vm.nodes.filter(function (n) { return n.small; })[0];
+      return { pass: g.nodes.length === 7 && g.chains.length === 1 && before === after && and && and.id === 'and:pkg:pp:R1' && vm.edges.filter(function (e) { return e.to === and.id; }).length === 2 && st.reviews.length === 0,
+        detail: g.nodes.length + ' propositions, ' + g.chains.length + ' chain; ids stable after an update: ' + (before === after) };
+    }],
+    ['Knowledge graph: a reviewed proposal adds ideas that link to existing ones; a rejected idea is not saved and its chain is skipped; "same idea" becomes another phrasing', function () {
+      var KG = global.KGraph, st = KStore.emptyState(), pkg = probePkg();
+      st.etuts.pp = { etut_id: 'pp', package: pkg, progress: global.KCycle.newProgress() };
+      var json = { propositions: [{ name: 'A', statement: 'Idea A about k2.', turn: 'notes', link_to: '', related: ['pkg:pp:LO-2'], confidence: 'clear' }, { name: 'B', statement: 'Idea B.', turn: 'notes', link_to: '', related: [], confidence: 'clear' }, { name: 'C', statement: 'Do k3 well.', turn: 'notes', link_to: 'pkg:pp:LO-3', related: [], confidence: 'clear' }],
+        chains: [{ premises: ['pkg:pp:LO-1'], conclusion: 'new:0', text: 'k1 gives A.', turn: 'notes' }, { premises: ['new:1'], conclusion: 'new:0', text: 'B gives A.', turn: 'notes' }] };
+      var inp = KG.extractorInputs(st, { notes: { name: 'n', text: 'notes about k1 k2 k3' } });
+      var probs = KG.checkExtraction(st, json, inp);
+      var rec = KG.addProposal(st, { notes: { name: 'n', text: 'x' } }, json, inp, { now: NOW });
+      var out = KG.applyReview(st, rec.id, { props: { 0: { action: 'accept' }, 1: { action: 'reject' }, 2: { action: 'same', same: 'pkg:pp:LO-3' } }, chains: { 0: 'accept', 1: 'accept' } }, NOW);
+      var g = KG.graphOf(st), n = g.nodes[out.nodes[0]];
+      return { pass: probs.length === 0 && out.nodes.length === 1 && out.chains.length === 1 && out.skipped.length === 1 && n.links[0] === 'pkg:pp:LO-2' && g.aliases['pkg:pp:LO-3'][0] === 'Do k3 well.' && g.pending.length === 0,
+        detail: out.nodes.length + ' idea added (links to ' + n.links.join(', ') + '), ' + out.chains.length + ' chain, ' + out.skipped.length + ' skipped, 1 phrasing added' };
+    }]
+  );
+
   // ------------------------------------------------------------------ adaptive practice (task F5)
   function prPkg() {
     var outs = [], ks = [];

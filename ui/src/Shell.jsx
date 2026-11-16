@@ -2,8 +2,7 @@ import React, { useEffect, useReducer, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Cards, BookOpenText, Exam, Stack, GraduationCap, AirplaneTilt, ChartBar, Function as FnIcon, GearSix, Sun, Moon, Monitor, Timer, Graph, ClipboardText,
-  Briefcase, GlobeHemisphereWest, CalendarCheck, House,
-} from "@phosphor-icons/react";
+  Briefcase, GlobeHemisphereWest, CalendarCheck, House, TreeStructure } from "@phosphor-icons/react";
 import { Count, TabEnter, SPRING } from "./motion.jsx";
 import Welcome, { welcomeSeen, markWelcomeSeen } from "./Welcome.jsx";
 import Review from "./Review.jsx";
@@ -28,7 +27,8 @@ const PLANNING_ITEMS = [
   { id: "stats", label: "Stats", Icon: ChartBar },
 ];
 // The AI Mind Mapping Assistant has its own sidebar section (MINDMAP-RULES.md), visible in both modes
-const MIND = [{ id: "mindmaps", label: "Mind maps", Icon: Graph }];
+// "Maps" (decision D10): the mind maps and the knowledge graph (task F6)
+const MIND = [{ id: "mindmaps", label: "Mind maps", Icon: Graph }, { id: "graph", label: "Knowledge graph", Icon: TreeStructure }];
 const CAREER = [{ id: "career", label: "Career", Icon: Briefcase }];
 const SYSTEM = [
   { id: "settings", label: "Settings", Icon: GearSix },
@@ -269,7 +269,7 @@ export default function Shell() {
             </>
           )}
           <div className="k-divider" role="separator" />
-          <div className="k-nav-group" id="k-nav-mind">AI Mind Mapping Assistant</div>
+          <div className="k-nav-group" id="k-nav-mind">Maps</div>
           {MIND.map(item)}
           <div className="k-divider" role="separator" />
           {CAREER.map(item)}
@@ -317,6 +317,7 @@ export default function Shell() {
           </React.Fragment>
         ))}
         <section id="tab-mock-all" role="region" aria-label="Mock exam" className="k-react" hidden={tab !== "mock-all"}>{W("mock-all", booted && tab === "mock-all" ? React.createElement(REACT_TABS["mock-all"]) : null)}</section>
+        <section id="tab-graph" role="region" aria-label="Knowledge graph" className="k-react" hidden={tab !== "graph"}>{W("graph", booted && tab === "graph" ? React.createElement(REACT_TABS.graph) : null)}</section>
         <section id="tab-career" role="region" aria-label="Career" className="k-react" hidden={tab !== "career"}>{W("career", booted && tab === "career" ? React.createElement(REACT_TABS.career) : null)}</section>
         <section id="tab-euroapply" role="region" aria-label="Euro apply" className="k-react" hidden={tab !== "euroapply"}>{W("euroapply", booted && tab === "euroapply" ? React.createElement(REACT_TABS.euroapply) : null)}</section>
         <section id="tab-home" role="region" aria-label="Home" className="k-react" hidden={tab !== "home"}>{W("home", booted && tab === "home" ? React.createElement(REACT_TABS.home) : null)}</section>

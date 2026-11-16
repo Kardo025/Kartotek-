@@ -1,0 +1,19 @@
+/* Knowledge graph screen (task F6) */
+.kg-page { display: flex; flex-direction: column; gap: 14px; }
+.kg-tools { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; }
+.kg-filter, .kg-search { display: inline-flex; align-items: center; gap: 8px; }
+.kg-filter .k-input { max-width: 320px; }
+.kg-search { flex: 1 1 220px; }
+.kg-search .k-input { width: 100%; }
+.kg-detail { display: flex; flex-direction: column; gap: 6px; }
+.kg-detail h3 { margin: 0; }
+.kg-detail p { margin: 0; }
+.kg-grow { display: flex; flex-direction: column; gap: 10px; }
+.kg-review { gap: 10px; }
+.kg-props, .kg-chains { display: flex; flex-direction: column; gap: 10px; margin: 0; padding-left: 20px; }
+.kg-props li { display: flex; flex-direction: column; gap: 6px; }
+.kg-props li[data-a="reject"] { opacity: .55; }
+.kg-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.kg-chains li { display: flex; flex-direction: column; gap: 4px; }
+.kg-links { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: center; }
+.kg-links label { display: inline-flex; gap: 4px; align-items: center; }

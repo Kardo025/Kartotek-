@@ -33,7 +33,7 @@ export function FindMyLevel({ et }) {
   const scopeOf = () => (scope === "study" ? { kind: "study" } : { kind: "part", part_id: part.part_id });
   const start = () => {
     const sc = scopeOf();
-    const p = KP().newProbe({ mode: "packaged", scope: sc, strands: KP().strandsFor(pkg, sc), etut_id: et.etut_id,
+    const p = KP().newProbe({ mode: "packaged", scope: sc, strands: KP().strandsFor(pkg, sc), etut_id: et.etut_id, known: window.KGraph.topicEvidence(A().S, et, extrasOf(et)),
       goal_words: "Study \"" + pkg.title + "\"" + (sc.kind === "part" ? ", part \"" + part.title + "\" and what it builds on" : ", the whole study") });
     PL().addProbe(et, p);
     save(et);

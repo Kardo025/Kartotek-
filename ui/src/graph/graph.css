@@ -50,3 +50,16 @@
 .gv-line { width: 20px; border-top: 1.6px solid var(--k-line-strong); }
 .gv-line.rel { border-top: 1.3px dashed var(--k-muted); }
 .gv-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* task F6: implication nodes, search, the light drawing for big graphs */
+.gv-node.small .gv-and { fill: var(--k-raised); stroke: var(--k-line-strong); stroke-width: 1.4; }
+.gv-and-t { fill: var(--k-text-2); font-size: 13px; font-weight: 700; pointer-events: none; }
+.gv-and-key { display: inline-grid; place-items: center; width: 16px; height: 16px; border-radius: 50%; border: 1.4px solid var(--k-line-strong); font-size: 11px; font-weight: 700; }
+.gv-node[data-dim] { opacity: .18; }
+.gv-edge.dim { opacity: .12; }
+.gv-node[data-match] .gv-box { stroke: var(--k-accent); stroke-width: 2.4; }
+.gv-lt { fill: var(--k-text); font-size: 12.5px; font-weight: 550; pointer-events: none; }
+.gv-ls { fill: var(--gv-tone-t, var(--k-muted)); font-size: 10.5px; pointer-events: none; }
+.gv-canvas[data-lite] .gv-node .gv-box { transition: none; }
+.gv-node[data-tone="session"], .gv-legend [data-tone="session"] { --gv-tone: var(--k-accent-soft, var(--k-select)); --gv-tone-t: var(--k-accent); }
+.gv-node[data-tone="session"] .gv-box { fill: var(--gv-tone); }

@@ -1,0 +1,37 @@
+{
+  "type": "object",
+  "properties": {
+    "propositions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "statement": { "type": "string" },
+          "turn": { "type": "string" },
+          "link_to": { "type": "string" },
+          "related": { "type": "array", "items": { "type": "string" } },
+          "confidence": { "type": "string", "enum": ["clear", "tentative"] }
+        },
+        "required": ["name", "statement", "turn", "link_to", "related", "confidence"],
+        "additionalProperties": false
+      }
+    },
+    "chains": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "premises": { "type": "array", "items": { "type": "string" } },
+          "conclusion": { "type": "string" },
+          "text": { "type": "string" },
+          "turn": { "type": "string" }
+        },
+        "required": ["premises", "conclusion", "text", "turn"],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": ["propositions", "chains"],
+  "additionalProperties": false
+}

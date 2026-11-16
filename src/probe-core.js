@@ -120,7 +120,10 @@
       budget: opts.budget || BUDGET, goal_max: GOAL_MAX[mode],
       goal: { learner_words: squash(opts.goal_words), concrete: '', questions: [] },
       strands: opts.strands || [], strands_from: opts.strands && opts.strands.length ? 'package' : null,
-      questions: [], status: 'goal', result: null, generator: []
+      questions: [], status: 'goal', result: null, generator: [],
+      // task F6: what the learner's evidence already shows per level (topic): { kid: "held" } from KGraph.topicEvidence; a held level
+      // counts as held without a question, so the probe starts near the edge ("strands held solidly need no re-probing")
+      known: opts.known || {}
     };
   }
 
@@ -150,6 +153,7 @@
       if (q.level !== levelId) return;
       if (q.correct) { if ((q.answer.confidence_pct || 0) >= HELD) sure++; else low++; } else miss++;
     });
+    if (!miss && !sure && !low && p.known && p.known[levelId] === 'held') return 'held';
     if (miss && (sure || low)) return 'mixed';
     if (sure || low >= 2) return 'held';
     if (low) return 'fragile';
@@ -167,6 +171,7 @@
   // A strand nobody asked about whose every prerequisite strand is missing from its first level is missing too (inferred, not asked)
   function inferredMissing(p, s) {
     if (!s.after || !s.after.length || answered(p, s.id).length) return false;
+    if (s.levels.some(function (l) { return p.known && p.known[l.id] === 'held'; })) return false;
     return s.after.every(function (id) {
       var a = strandById(p, id);
       if (!a) return false;
@@ -280,7 +285,7 @@
         ? 'located: ' + (b.lo >= 0 ? 'held up to ' + s.levels[b.lo].id : 'nothing held') + (b.hi < b.n ? ', first miss at ' + s.levels[b.hi].id : ', every level held')
         : 'open: ' + (b.lo >= 0 ? 'held up to ' + s.levels[b.lo].id : 'no floor yet') + (b.hi < b.n ? ', missed at ' + s.levels[b.hi].id : ', no miss yet');
       return head + '\n  Status: ' + state + '\n  Levels, easiest first:\n' + s.levels.map(function (l, i) {
-        return '   ' + (i + 1) + '. [' + l.id + '] ' + l.label + ' — ' + b.verdicts[i] + (l.detail ? '\n      ' + clip(l.detail, 600) : '') +
+        return '   ' + (i + 1) + '. [' + l.id + '] ' + l.label + ' — ' + b.verdicts[i] + (p.known && p.known[l.id] === 'held' ? ' (held by the evidence in Kartotek)' : '') + (l.detail ? '\n      ' + clip(l.detail, 600) : '') +
           (l.related && l.related.length ? '\n      Builds on: ' + l.related.join('; ') : '');
       }).join('\n');
     }).join('\n\n');
