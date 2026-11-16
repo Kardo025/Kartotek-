@@ -527,7 +527,7 @@ Files: `desktop\jobs\` (`service.js` the job runner, `study.js`, `lesson.js`, `m
 
 - **Skip the remaining fixes.** A job card offers it while the verification runs: no more fix rounds, disputed items keep their mark, the job saves. Added after the real run, where the fix round of a local model took about two minutes per disputed item.
 - **Learner text is cleaned at save:** unit ids that a model writes into lessons, overviews or items ("… (U9)") are removed; id fields keep them. Numeric items whose solution never reaches the key and more than 3 connecting items per part are reported back to the model as problems (both found in the real run).
-### 10.0h E2 as built (2026-11-16)
+### 10.0i E2 as built (2026-11-16)
 
 Files: `prompts\` (five prompt files and their schemas), `src\study-v2.js` (values and answer checks), `src\prep-core.js` (`cardAskInputs`), `ui\src\model-call.jsx` and `.css` (calls from the window), `ui\src\tabs\study\cycle\Item.jsx`, `ui\src\tabs\study\Cycle.jsx` (Feynman), `ui\src\Review.jsx`, `scripts\study-model-tests.cjs`. No change in the main process or the bridge: the window renders a prompt with `prompts.render`, calls `models.run` with the prompt's slot and schema, and checks the answer again with the engine. As designed in sections 5 and 6, with these differences:
 - **Slots:** per decision 16: Explain, follow-up items and Ask about a card use `fast`; the grading proposal and Feynman feedback use `strong` (a request whose slot is empty falls back to `strong`, so one slot is enough).
