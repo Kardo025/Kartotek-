@@ -930,6 +930,45 @@
     }]
   );
 
+  // ------------------------------------------------------------------ adaptive practice (task F5)
+  function prPkg() {
+    var outs = [], ks = [];
+    for (var i = 1; i <= 3; i++) { outs.push({ id: 'LO-' + i, part_id: 'p1', kazanim_id: 'k' + i, performance: 'Do k' + i, units: [], criteria: [{ id: 'C-' + i, text: 'c' + i }] }); ks.push({ kazanim_id: 'k' + i, title: 'Topic ' + i }); }
+    return { etut_id: 'pr', schema_version: 2, workflow: 'cycle-v2', units: [], outcomes: outs, relations: [], parts: [{ part_id: 'p1', title: 'P', prerequisites: [], kazanimlar: ks }] };
+  }
+  var PR_E = { problem: { statement: '', setting: '', template: '', targets: [], solution: '', answer: '' }, check: { sound: true, issue: '', solution: '', answer: '' }, verdict: { result: 'not_yet', moves: '', first_break: '', feedback: '' }, own: { solvable: true, issue: '', solution: '', answer: '', targets: [] } };
+  function prReply(task, key, part) { var r = JSON.parse(JSON.stringify(PR_E)); r.task = task; Object.keys(part).forEach(function (k) { r[key][k] = part[k]; }); return r; }
+  tests.push(
+    ['Adaptive practice: five clean solves rise from level 1 to 5; a miss drops a level and comes back once in a new setting; earlier topics mix in from the third problem', function () {
+      var KP = global.KPractice, st = KStore.emptyState(), s = KP.newSession(st, { purpose: 'evaluating', etut_id: 'pr', kids: ['k3'], targets: KP.targetsFor(prPkg(), 'k3'), now: NOW }), seen = [], n = 0;
+      var plan = { 4: 'miss' };
+      for (var g = 0; g < 40; g++) {
+        var ph = KP.phase(s);
+        if (ph === 'complete') break;
+        if (ph === 'write') { var sp = KP.nextSpec(s); n++; KP.applyReply(s, 'write', prReply('problem', 'problem', { statement: 'Problem ' + n, setting: 's' + n, targets: sp.targets, solution: 'x = ' + n, answer: String(n) }), { now: NOW }); continue; }
+        if (ph === 'check') { KP.applyReply(s, 'check', prReply('check', 'check', { sound: true, solution: 'x = ' + n, answer: String(n) }), { now: NOW }); continue; }
+        if (ph === 'between') { KP.nextProblem(s, NOW); continue; }
+        var p = KP.lastProblem(s);
+        seen.push((p.retest_of ? 'r' : '') + p.difficulty.level);
+        if (plan[n] && !p.retest_of) { KP.giveUp(s, NOW); continue; }
+        KP.submit(s, { thinking: 'work', answer: p.answer }, NOW);
+        KP.applyReply(s, 'verdict', prReply('verdict', 'verdict', { result: 'solved' }), { now: NOW });
+      }
+      var mixed = s.problems.filter(function (p) { return p.targets.length > 1; }).every(function (p) { return p.targets.some(function (t) { return t !== 'LO-3'; }); });
+      return { pass: seen.join() === '1,2,3,4,3,r4' && mixed && st.reviews.length === 0 && KP.phase(s) === 'complete', detail: 'levels: ' + seen.join(' → ') + ' · earlier topics mixed in: ' + mixed };
+    }],
+    ['Adaptive practice: the verdict "solved" is refused when the answer box disagrees with the committed answer; a reported problem leaves every count', function () {
+      var KP = global.KPractice, st = KStore.emptyState(), s = KP.newSession(st, { purpose: 'free', targets: KP.targetsFromWords('Ohm\'s law'), now: NOW });
+      KP.applyReply(s, 'write', prReply('problem', 'problem', { statement: 'Find I.', setting: 'a', targets: ['t1'], solution: 'I = 3 A', answer: '3 A' }), { now: NOW });
+      KP.applyReply(s, 'check', prReply('check', 'check', { sound: true, solution: 'I = 3 A', answer: '3 A' }), { now: NOW });
+      KP.submit(s, { thinking: 'V/R', answer: '4 A' }, NOW);
+      var bad = KP.checkReply(s, 'verdict', prReply('verdict', 'verdict', { result: 'solved' }), {});
+      KP.applyReply(s, 'verdict', prReply('verdict', 'verdict', { result: 'not_yet', first_break: 'the division' }), { now: NOW });
+      KP.dispute(s, s.problems[0].id, 'x', NOW);
+      return { pass: !bad.ok && KP.summary(s).problems === 0 && KP.summary(s).disputed === 1, detail: bad.problems[0] || '' };
+    }]
+  );
+
   // ------------------------------------------------------------------ live teaching (task F4)
   function liveReady() {
     var PL = global.KPlan, st = KStore.emptyState(), s = PL.newSession(st, { goal_words: 'Understand x', now: NOW });

@@ -679,3 +679,52 @@ I did not spend your Claude Code subscription or an API key on a real call. To c
 - **Calibration view:** the "Generated questions" calibration view is still not built. Probe, prediction and check answers with confidence are stored for it (`KLive.confidenceRecords`).
 - **Lost file text:** if the cached text of an own-files session is deleted, the session asks you to start again on the files. Re-choosing the same files for the same session could be added if you need it.
 - **Still open from earlier:** the C4 draft release, the placeholder author email, and the Anthropic key you pasted in chat (replace it in the Console).
+
+## 2026-11-18 · Task F5: adaptive practice (branch `task/f5-adaptive-practice`)
+
+### What changed
+- **Before starting:** merged `task/f4-live-teaching` into `main` (your prompt is the OK) and branched from `main`.
+- **Evaluating is now adaptive practice** on the topic's outcomes. It needs a model in the strong slot; without one it stays the deferred placeholder.
+  - **One problem at a time.** Your model writes the problem with its solution. It then solves the problem again from scratch and corrects or rejects it before you see it. A rejected draft is kept in the record and never shown.
+  - **The difficulty level (1 to 6)** is set by how many ideas a problem combines (1–3) and how unfamiliar its setting is (the lesson's kind, a new kind, an unfamiliar context). It goes one level up after a clean solve, holds after a solve with hints, and goes one level down after a miss.
+  - **Earlier topics:** from the third problem on, problems that combine ideas mix in an earlier topic of the same part.
+  - **Five problems,** then every missed problem comes back once in a different setting before the run ends.
+  - **Finishing** completes the topic's cycle ("practised"). **Skip Evaluating** still records `deferred_by_user` as before.
+- **Your work and the verdict:**
+  - You work in the thinking field (here it always stays open), with an optional final-answer box and confidence.
+  - **Check my work:** the model reads the work and decides "Solved" or "Not yet", localising the first break.
+  - Code refuses a "Solved" when your answer's number differs from the committed answer.
+  - **Ask for a hint** is the F2 ladder, one rung at a time. **I don't understand what is asked** is free, as before.
+  - **Give up: show the solution** ends the problem as a miss, so it comes back in a new setting.
+- **Free practice** (Study library, "Practice"): on topics of a study or on a topic in your own words. It has Pause and Resume, and the same run. Task F6 adds the graph-node entry.
+- **My own problem** (in any run): paste it or read it from a file. The model solves it first and says if it is ambiguous or unsolvable, then it runs through the same work → hint → verdict flow. It is kept as your problem and never counts as generated practice.
+- **Records:** every problem keeps the following: statement, setting, targets (outcomes), difficulty, mode, the draft and the checked solution and answer, every claim (thinking, answer, confidence, verdict), the hints, the highest rung, the outcome, retest links and its generator.
+- **Report a problem** marks a problem disputed: it leaves every count, and you can withdraw the report.
+- **Evidence (D1):** generated problems never reach the scheduler or the outcome states. The report shows them as "Evaluating practice: n problems, n solved without help… (generated, not verified)".
+- **Prompt:** `prompts\practice-coach.md` version 3 with a schema; it includes the shared fragments.
+
+### Verification
+| Check | Result |
+| --- | --- |
+| `KARTOTEK_BACKUP=<your export> npm test` | Everything passes. **Engine:** 75/75 (2 new scenarios). **Practice tests:** 12/12. They cover choosing the demand: levels 1–5 after clean solves, hold after hints, drop after a miss, retests in a new setting, earlier topics mixed in. They also run a whole Evaluating run through the prompt file and the model service with a fake provider: the coach's own check rejects one draft and corrects another; "not yet" → hint → "solved with hints"; a wrong "solved" is refused; give up, retest, "practised"; no review event; no learner text in the usage log. The rest cover your own problem, reports, refusals, "stuck" after three rejections, and pause, resume and restart. **Your backup:** unchanged (same SHA-256). |
+| `npm run smoke`, real Electron window | Passes. A new F5 block checks that Evaluating shows the problem, stores the work typed on screen as a claim, and that "Report a problem" marks the problem disputed. Algorithm tab 75/75; 0 unexpected console errors. |
+| **Done when (verified with a scripted learner, see below)** | **Setup:** your dsd-1 study, topic "How many bits? Ranges and codes", run in Evaluating through the real screen in the preview (its own profile). Questions by **gpt-oss:20b on this PC**, free. **Five problems at levels 1, 2, 3, 4, 5:** 80 items → 7 bits; 30 days → 5 bits; 500 items and the noise margins of a gate (with the digital-abstraction topic); 350 drone IDs and 123 in binary (with the conversion topic); 200 sensors, noise margins and 75 as a 12-bit number (all three outcomes). I checked every committed answer by hand: all right (9 bits, NMH 0.69 V, NML 1.02 V, 1111011, 8 bits, 000001001011). **Verdicts, all correct:** a wrong "6" on problem 2 got "Not yet" with the first break located; every right answer got "Solved". **End:** "Finish Evaluating" set the topic to "practised" and moved on; the report shows "Evaluating practice: 5 problems, 5 solved without help"; no review event. |
+| Your own problem and a hint (same model) | Problem: "205 to 8-bit binary and hex". The model solved it first (11001101, CD). One R0 hint; a wrong top-down reading got "Not yet"; the right answer got "Solved with hints, highest rung R0". |
+
+### Honest notes
+- **The learner was scripted, not you:** it copied the committed solution for the right answers and wrote one deliberately wrong answer. That proves that the run, the levels, the records and the verdicts are right, not how the problems feel. Please run one yourself.
+- **Problem quality with this 20B model:**
+  - The "combined" problems at levels 3–5 glue separate questions together (bits and noise margins) more than they make the ideas work together.
+  - One multiple-choice option was vague ("tolerated only if less than 0.7 V" when the margin is 0.69 V).
+  - The R0 hint and one "Not yet" explanation stated the correction ("read the remainders in reverse"). The code catches copied solutions and numbers, not a hint that says too much in its own words; a stronger model in the strong and fast slots should respect the rungs better.
+- **A smoke-test catch, fixed:** the work box used the folding "Your thinking" box, so it could start closed. In practice it now always stays open.
+
+### How you can test it
+1. `npm start`, open a Study v2 study, take a topic to **Evaluating** (needs a model in the strong slot), then **Start practice**.
+2. Work in the box, press **Check my work**, try **Ask for a hint**, give one up and see it come back, then **Finish Evaluating**.
+3. Study library → **Practice** → **Start practice** (topics of a study, or your own words), and **My own problem**.
+
+### Open questions
+- **Photos of a problem** (the vision slot) are not read yet; text, PDF, .pptx and .docx are.
+- **The calibration view:** the "Generated questions" calibration view is still open (records exist for probe, live and practice answers).
+- **Still open from earlier:** the C4 draft release, the placeholder author email, and the Anthropic key you pasted in chat (replace it in the Console).

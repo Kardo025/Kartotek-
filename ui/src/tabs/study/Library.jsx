@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { UploadSimple, Play, ArrowRight, Trophy, Cards, ArrowCounterClockwise, Trash, Plus, Warning, BookOpenText, NotePencil, Bug } from "@phosphor-icons/react";
 import { EASE, PageHead, Btn, Seg, Bar, TableWrap, ConfirmBtn } from "../kit.jsx";
 import { LiveSessionsPanel } from "./Live.jsx";
+import { PracticePanel } from "./Practice.jsx";
 import { Confirm, Callout, Inl, Chip } from "./common.jsx";
 import { AskPair } from "../Cents.jsx";
 import { ReloadButton } from "../ContentPanel.jsx";
@@ -77,6 +78,7 @@ export default function Library() {
       {tab !== "gunluk" && tab !== "hatalar" && <JobsPanel kinds={["study"]} title="Studies being written" />}
       {tab !== "gunluk" && tab !== "hatalar" && <NewWithClaude />}
       {tab !== "gunluk" && tab !== "hatalar" && !App.scope && <LiveSessionsPanel />}
+      {tab !== "gunluk" && tab !== "hatalar" && !App.scope && <PracticePanel />}
       <motion.div key={tab} className="st-lib-body" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.28, ease: EASE }}>
         {tab === "gunluk" ? <JournalList /> : tab === "hatalar" ? <ErrorList /> : <StudyList />}
       </motion.div>

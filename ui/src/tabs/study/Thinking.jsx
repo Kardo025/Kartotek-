@@ -8,14 +8,15 @@ import "./confidence.css";
 const PREF = "kartotek-thinking-open";
 const getOpen = () => { try { return window.App.pref(PREF) !== "0"; } catch (e) { return true; } };
 
-export default function Thinking({ value, onChange, label, placeholder, rows, disabled, id }) {
+// forceOpen: the box is the main work area (practice) and cannot be folded away
+export default function Thinking({ value, onChange, label, placeholder, rows, disabled, id, forceOpen }) {
   const [open, setOpen] = useState(getOpen);
   const [hint, setHint] = useState(false);
   const ref = useRef(null);
   const toggle = (e) => { setOpen(e.currentTarget.open); try { window.App.setPref(PREF, e.currentTarget.open ? "1" : "0"); } catch (x) { /* ignore */ } };
   const dictate = () => { setOpen(true); setHint(true); setTimeout(() => { if (ref.current) ref.current.focus(); }, 30); };
   return (
-    <details className="th" open={open} onToggle={toggle}>
+    <details className="th" open={forceOpen || open} onToggle={forceOpen ? undefined : toggle}>
       <summary>{label || "Your thinking (optional)"}</summary>
       <textarea ref={ref} id={id} data-f="thinking" className="k-input" rows={rows || 3} maxLength={4000} disabled={disabled} value={value}
         placeholder={placeholder || "How are you working this out? Write it as it comes; it does not need to be tidy."} onChange={(e) => onChange(e.target.value)} />

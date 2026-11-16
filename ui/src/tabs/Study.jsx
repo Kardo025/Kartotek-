@@ -5,6 +5,7 @@ import Library from "./study/Library.jsx";
 import Runner from "./study/Runner.jsx";
 import Cycle from "./study/Cycle.jsx";
 import Live from "./study/Live.jsx";
+import { PracticeScreen } from "./study/Practice.jsx";
 import "./study.css";
 
 export default function Study() {
@@ -13,6 +14,10 @@ export default function Study() {
   // a live session (task F3) opens on its own screen
   const live = App.liveOpen && S.sessions && S.sessions[App.liveOpen];
   if (live) return <Live key={live.id} session={live} />;
+  // a free practice session (task F5)
+  const prac = App.practiceOpen && S.sessions && S.sessions[App.practiceOpen];
+  if (prac) return <PracticeScreen key={prac.id} s={prac} />;
+  App.practiceOpen = null;
   App.liveOpen = null;
   const et = App.etutOpen && S.etuts && S.etuts[App.etutOpen];
   if (!et || et.removed || !et.package) {
