@@ -83,7 +83,8 @@ const models = createModelService({
 const jobEvents = []; let eventSeq = 0;
 const jobs = createJobService({
   dir: profile, models, prompts, checks: createChecks(SRC), extract: require('../desktop/jobs/extract'),
-  pipelines: { study: require('../desktop/jobs/study'), lesson: require('../desktop/jobs/lesson'), mock: require('../desktop/jobs/mock'), 'mind-read': require('../desktop/jobs/mind').read, 'mind-coach': require('../desktop/jobs/mind').coach },
+  pipelines: { study: require('../desktop/jobs/study'), lesson: require('../desktop/jobs/lesson'), mock: require('../desktop/jobs/mock'), 'mind-read': require('../desktop/jobs/mind').read, 'mind-coach': require('../desktop/jobs/mind').coach, research: require('../desktop/jobs/research') },
+  research: { status: () => models.searchStatus(), search: (q) => models.search(q), checkLink: (u) => require('../desktop/links').checkLink(u) },
   content: { dir: () => content.resolveContentDir({ settings: {}, env: process.env, dev: true, repoRoot: root }).dir },
   files: { rules: (n) => fs.readFileSync(path.join(root, path.basename(n)), 'utf8') },
   emit: (ev) => { jobEvents.push({ seq: ++eventSeq, ev }); if (jobEvents.length > 500) jobEvents.splice(0, jobEvents.length - 500); },
@@ -130,6 +131,9 @@ RPC['jobs.remove'] = wrap((id) => jobs.remove(String(id)));
 const liveFiles = require('../desktop/live').createLiveFiles({ dir: profile, extract: require('../desktop/jobs/extract') });
 RPC['live.readFiles'] = wrap((sid, tokens) => liveFiles.read(String(sid), (tokens || []).map((t) => { const p = picked.get(String(t)); if (!p) throw new Error('Choose the file again.'); return p; })));
 RPC['live.material'] = wrap((sid) => liveFiles.get(String(sid)));
+RPC['research.status'] = wrap(() => models.searchStatus());
+RPC['research.setKey'] = wrap((k) => models.setSearchKey(String(k || '')));
+RPC['research.clearKey'] = wrap(() => models.clearSearchKey());
 RPC['jobs.openFolder'] = wrap(async () => { throw new Error('Not available in the preview. Profile: ' + profile); });
 RPC['jobs.events'] = async (since) => ({ ok: true, value: { next: eventSeq, events: jobEvents.filter((x) => x.seq > (Number(since) || 0)).map((x) => x.ev) } });
 // Only this page may call the bridge: every call carries a token that the page gets with the shim
@@ -151,6 +155,7 @@ const SHIM = `/* bridge-preview: stand-in for desktop/preload.js */
   api.prompts = {}; ['list', 'get', 'saveOverride', 'resetOverride', 'render'].forEach(function (n) { api.prompts[n] = call('prompts.' + n); });
   api.jobs = {}; ['pickFiles', 'list', 'get', 'create', 'start', 'pause', 'skipFixes', 'remove', 'openFolder'].forEach(function (n) { api.jobs[n] = call('jobs.' + n); });
   api.live = { readFiles: call('live.readFiles'), material: call('live.material') };
+  api.research = { status: call('research.status'), setKey: call('research.setKey'), clearKey: call('research.clearKey') };
   var ev = call('jobs.events'), cursor = 0, listeners = [];
   setInterval(function () {
     if (!listeners.length) return;

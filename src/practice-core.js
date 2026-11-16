@@ -265,6 +265,7 @@
       var np = { id: uid('pp'), n: problemsOf(s).length + 1, origin: 'generated', validation: 'unverified', status: 'draft', targets: (q.targets || []).map(squash),
         mode: sp.mode, template: squash(q.template) || null, difficulty: { level: sp.level, ideas: sp.ideas, setting: sp.setting }, setting: clip(q.setting, 300), statement: lines(q.statement),
         model_solution: lines(q.solution), answer: clip(q.answer, 300), draft: { solution: lines(q.solution), answer: clip(q.answer, 300) }, check: null, retest_of: sp.retest_of,
+        uncertain: (q.uncertain || []).map(function (x) { return clip(x, 300); }).filter(Boolean),
         submissions: [], help: [], outcome: null, highest_rung: null, at: now, by: by, rejected: [] };
       problemsOf(s).push(np);
       return np;

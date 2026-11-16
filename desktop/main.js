@@ -382,6 +382,10 @@ handleModel('models:setPrice', (e, model, price) => models().setPrice(model, pri
 handleModel('models:listModels', (e, id) => { if (!isStr(id)) throw new Error('Invalid provider.'); return models().listModels(id); });
 handleModel('models:usage', (e, month) => models().usageSummary(isStr(month, 7) ? month : undefined));
 handleModel('models:cancel', (e, callId) => models().cancel(String(callId)));
+// The researcher's web search (task F7): which way is available, and the search key (encrypted like the model keys, never sent back)
+handleModel('research:status', () => models().searchStatus());
+handleModel('research:setKey', (e, key) => { if (!isStr(key, 400)) throw new Error('Invalid key.'); return models().setSearchKey(key); });
+handleModel('research:clearKey', () => models().clearSearchKey());
 // Streaming calls: events go to the window as 'models:event' with the call id
 function sendModelEvent(event, callId, ev) { if (!event.sender.isDestroyed()) event.sender.send('models:event', { callId, event: ev }); }
 handleModel('models:run', (event, callId, request) => {
@@ -410,7 +414,8 @@ function jobs() {
   if (!jobService) {
     jobService = createJobService({
       dir: app.getPath('userData'), models: models(), prompts: prompts(), checks: createChecks(SRC), extract: jobExtract,
-      pipelines: { study: require('./jobs/study'), lesson: require('./jobs/lesson'), mock: require('./jobs/mock'), 'mind-read': require('./jobs/mind').read, 'mind-coach': require('./jobs/mind').coach },
+      pipelines: { study: require('./jobs/study'), lesson: require('./jobs/lesson'), mock: require('./jobs/mock'), 'mind-read': require('./jobs/mind').read, 'mind-coach': require('./jobs/mind').coach, research: require('./jobs/research') },
+      research: { status: () => models().searchStatus(), search: (q) => models().search(q), checkLink: (u) => require('./links').checkLink(u) },
       content: { dir: () => currentContent().dir },
       files: { rules: (name) => fs.readFileSync(path.join(ROOT, path.basename(name)), 'utf8') },
       emit: (ev) => { if (win && !win.isDestroyed()) win.webContents.send('jobs:event', ev); },

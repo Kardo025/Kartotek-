@@ -28,7 +28,7 @@ const fakeEncrypt = async (s) => Buffer.from('ENC1' + Buffer.from(s, 'utf8').toS
 const fakeDecrypt = async (b) => Buffer.from(b.toString().slice(4).split('').reverse().join(''), 'base64').toString('utf8');
 async function t(list, name, fn) { try { await fn(); list.push(name); } catch (e) { e.message = name + ': ' + e.message; throw e; } }
 
-const E = { problem: { statement: '', setting: '', template: '', targets: [], solution: '', answer: '' }, check: { sound: true, issue: '', solution: '', answer: '' }, verdict: { result: 'not_yet', moves: '', first_break: '', feedback: '' }, own: { solvable: true, issue: '', solution: '', answer: '', targets: [] } };
+const E = { problem: { statement: '', setting: '', template: '', targets: [], solution: '', answer: '', uncertain: [] }, check: { sound: true, issue: '', solution: '', answer: '' }, verdict: { result: 'not_yet', moves: '', first_break: '', feedback: '' }, own: { solvable: true, issue: '', solution: '', answer: '', targets: [] } };
 const reply = (task, part) => Object.assign(plain(E), { task }, { [task === 'write' ? 'problem' : task]: Object.assign(plain(E[task === 'write' ? 'problem' : task]), part) });
 function writeReply(KPr, s, n) { const sp = KPr.nextSpec(s); return reply('problem', { statement: 'Problem ' + n + ': with ' + sp.ideas + ' idea(s) in a ' + sp.setting + ' setting, find x.', setting: 'setting ' + n, template: '', targets: sp.targets, solution: 'Step 1. Step 2. x = ' + (10 + n), answer: String(10 + n) }); }
 // The engine's own task names → the reply "task" field

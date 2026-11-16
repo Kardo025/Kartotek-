@@ -930,6 +930,27 @@
     }]
   );
 
+  // ------------------------------------------------------------------ side questions and research requests (task F7)
+  tests.push(
+    ['Side questions: an open item is sent without its key; opening the panel during the attempt is help (not DSR-eligible); the final test has none', function () {
+      var K = global.KCycle, KS = global.KSide, st = KStore.emptyState(), et = KEtut.importPackage(st, miniV2(), { now: NOW }).etut, idx = K.itemIndex(et.package);
+      var a = K.startAttempt(et, idx.i1, 'practice', NOW), ctx = KS.itemContext(et.package, idx.i1, a);
+      var opened = K.useHelp(a, 'side');
+      K.commit(et, a, { choice: ['b'], confidence_pct: 90 }, idx.i1, NOW + 1000);
+      var el = K.eligibility(a, idx.i1), fin = K.startAttempt(et, idx.i1, 'final', NOW + 2000);
+      return { pass: ctx.open && !/Key:/.test(ctx.text) && opened && K.assisted(a) && !el.eligible && /side questions open/.test(el.reason) && !K.useHelp(fin, 'side') && st.reviews.length === 0,
+        detail: 'open item context without key: ' + !/Key:/.test(ctx.text) + ' · ' + el.reason };
+    }],
+    ['Research requests: a finished job fills the request; a brief without sources is kept but is not a verdict', function () {
+      var KS = global.KSide, st = KStore.emptyState();
+      var a = KS.newRequest(st, { claim: 'A claim', target: { kind: 'explanation', attempt: 'x' }, now: NOW }), b = KS.newRequest(st, { claim: 'Another', target: { kind: 'explanation', attempt: 'x' }, now: NOW + 1 });
+      KS.applyJob(st, a.id, { id: 'job-1', status: 'done', result: { brief: { verdict: 'supported', summary: 's', findings: [], sources: [{ title: 't', url: 'https://example.org', quote: 'q', working: true }] }, mode: 'key' } });
+      KS.applyJob(st, b.id, { id: 'job-2', status: 'done', result: { brief: { verdict: 'unclear', summary: 'nothing', findings: [], sources: [] }, mode: 'provider' } });
+      var list = KS.requestsFor(st, { kind: 'explanation', attempt: 'x' });
+      return { pass: list.length === 2 && list[0].status === 'done' && list[1].status === 'no_sources', detail: list.map(function (r) { return r.status; }).join(', ') };
+    }]
+  );
+
   // ------------------------------------------------------------------ knowledge graph (task F6)
   tests.push(
     ['Knowledge graph: the seed is one proposition per outcome and one chain per relation; ids survive a package update; joint premises meet in an implication node', function () {
@@ -968,7 +989,7 @@
     for (var i = 1; i <= 3; i++) { outs.push({ id: 'LO-' + i, part_id: 'p1', kazanim_id: 'k' + i, performance: 'Do k' + i, units: [], criteria: [{ id: 'C-' + i, text: 'c' + i }] }); ks.push({ kazanim_id: 'k' + i, title: 'Topic ' + i }); }
     return { etut_id: 'pr', schema_version: 2, workflow: 'cycle-v2', units: [], outcomes: outs, relations: [], parts: [{ part_id: 'p1', title: 'P', prerequisites: [], kazanimlar: ks }] };
   }
-  var PR_E = { problem: { statement: '', setting: '', template: '', targets: [], solution: '', answer: '' }, check: { sound: true, issue: '', solution: '', answer: '' }, verdict: { result: 'not_yet', moves: '', first_break: '', feedback: '' }, own: { solvable: true, issue: '', solution: '', answer: '', targets: [] } };
+  var PR_E = { problem: { statement: '', setting: '', template: '', targets: [], solution: '', answer: '', uncertain: [] }, check: { sound: true, issue: '', solution: '', answer: '' }, verdict: { result: 'not_yet', moves: '', first_break: '', feedback: '' }, own: { solvable: true, issue: '', solution: '', answer: '', targets: [] } };
   function prReply(task, key, part) { var r = JSON.parse(JSON.stringify(PR_E)); r.task = task; Object.keys(part).forEach(function (k) { r[key][k] = part[k]; }); return r; }
   tests.push(
     ['Adaptive practice: five clean solves rise from level 1 to 5; a miss drops a level and comes back once in a new setting; earlier topics mix in from the third problem', function () {

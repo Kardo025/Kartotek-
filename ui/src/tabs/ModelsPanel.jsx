@@ -2,6 +2,7 @@
 // "Test connection" call, the three task slots, usage and cost with a monthly budget, prices, and the editable prompt files.
 // Keys go to the desktop backend and never come back to the window. In the browser page the panel says that models need the desktop app.
 import React, { useEffect, useRef, useState } from "react";
+import { ResearchPanel } from "../research.jsx";
 import { Plus, Trash, Plugs, CheckCircle, Warning, Key, Terminal, Cloud, Desktop, X, ArrowCounterClockwise, Robot } from "@phosphor-icons/react";
 import { Panel, Btn, Lvl, TableWrap } from "./kit.jsx";
 import { ArmBtn } from "./manage-kit.jsx";
@@ -387,6 +388,7 @@ function ModelsPanelDesktop() {
           <p className="k-small k-muted md-keynote">Keys are encrypted with Windows' own protection for your account (DPAPI) and stored in the Kartotek data folder. They never appear in your data, backups or exports. Windows protects them from other users of this PC, not from other programs that run as you.</p>
           <h3 className="md-h">Task slots</h3>
           {cfg.providers.length ? <Slots cfg={cfg} apply={apply} /> : <p className="k-small k-muted">Add a provider first.</p>}
+          <ResearchPanel />
         </>
       )}
       {tab === "usage" && <Usage cfg={cfg} apply={apply} />}

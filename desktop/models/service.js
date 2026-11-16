@@ -423,7 +423,50 @@ function createModelService(opts) {
     return { configured: SLOTS.some((s) => slots[s]), slots, budget: budgetState(c) };
   }
 
+  // ---- web search for the researcher (task F7): the strong slot's provider when it has a web search tool, else a search key
+  // (Brave Search API) stored with the other keys (encrypted, never sent to the window). Without either, research is unavailable.
+  const SEARCH_KEY = 'search:brave';
+  async function setSearchKey(key) { await setKey(SEARCH_KEY, key); return searchStatus(); }
+  async function clearSearchKey() { await clearKey(SEARCH_KEY); return searchStatus(); }
+  // → { mode: "provider" | "key" | null, label, hasKey }
+  async function searchStatus() {
+    const c = readConfig();
+    let keys = {};
+    try { keys = await readKeys(); } catch (e) { /* none */ }
+    const hasKey = !!keys[SEARCH_KEY];
+    let provider = null;
+    try {
+      const t = resolveTarget({ slot: 'strong' }, c);
+      const a = await adapterFor(t.provider);
+      if (a.capabilities(t.model).webSearch) provider = t.provider.label + (t.model ? ' (' + t.model + ')' : '');
+    } catch (e) { /* no strong slot or no key */ }
+    if (provider) return { mode: 'provider', label: 'web search of ' + provider, hasKey };
+    if (hasKey) return { mode: 'key', label: 'Brave Search (your search key)', hasKey };
+    return { mode: null, label: null, hasKey };
+  }
+  // One web search with the search key: [{ title, url, snippet }]
+  async function search(query, o) {
+    let keys = {};
+    try { keys = await readKeys(); } catch (e) { /* none */ }
+    const key = keys[SEARCH_KEY];
+    if (!key) throw new ModelError('not-configured', 'No search key is stored.');
+    const q = String(query || '').slice(0, 300);
+    if (!q.trim()) throw new ModelError('invalid', 'Empty search.');
+    const doFetch = (o && o.fetch) || opts.fetch || fetch;
+    let res;
+    try {
+      res = await doFetch('https://api.search.brave.com/res/v1/web/search?count=6&q=' + encodeURIComponent(q), { headers: { Accept: 'application/json', 'X-Subscription-Token': key } });
+    } catch (e) { throw new ModelError('network', 'Kartotek could not reach the search service.'); }
+    if (res.status === 401 || res.status === 403) throw new ModelError('auth', 'The search service refused the key (' + res.status + ').');
+    if (res.status === 429) throw new ModelError('rate-limit', 'The search service limit was reached. Try again later.');
+    if (!res.ok) throw new ModelError('provider', 'The search service answered ' + res.status + '.');
+    const j = await res.json();
+    return (((j || {}).web || {}).results || []).slice(0, 6).map((r) => ({ title: String(r.title || '').slice(0, 200), url: String(r.url || ''), snippet: String(r.description || '').replace(/<[^>]+>/g, '').slice(0, 400) }))
+      .filter((r) => /^https?:\/\//.test(r.url));
+  }
+
   return { publicConfig, saveProvider, setKey, clearKey, removeProvider, setSlot, setBudget, allowOverBudget, setPrice, run, test, cancel, listModels, usageSummary, status, estimate,
+    setSearchKey, clearSearchKey, searchStatus, search,
     _dir: dir, _readKeysRaw: () => { try { return fs.readFileSync(keysFile); } catch (e) { return null; } } };
 }
 

@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { FileArrowUp, Play, Pause, Trash, CheckCircle, Circle, CircleNotch, Warning, XCircle, FolderOpen, Robot, ArrowClockwise, CaretRight, Sparkle } from "@phosphor-icons/react";
 import { Btn, Lvl, EASE } from "./kit.jsx";
 import { modelsAvailable, useModelStatus, openModelSettings } from "./ModelsPanel.jsx";
+import { CheckThis, BriefView } from "../research.jsx";
 import "./jobs.css";
 
 const J = () => window.kartotek && window.kartotek.jobs;
@@ -155,6 +156,8 @@ function Estimate({ est }) {
 
 function Result({ job }) {
   const r = job.result || {};
+  // a research job (task F7) shows its brief
+  if (job.kind === "research") return r.brief ? <div className="jb-result" data-ok="true"><BriefView r={{ status: "done", claim: String(job.title || "").replace(/^Check: /, ""), brief: r.brief, mode: r.mode, by: r.by }} /></div> : null;
   const v = r.verification;
   const reload = async () => { await App().reloadContent(); App().toast("Content reloaded."); };
   return (
@@ -171,6 +174,8 @@ function Result({ job }) {
       {(r.blockers || []).length > 0 && <details className="jb-probs"><summary className="k-small">Audit blockers</summary><ul>{r.blockers.map((b, i) => <li key={i} className="k-small">{b}</li>)}</ul></details>}
       {(r.errors || r.structural || []).length > 0 && <details className="jb-probs" open><summary className="k-small">Problems that kept it from being saved</summary><ul>{(r.errors || r.structural).map((b, i) => <li key={i} className="k-small">{b}</li>)}</ul></details>}
       {r.saved && <div className="k-row-btns"><Btn size="sm" kind="primary" onClick={reload}><ArrowClockwise size={14} weight="bold" aria-hidden="true" />Reload content to open it</Btn></div>}
+      {/* task F7: a fact in the draft that you or the model are unsure of can be checked against the web */}
+      {r.saved && <CheckThis claim="" context={"A draft written in Kartotek: " + job.title} target={{ kind: "job", job: job.id }} editable label="Check a fact in this draft" />}
     </div>
   );
 }

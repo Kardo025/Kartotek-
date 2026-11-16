@@ -11,7 +11,7 @@ const path = require('path');
 const crypto = require('crypto');
 const { parseJsonLoose } = require('../models/schema');
 
-const KINDS = ['study', 'lesson', 'mock', 'mind-read', 'mind-coach'];
+const KINDS = ['study', 'lesson', 'mock', 'mind-read', 'mind-coach', 'research'];
 
 function writeSafe(file, text) {
   fs.mkdirSync(path.dirname(file), { recursive: true });
@@ -184,6 +184,8 @@ function createJobService(opts) {
     const ctx = {
       job, dir: jobDir(job.id), data: job.data, request: job.request, limits: job.limits, now,
       checks: opts.checks, extract: opts.extract, content: opts.content, files: opts.files,
+      // task F7: web search for the researcher ({ status, search, checkLink }) and the schema of a prompt file
+      research: opts.research || null, schema: (id) => prompts.render(id, {}).schema,
       log: (level, text) => { log(job, level, text); emit({ type: 'job', job: summary(job) }); },
       save: () => changed(job),
       render: (id, vars) => prompts.render(id, vars || {}).text,
@@ -227,6 +229,7 @@ function createJobService(opts) {
         const target = o.slot === 'vision' ? job.visionTarget : job.target;
         const req = { feature: o.feature || ('job:' + job.kind), messages, system: o.system || SYSTEM, schema: o.schema || undefined,
           maxOutputTokens: o.maxOutputTokens || 16000, effort: o.effort || 'medium', promptId: rendered.promptId, promptVersion: rendered.promptVersion, promptHash: rendered.promptHash };
+        if (o.webSearch) req.webSearch = true;
         if (target && target.providerId) req.target = target; else req.slot = o.slot || 'strong';
         if (ctx.currentTask) ctx.currentTask.calls = (ctx.currentTask.calls || 0) + 1;
         let res;

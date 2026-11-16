@@ -1,0 +1,11 @@
+{
+  "type": "object",
+  "properties": {
+    "answer_md": { "type": "string" },
+    "uses": { "type": "array", "items": { "type": "string" } },
+    "beyond_source": { "type": "boolean" },
+    "uncertain": { "type": "boolean" }
+  },
+  "required": ["answer_md", "uses", "beyond_source", "uncertain"],
+  "additionalProperties": false
+}
