@@ -310,7 +310,7 @@ const FIXTURE = path.join(__dirname, 'fixtures', 'explain-request.txt');
 
 async function compatibilityTests() {
   const ok = [];
-  await t(ok, 'the Claude Code request of Explain is the same text as before E2 (stored snapshot)', () => {
+  await t(ok, 'the Claude Code request of Explain is the stored snapshot (since F1 it says the label My thinking replaced My working; nothing else changed)', () => {
     const w = loadEngine();
     try { assert.strictEqual(explainSample(w), fs.readFileSync(FIXTURE, 'utf8').replace(/\r\n/g, '\n').replace(/\n$/, '')); } finally { w.close(); }
   });
@@ -340,7 +340,12 @@ async function compatibilityTests() {
           if (!rec.progress || rec.progress.v !== 'c2') return;
           const before = plain(rec.progress);
           const m = w.KCycle.migrate(plain(before), null);
-          Object.keys(before).forEach((k) => assert.strictEqual(JSON.stringify(m[k]), JSON.stringify(before[k]), id + ': ' + k));
+          // F1 (cv 3): cv moves from 2 to 3 and an attempt that has a "working" text also gets "thinking"; nothing else differs
+          Object.keys(before).forEach((k) => {
+            if (k === 'cv') return assert.strictEqual(m.cv, 3, id + ': cv');
+            if (k === 'attempts') return before.attempts.forEach((a, i) => { const x = Object.assign({}, m.attempts[i]); delete x.thinking; assert.strictEqual(JSON.stringify(x), JSON.stringify(a), id + ': attempt ' + i); });
+            assert.strictEqual(JSON.stringify(m[k]), JSON.stringify(before[k]), id + ': ' + k);
+          });
           n++;
         });
         console.log('  real backup: ' + n + ' Study v2 progress record(s) migrated without changing a field');

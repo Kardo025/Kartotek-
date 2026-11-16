@@ -118,13 +118,66 @@
     return out;
   }
 
+  // Every answer that has a confidence, from the three places it is asked (task F1, LEARNING-PROTOCOL 2.3): legacy study answers,
+  // Study v2 attempts and lesson-test answers. Only answers whose correctness is not decided by a model count: verified package items
+  // that were graded (not uncertain, not reported, not a follow-up) and lesson tests. "I don't know" has no confidence and is left out.
+  // → [{ band, pct (0-100 or null for old records), correct, assisted, src }]
+  function confidenceRecords(state) {
+    var out = [];
+    allAnswers(state).forEach(function (x) {
+      var a = x.answer;
+      if (a.confidence && !a.dont_know) out.push({ band: a.confidence, pct: a.confidence_pct == null ? null : a.confidence_pct, correct: !!a.correct, assisted: false, src: 'legacy' });
+    });
+    var KC = global.KCycle;
+    Object.keys(state.etuts || {}).forEach(function (id) {
+      var et = state.etuts[id];
+      if (!et || et.removed || !et.package || !KC || !KC.isV2(et.package)) return;
+      var idx = KC.itemIndex(et.package, null);
+      ((et.progress && et.progress.attempts) || []).forEach(function (a) {
+        var it = idx[a.q_id];
+        if (!a.committed_at || !a.confidence || a.dont_know || a.followup_of || a.disputed || !it || (it.validation || 'unverified') !== 'verified') return;
+        if (!a.result || a.result.correct == null || a.grading === 'uncertain' || a.grading === 'pending') return;
+        out.push({ band: a.confidence, pct: a.confidence_pct == null ? null : a.confidence_pct, correct: !!a.result.correct, assisted: KC.assisted(a), src: 'study' });
+      });
+    });
+    Object.keys(state.lessons || {}).forEach(function (id) {
+      var pr = state.lessons[id] && state.lessons[id].progress;
+      if (!pr) return;
+      (pr.runs || []).concat(pr.run ? [pr.run] : []).forEach(function (run) {
+        Object.keys(run.answers || {}).forEach(function (k) {
+          var a = run.answers[k];
+          if (a && a.type === 'mcq' && a.confidence && !a.dont_know) out.push({ band: a.confidence, pct: a.confidence_pct == null ? null : a.confidence_pct, correct: !!a.correct, assisted: false, src: 'lesson' });
+        });
+      });
+    });
+    return out;
+  }
+
+  // Banded table: old and new records together
   function confidenceAccuracy(state) {
     var res = { guess: { n: 0, correct: 0 }, unsure: { n: 0, correct: 0 }, sure: { n: 0, correct: 0 } };
-    allAnswers(state).forEach(function (x) {
-      var c = res[x.answer.confidence];
-      if (c) { c.n++; if (x.answer.correct) c.correct++; }
+    confidenceRecords(state).forEach(function (x) {
+      var c = res[x.band];
+      if (c) { c.n++; if (x.correct) c.correct++; }
     });
     return res;
+  }
+
+  // Fine view: only records with a number, unassisted (D7). Ten-point bins with numerators and denominators, the mean confidence,
+  // the accuracy and the Brier score (mean squared gap between the stated probability and what happened; 0 is perfect, 0.25 is
+  // always saying 50 %).
+  function confidenceCurve(state) {
+    var rows = confidenceRecords(state).filter(function (x) { return x.pct != null && !x.assisted; });
+    var bins = [];
+    for (var i = 0; i < 10; i++) bins.push({ lo: i * 10, hi: i === 9 ? 100 : i * 10 + 9, n: 0, correct: 0, conf: 0 });
+    var brier = 0, conf = 0, ok = 0;
+    rows.forEach(function (x) {
+      var b = bins[Math.min(9, Math.floor(x.pct / 10))];
+      b.n++; b.conf += x.pct; if (x.correct) b.correct++;
+      brier += Math.pow(x.pct / 100 - (x.correct ? 1 : 0), 2); conf += x.pct; if (x.correct) ok++;
+    });
+    bins.forEach(function (b) { if (b.n) b.conf /= b.n; });
+    return { n: rows.length, bins: bins, brier: rows.length ? brier / rows.length : null, mean_conf: rows.length ? conf / rows.length : null, accuracy: rows.length ? ok / rows.length : null };
   }
 
   function errorLog(state) {
@@ -222,7 +275,7 @@
   global.KMeta = {
     ERROR_TYPES: ERROR_TYPES, ERROR_BY_ID: ERROR_BY_ID, STRATEGY_TR: STRATEGY_TR, LEVEL_TR: LEVEL_TR,
     interpretGap: interpretGap, predictionGap: predictionGap, predictionOutcome: predictionOutcome, predictionsList: predictionsList,
-    jolEntries: jolEntries, jolBins: jolBins, confidenceAccuracy: confidenceAccuracy,
+    jolEntries: jolEntries, jolBins: jolBins, confidenceAccuracy: confidenceAccuracy, confidenceRecords: confidenceRecords, confidenceCurve: confidenceCurve,
     allAnswers: allAnswers, errorLog: errorLog, errorDistribution: errorDistribution,
     strategyEffect: strategyEffect, promptLevel: promptLevel, diagnose13: diagnose13, activeEtuts: activeEtuts
   };

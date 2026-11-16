@@ -345,7 +345,7 @@ Everything that works today keeps working. New things that need no model: thinki
 
 They are drafts: the F task that uses one finalises its text, adds `schema:` and raises `version`. They carry `status: draft`, the shared fragments they use (`includes:`) and their LearnHarness source (`adapted_from:`) in the front matter. Version 1 was written from the comparison notes only; version 2 adapts LearnHarness's own instructions (section 12). Shared fragments: `prompts\shared\voice.md`, `accuracy.md`, `thinking.md`, `confidence.md`, `side-conversations.md`.
 
-## 9. Proposed changes to STUDY-RULES.md (not edited yet)
+## 9. Changes to STUDY-RULES.md (applied in task F1)
 
 1. v2.1 table: Priming gains the optional "Find my level" probe (generated questions, never package items, no score, no gate); Learn & digest gains "Thinking while reading"; Evaluating becomes "adaptive practice with generated problems, or deferred".
 2. v2.1 Navigation: a topic may be skipped after a probe by the learner's choice; it counts as complete for End and stays in the final test.
@@ -374,7 +374,9 @@ They are drafts: the F task that uses one finalises its text, adds `schema:` and
 
 Every task keeps: `npm test`, `npm run smoke` where Electron runs, a migration test on the real export when the state format changes, and an entry in this document's "as built" notes.
 
-## 11. Decisions I need from you
+## 11. Decisions
+
+**Decided 2026-11-16 (task F1): the owner accepted every recommendation below as written (D1–D17).** The table is kept as the record. Changing one later needs the owner's word and an edit here first. Task F1 applied them to `STUDY-RULES.md` (section 9 of this document, now done: v2.1, v2.1a, v2.2 rule 8, v2.4, v2.5, v2.8, v2.9, v2.11, v2.13). D16 (shared prompt fragments, `includes:`) was proposed with E2 but E2 did not build it; it is still open work for the first F task that needs a shared fragment.
 
 | # | Question | Recommendation |
 | --- | --- | --- |

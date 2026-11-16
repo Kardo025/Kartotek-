@@ -8,6 +8,7 @@ import {
   PlanScreen, RecallBlock, JolBlock, ExplainBlock, ProduceBlock, PracticeBlock, PredictBlock, ErrorLogBlock, Options, TeachScreen, JournalScreen, FinalReviewScreen,
 } from "./Srl.jsx";
 import { PrimingScreen, QuestionsDock } from "./QList.jsx";
+import ConfidenceSlider from "./ConfidenceSlider.jsx";
 import { A, KE, KM, EU, DSR, recallLoc, viewKey, currentQuestion, progressLabel, phaseKey } from "./util.js";
 
 // ------------------------------------------------------------------ header: phase timer (Rule 19)
@@ -247,20 +248,8 @@ function QuestionScreen(p) {
 }
 
 function ConfScale({ f, set }) {
-  const CT = KE().CONFIDENCE_TR;
-  const opts = ["guess", "unsure", "sure"];
-  return (
-    <div className="st-scale" role="radiogroup" aria-label="How sure are you?">
-      {opts.map((c) => {
-        const on = f.conf === c;
-        return (
-          <motion.button key={c} type="button" className="st-choice" data-on={on ? "1" : undefined} role="radio" aria-checked={on} whileTap={{ scale: 0.97 }} onClick={() => set("conf", c)}>
-            <motion.span key={on ? "on" : "off"} className="st-choice-in" initial={on ? { scale: 0.9 } : false} animate={{ scale: 1 }} transition={{ duration: 0.22, ease: EASE }}>{CT[c]}</motion.span>
-          </motion.button>
-        );
-      })}
-    </div>
-  );
+  // 0-100; the band (what the scheduler reads) is written next to the number
+  return <ConfidenceSlider value={f.conf_pct == null ? null : f.conf_pct} onChange={(n) => { set("conf_pct", n); set("conf", KE().confBand(n)); }} />;
 }
 
 // ------------------------------------------------------------------ summary tables
@@ -500,7 +489,7 @@ function answerQuestion(et) {
   if (ui.form.choice == null || String(ui.form.reason || "").trim().length < 5 || !ui.form.conf) return;
   const correct = choice === q.correct;
   const r = U.record(et, q.kazanim_id, { signal: pr.stage === "final" ? "final" : "quiz", correct, confidence: ui.form.conf, question_id: q.q_id });
-  pr.answers[q.q_id] = { choice, correct, confidence: ui.form.conf, reason: String(ui.form.reason).trim(), ms: Date.now() - ui.shownAt, at: Date.now(), stage: pr.stage };
+  pr.answers[q.q_id] = { choice, correct, confidence: ui.form.conf, confidence_pct: ui.form.conf_pct == null ? null : ui.form.conf_pct, reason: String(ui.form.reason).trim(), ms: Date.now() - ui.shownAt, at: Date.now(), stage: pr.stage };
   U.commit(et);
   ui.last = r ? Object.assign({ q_id: q.q_id }, r) : null;
   A().render();

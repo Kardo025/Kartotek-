@@ -25,6 +25,21 @@
   };
   var PRODUCE_TR = { kavram: 'Generate your own example', yazma: 'Write a draft', uygulama: 'Performance attempt', problem: 'Set up your own problem', olgu: 'Generate your own example' };
   var CONFIDENCE_TR = { guess: 'Guess', unsure: 'Unsure', sure: 'Sure' };
+  // Confidence is a 0-100 slider (task F1, LEARNING-PROTOCOL 2.2). The scheduler and the lesson scores still read three bands, so the
+  // rule is unchanged: Sure = 80-100, Unsure = 40-79, Guess = 0-39. Keys 1, 2, 3 set the middle of a band.
+  var BAND_PCT = { guess: 20, unsure: 60, sure: 90 };
+  function confBand(pct) {
+    if (pct == null || pct === '' || !isFinite(Number(pct))) return null;
+    var n = Math.round(Number(pct));
+    if (n < 0 || n > 100) return null;
+    return n >= 80 ? 'sure' : n >= 40 ? 'unsure' : 'guess';
+  }
+  // Fills in both fields of a record from whichever the caller has: a number gives the band, a word keeps itself and gets no number
+  function confidenceOf(pctOrBand) {
+    if (pctOrBand === 'guess' || pctOrBand === 'unsure' || pctOrBand === 'sure') return { confidence: pctOrBand, confidence_pct: null };
+    var b = confBand(pctOrBand);
+    return b ? { confidence: b, confidence_pct: Math.round(Number(pctOrBand)) } : { confidence: null, confidence_pct: null };
+  }
   var STAGE_TR = {
     plan: 'Session plan', warmup: 'Warm-up', priming: 'Priming', learn: 'Lesson', quiz: 'Quiz', retry: 'Second round',
     teach: 'Explain as if teaching', journal: 'Learning journal',
@@ -482,7 +497,7 @@
 
   global.KEtut = {
     BLOCK_TYPES: BLOCK_TYPES, KINDS: KINDS, KIND_TR: KIND_TR, KIND_STRATEGY: KIND_STRATEGY, PRODUCE_TR: PRODUCE_TR,
-    CONFIDENCE_TR: CONFIDENCE_TR, STAGE_TR: STAGE_TR, LEVEL_TR: LEVEL_TR, PART_STAGES: PART_STAGES, PHASES: PHASES,
+    CONFIDENCE_TR: CONFIDENCE_TR, BAND_PCT: BAND_PCT, confBand: confBand, confidenceOf: confidenceOf, STAGE_TR: STAGE_TR, LEVEL_TR: LEVEL_TR, PART_STAGES: PART_STAGES, PHASES: PHASES,
     validatePackage: validatePackage, flatKazanimlar: flatKazanimlar, findKazanim: findKazanim,
     newProgress: newProgress, migrateProgress: migrateProgress, currentPart: currentPart, currentKazanim: currentKazanim,
     learnSteps: learnSteps, explainLimit: explainLimit, warmupPick: warmupPick, retryQueue: retryQueue,

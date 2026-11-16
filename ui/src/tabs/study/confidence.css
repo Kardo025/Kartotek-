@@ -1,0 +1,17 @@
+/* Confidence slider and thinking box (task F1); tokens from index.css */
+.cf { display: grid; gap: 6px; max-width: 520px; }
+.cf-head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.cf-val { display: inline-flex; align-items: baseline; gap: 8px; font-size: 15px; }
+.cf-band { font-size: 12px; font-weight: 600; padding: 1px 8px; border-radius: 999px; background: var(--k-tile); color: var(--k-text-2); }
+.cf[data-band="sure"] .cf-band { color: var(--k-good); }
+.cf[data-band="unsure"] .cf-band { color: var(--k-hard); }
+.cf[data-band="guess"] .cf-band { color: var(--k-again); }
+.cf-range { width: 100%; accent-color: var(--k-accent); margin: 0; }
+.cf:not([data-set]) .cf-range { opacity: 0.55; }
+.cf[data-dk] .cf-range { opacity: 0.3; }
+.cf-ticks { display: flex; justify-content: space-between; font-size: 11px; color: var(--k-text-3); }
+.cf-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.th { display: block; }
+.th > summary { cursor: pointer; font-size: 13px; color: var(--k-text-2); padding: 2px 0; }
+.th textarea { width: 100%; margin-top: 6px; }
+.th-foot { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 4px; }

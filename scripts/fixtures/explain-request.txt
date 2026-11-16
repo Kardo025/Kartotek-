@@ -4,7 +4,7 @@ Question: A is off and B is on. What is the gate state?
 Response type: Single answer.
 Options in the order I saw them: A) Closed [b] | B) Determined only by the display [c] | C) Open [a]
 My response: Open [a]; Closed [b]
-My working: "I took the first two."
+My thinking: "I took the first two."
 Assistance already used: 1 hint(s), 0 step(s), solution not shown, lesson closed.
 The verified key marks: Closed [b]
 Comparison with that key: correct selected b; correct missed none; incorrect selected a; incorrect correctly left out c.

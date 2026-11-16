@@ -4,9 +4,10 @@
 import React, { useEffect, useRef, useState } from "react";
 import { motion } from "motion/react";
 import { SPRING, DUR, EASE as E } from "../../motion.jsx";
-import { CaretLeft, ArrowRight, ArrowsIn, ArrowsOut, ShieldCheck, Graph, NotePencil, ListChecks, Play, Clock, Hourglass, Lock, Check, Robot } from "@phosphor-icons/react";
+import { CaretLeft, ArrowRight, ArrowsIn, ArrowsOut, ShieldCheck, Graph, NotePencil, ListChecks, Play, Clock, Hourglass, Lock, Check, Robot, Notebook } from "@phosphor-icons/react";
 import { EASE, Btn } from "../kit.jsx";
 import ModelHint from "../ModelHint.jsx";
+import Thinking from "./Thinking.jsx";
 import { useModelReady, useModelCall, CallStatus, CopyPromptBtn, RequestPreview, byLine } from "../../model-call.jsx";
 import { Md, Html, Chip, Blocks, Scale } from "./common.jsx";
 import { QuestionsList } from "./QList.jsx";
@@ -251,7 +252,7 @@ function Priming({ et }) {
       </section>
       <section className="k-panel k-sec">
         <label className="k-field">
-          <span className="k-field-label">Your first guesses and connections (optional)</span>
+          <span className="k-field-label">Your thinking: first guesses and connections (optional)</span>
           <textarea className="k-input" rows={3} value={notes} placeholder="What do you expect? What does it remind you of? What is unclear?" onChange={(e) => setNotes(e.target.value)} onBlur={() => { keep(); EU().commit(et); }} />
           <span className="k-field-hint">Kept as your assumptions, never graded.</span>
         </label>
@@ -300,10 +301,11 @@ function Workspace({ et }) {
       </div>
       <aside className="cy-pane">
         <div className="k-subtabs" role="tablist" aria-label="Your work">
-          {[["feynman", "Explain it", NotePencil], ["map", "Mind map", Graph], ["questions", "Questions", ListChecks]].map(([v, l, I]) => (
+          {[["reading", "Thinking while reading", Notebook], ["feynman", "Explain it", NotePencil], ["map", "Mind map", Graph], ["questions", "Questions", ListChecks]].map(([v, l, I]) => (
             <button key={v} type="button" role="tab" aria-selected={tab === v} onClick={() => setTab(v)}><span><I size={14} aria-hidden="true" /> {l}</span></button>
           ))}
         </div>
+        {tab === "reading" && <ReadingThinking key={k.kazanim_id} et={et} k={k} />}
         {tab === "feynman" && <Feynman key={k.kazanim_id} et={et} part={part} k={k} />}
         {tab === "map" && <MapLink et={et} part={part} k={k} />}
         {tab === "questions" && <section className="k-panel k-sec"><QuestionsList et={et} pi={pr.part} /></section>}
@@ -367,6 +369,32 @@ function Feynman({ et, part, k }) {
         <details className="k-small">
           <summary>Your explanations of the whole part, from before topic cycles ({older.length})</summary>
           <ol className="cy-versions">{older.slice().reverse().map((v) => <li key={v.n}><span className="k-muted">v{v.n} · {when(v.at)}</span><p>{v.text}</p></li>)}</ol>
+        </details>
+      )}
+    </section>
+  );
+}
+
+// Thinking while reading (task F1): free text beside the lesson, saved as versions per topic like the Feynman explanation.
+// Optional, never required, never evidence; included in the exports with the rest of the progress.
+function ReadingThinking({ et, k }) {
+  const pr = et.progress, kid = k.kazanim_id, K = KC();
+  const list = (pr.reading_thinking || {})[kid] || [];
+  const [text, setText] = useState(list.length ? list[list.length - 1].text : "");
+  const add = () => { const r = K.saveReadingThinking(et, kid, text, Date.now()); if (r) { save(et); A().toast("Saved as note " + r.n + ". Earlier notes are kept."); } };
+  const same = list.length && list[list.length - 1].text === text;
+  return (
+    <section className="k-panel k-sec cy-feynman">
+      <h3 className="cy-h3">Thinking while reading</h3>
+      <p className="k-small k-muted">What do you notice, doubt or connect as you read this lesson? Write it as it comes. It is kept for you; it is never graded and never required.</p>
+      <Thinking value={text} onChange={setText} label="Your notes while reading" rows={7} placeholder="e.g. This looks like the rule from part 1, but with a condition I have not seen." />
+      <div className="cy-actions">
+        <Btn size="sm" kind="primary" disabled={!text.trim() || !!same} onClick={add}>Save as note {list.length + 1}</Btn>
+      </div>
+      {list.length > 0 && (
+        <details className="k-small">
+          <summary>Earlier notes ({list.length})</summary>
+          <ol className="cy-versions">{list.slice().reverse().map((v) => <li key={v.n}><span className="k-muted">#{v.n} · {when(v.at)}</span><p>{v.text}</p></li>)}</ol>
         </details>
       )}
     </section>

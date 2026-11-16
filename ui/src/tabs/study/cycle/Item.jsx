@@ -1,13 +1,15 @@
 // One question of Study v2: answer → (optional help in practice) → commit → feedback → self-check → DSR line → Explain / follow-up / report.
 // In the final test the feedback waits for the end of the block (held = true).
 import React, { useState } from "react";
-import { Lightbulb, ListNumbers, Eye, BookOpenText, ChatCircleText, ArrowsClockwise, Flag, ArrowRight, CheckCircle, XCircle, MinusCircle, Circle, Robot } from "@phosphor-icons/react";
+import { Lightbulb, ListNumbers, Eye, BookOpenText, ChatCircleText, ArrowsClockwise, Flag, ArrowRight, CheckCircle, XCircle, MinusCircle, Circle, Robot, Question } from "@phosphor-icons/react";
 import { Btn } from "../../kit.jsx";
 import { Md, Html, Chip, Scale, Blocks } from "../common.jsx";
 import { AskPair } from "../../Cents.jsx";
 import ModelHint from "../../ModelHint.jsx";
 import { useModelReady, useModelCall, CallStatus, CopyPromptBtn, RequestPreview, byLine } from "../../../model-call.jsx";
-import { A, KC, KE, EU, extrasOf, save, sendAttempt, refsText, criterionText, LETTERS, CONF, RATINGS } from "./lib.js";
+import ConfidenceSlider from "../ConfidenceSlider.jsx";
+import Thinking from "../Thinking.jsx";
+import { A, KC, KE, EU, extrasOf, save, sendAttempt, refsText, criterionText, LETTERS, RATINGS } from "./lib.js";
 
 export function ItemHead({ item, attempt, index, total, pkg }) {
   const K = KC();
@@ -42,7 +44,7 @@ function optMd(item, id) { const o = (item.options || []).filter((x) => x.id ===
 
 export default function Item({ et, item, attempt, held, onNext, nextLabel, part }) {
   const K = KC(), App = A(), pkg = et.package;
-  const [f, setF] = useState({ choice: [], text: "", working: "", number: "", conf: null, produced: "" });
+  const [f, setF] = useState({ choice: [], text: "", thinking: "", number: "", conf: null, dk: false, produced: "" });
   const [marks, setMarks] = useState({});
   const [kp, setKp] = useState([]);
   const [proposal, setProposal] = useState(null);   // a model's proposed grading of a typed answer, until the learner confirms it
@@ -53,12 +55,13 @@ export default function Item({ et, item, attempt, held, onNext, nextLabel, part 
   const fmt = item.format;
   const order = attempt.order && attempt.order.length ? attempt.order : (item.options || []).map((o) => o.id);
   const help = (kind) => { if (K.useHelp(attempt, kind)) save(et); };
+  // Confidence is a 0-100 number (null until the slider is touched); "I don't know" needs no answer and no confidence
+  const answered = fmt === "mcq_single" || fmt === "mcq_multi" ? f.choice.length > 0 : fmt === "numeric" ? String(f.number).trim() !== "" : f.text.trim().length > 0;
   const ready = fmt === "recall" ? f.text.trim().length > 0
-    : (fmt === "mcq_single" || fmt === "mcq_multi" ? f.choice.length > 0 : fmt === "numeric" ? String(f.number).trim() !== "" : f.text.trim().length > 0)
-      && !!f.conf && (!item.produce_first || f.produced.trim().length >= 5);
+    : f.dk || (answered && f.conf != null && (!item.produce_first || f.produced.trim().length >= 5));
   const commit = () => {
     if (!ready) return;
-    K.commit(et, attempt, { choice: f.choice, text: f.text || f.produced, working: f.working, number: f.number, confidence: f.conf }, item, Date.now());
+    K.commit(et, attempt, { choice: f.dk ? [] : f.choice, text: f.dk ? "" : f.text || f.produced, thinking: f.thinking, number: f.dk ? null : f.number, confidence_pct: f.dk ? null : f.conf, dont_know: f.dk }, item, Date.now());
     // Deterministic grades go to DSR at once (the final test sends them without showing anything)
     if (attempt.grading === "auto") sendAttempt(et, attempt, item); else EU().commit(et);
     App.render();
@@ -107,16 +110,11 @@ export default function Item({ et, item, attempt, held, onNext, nextLabel, part 
               <textarea className="k-input" rows={fmt === "recall" ? 4 : 5} value={f.text} onChange={(e) => set("text", e.target.value)} />
             </label>
           )}
-          {fmt !== "recall" && (
-            <details className="cy-working">
-              <summary>How did you get it? (optional; it helps an explanation later)</summary>
-              <textarea className="k-input" rows={2} value={f.working} onChange={(e) => set("working", e.target.value)} />
-            </details>
-          )}
+          <Thinking value={f.thinking} onChange={(v) => set("thinking", v)} label="Your thinking (optional; it also helps an explanation later)" />
           {fmt !== "recall" && (
             <div className="cy-conf">
-              <span className="k-small k-muted">How sure are you?</span>
-              <Scale label="Confidence" opts={CONF} value={f.conf} onPick={(v) => set("conf", v)} />
+              <ConfidenceSlider value={f.dk ? null : f.conf} dontKnow={f.dk} onChange={(v) => setF((x) => ({ ...x, conf: v, dk: false }))}
+                onDontKnow={() => setF((x) => ({ ...x, dk: !x.dk }))} />
             </div>
           )}
           {practice && (
@@ -124,7 +122,7 @@ export default function Item({ et, item, attempt, held, onNext, nextLabel, part 
           )}
           <div className="cy-actions">
             <Btn kind="primary" disabled={!ready} onClick={commit}>{attempt.mode === "final" ? "Submit" : "Check"}</Btn>
-            {!ready && <span className="k-small k-muted">{fmt === "recall" ? "Write something first (a guess is fine)." : "Answer and choose how sure you are."}</span>}
+            {!ready && <span className="k-small k-muted">{fmt === "recall" ? "Write something first (a guess is fine)." : "Answer and set how sure you are, or choose I don't know."}</span>}
           </div>
         </div>
       )}
@@ -194,6 +192,20 @@ function DsrLine({ attempt }) {
 
 function Feedback({ et, item, attempt, marks, setMarks, kp, setKp, proposal, setProposal }) {
   const K = KC(), App = A(), r = attempt.result || {}, fmt = item.format, pkg = et.package;
+  if (attempt.dont_know) {
+    // A gap, not a wrong guess (LEARNING-PROTOCOL 2.2): counted as not correct, no confidence, never a misconception
+    const modelAns = fmt === "mcq_single" || fmt === "mcq_multi" ? (item.key || []).map((id) => optMd(item, id)).join(" · ")
+      : fmt === "numeric" ? item.numeric.value + (item.numeric.tol ? " ± " + item.numeric.tol : "") + (item.numeric.unit ? " " + item.numeric.unit : "")
+        : (item.rubric && item.rubric.model) || item.solution || "";
+    return (
+      <div className="cy-fb">
+        <p className="cy-verdict" data-ok="u"><Question size={18} aria-hidden="true" />You chose “I don't know”. It is kept as a gap, not as a wrong guess.</p>
+        {modelAns && <div className="cy-compare"><div><b>The answer</b><Md src={modelAns} /></div></div>}
+        {item.solution && <div className="cy-solution"><Md src={item.solution} /></div>}
+        <DsrLine attempt={attempt} />
+      </div>
+    );
+  }
   if (fmt === "mcq_single" || fmt === "mcq_multi") {
     const set = r.set || { ok: [], missed: [], wrong: [], left: [] };
     const tag = (id) => set.ok.indexOf(id) >= 0 ? ["ok", "You chose it · correct"] : set.missed.indexOf(id) >= 0 ? ["missed", "Correct, not chosen"] : set.wrong.indexOf(id) >= 0 ? ["wrong", "You chose it · not correct"] : ["left", "Not chosen · not correct"];
@@ -282,7 +294,7 @@ function TypedFeedback({ et, item, attempt, marks, setMarks, proposal, setPropos
   return (
     <div className="cy-fb">
       <div className="cy-compare">
-        <div><b>You wrote</b><p>{attempt.response.text}</p>{attempt.response.working && <p className="k-small k-muted">Working: {attempt.response.working}</p>}</div>
+        <div><b>You wrote</b><p>{attempt.response.text}</p>{(attempt.thinking || attempt.response.working) && <p className="k-small k-muted">Thinking: {attempt.thinking || attempt.response.working}</p>}</div>
         <div><b>A model answer</b><Md src={(item.rubric && item.rubric.model) || item.solution || ""} /></div>
       </div>
       {item.rubric && (item.rubric.accept || []).length > 0 && <p className="k-small k-muted">Also accepted: {item.rubric.accept.join(" · ")}</p>}
