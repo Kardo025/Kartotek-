@@ -639,6 +639,135 @@
     }]
   );
 
+  // ------------------------------------------------------------------ Study v2 with a model (task E2): what the engine does with the answers
+  function typedV2() {
+    var p = miniV2();
+    p.outcomes[0].criteria.push({ id: 'C-2', text: 'Criterion C-2' });
+    p.parts[0].items.push({ q_id: 't1', version: 1, origin: 'generated', format: 'typed', kazanim_id: 'k1', outcomes: ['LO-1'], criteria: ['C-1', 'C-2'], units: ['U1'],
+      stem: 'Is the gate open with A on and B off? Say why.',
+      rubric: { criteria: [{ id: 'C-1', text: 'Says closed.', required: true }, { id: 'C-2', text: 'Gives the reason: B is off.', required: true }], accept: [], contradictions: ['Says open'], model: 'Closed, because B is off.' },
+      solution: 'Closed.', family: 'f-t1', use: 'practice', validation: 'verified' });
+    return p;
+  }
+  var clone2 = function (x) { return JSON.parse(JSON.stringify(x)); };
+  var META = { provider: 'fake', providerLabel: 'Fake provider', model: 'fake-model-1', costUsd: 0.002, costKind: 'api' };
+  var PROMPT = { promptId: 'x', promptVersion: 1, promptHash: null };
+  function answeredTyped(text, now) {
+    var K = global.KCycle, st = KStore.emptyState(), et = KEtut.importPackage(st, typedV2(), { now: NOW }).etut, idx = K.itemIndex(et.package);
+    var a = K.startAttempt(et, idx.t1, 'practice', now || NOW);
+    K.commit(et, a, { text: text, confidence: 'sure' }, idx.t1, (now || NOW) + 1000);
+    return { K: K, st: st, et: et, item: idx.t1, a: a };
+  }
+  tests.push(
+    ['In-app Explain: the answer is saved on the attempt, an earlier one is kept, and nothing the scheduler reads changes', function () {
+      var K = global.KCycle, st = KStore.emptyState(), et = KEtut.importPackage(st, miniV2(), { now: NOW }).etut, idx = K.itemIndex(et.package);
+      var a = K.startAttempt(et, idx.i1, 'practice', NOW);
+      var early = K.saveExplanation(a, { explanation_md: 'x' }, {});
+      K.commit(et, a, { choice: ['b'], confidence: 'sure' }, idx.i1, NOW + 1000);
+      var before = JSON.stringify([a.result, a.grading, a.dsr, a.confidence, a.hints, a.committed_at]), elig = JSON.stringify(K.eligibility(a, idx.i1));
+      var inp = K.explainInputs(et, a, idx.i1, 'deep', { note: 'why B?' });
+      var s1 = K.saveExplanation(a, { explanation_md: 'First **text**.', item_status: 'consistent', item_note: '', refs: ['p. 1'], next_steps: ['Reread p. 1'] }, { depth: 'deep', note: 'why B?', now: NOW + 2000, meta: META, prompt: PROMPT });
+      var s2 = K.saveExplanation(a, { explanation_md: 'Second.', item_status: 'disputed', item_note: 'The key is odd.', refs: [], next_steps: [] }, { now: NOW + 3000, meta: META, prompt: PROMPT });
+      var empty = K.saveExplanation(a, { explanation_md: '   ' }, {});
+      var after = JSON.stringify([a.result, a.grading, a.dsr, a.confidence, a.hints, a.committed_at]);
+      var list = K.explanationsOf(a, { explanations: { x: 1 } }), withFile = K.explanationsOf(a, { explanations: (function () { var o = {}; o[a.id] = { md: 'From a file', refs: [] }; return o; })() });
+      var c = [!early.ok, s1.ok, s2.ok, !empty.ok, a.explanations.length === 2, a.explanations[0].md === 'First **text**.', a.explanations[0].by.model === 'fake-model-1', a.explanations[0].by.provider === 'Fake provider',
+        a.explanations[1].item_status === 'disputed', before === after, elig === JSON.stringify(K.eligibility(a, idx.i1)), K.eligibility(a, idx.i1).eligible,
+        /Question: Item i1/.test(inp.attempt), /Depth: deep/.test(inp.attempt), /My question: why B\?/.test(inp.attempt), /U1 \[p\. 1\]: x/.test(inp.sources), /Text/.test(inp.sources),
+        list.length === 2, withFile.length === 3, withFile[0].from_file === true];
+      return { pass: c.every(Boolean),
+        detail: 'explanations kept: ' + a.explanations.length + ' · result, grading, dsr and eligibility unchanged: ' + (before === after) + ' · request facts carry the question, depth and note · checks ' + c.map(Number).join('') };
+    }],
+    ['Practice this again: model items go through validateExtra, stay in the learner data, show as follow-up practice and never reach DSR', function () {
+      var K = global.KCycle, st = KStore.emptyState(), et = KEtut.importPackage(st, miniV2(), { now: NOW }).etut, idx = K.itemIndex(et.package);
+      var a = K.startAttempt(et, idx.i1, 'practice', NOW);
+      K.commit(et, a, { choice: ['a'], confidence: 'sure' }, idx.i1, NOW + 1000);
+      var good = { items: [
+        { format: 'mcq_single', stem: 'Which switch setting closes the gate?', options: [{ id: 'a', md: 'Both on', note: 'Opens it.' }, { id: 'b', md: 'B off', note: 'Correct.' }, { id: 'c', md: 'Display on', note: 'Irrelevant.' }], key: ['b'], numeric_value: 0, numeric_tol: 0, numeric_unit: '', rubric_criteria: [], model_answer: '', accept: [], contradictions: [], solution: 'B off closes it.', hints: ['Think of the rule.'], units: ['U1', 'U9'], difference: 'A new situation.' },
+        { format: 'numeric', stem: 'How many of the 4 settings open the gate?', options: [], key: [], numeric_value: 1, numeric_tol: 0, numeric_unit: '', rubric_criteria: [], model_answer: '', accept: [], contradictions: [], solution: 'One.', hints: [], units: [], difference: 'Counting.' }] };
+      var b = K.buildFollowups(et, a, idx.i1, good, { now: NOW + 5000, meta: META, prompt: PROMPT });
+      var bad = clone2(good); bad.items[0].key = ['a', 'b']; bad.items[0].stem = idx.i1.stem; bad.items[1].numeric_value = 'many';
+      var rb = K.buildFollowups(et, a, idx.i1, bad, {});
+      var dup = clone2(good); dup.items = [dup.items[0], clone2(dup.items[0])];
+      var rd = K.buildFollowups(et, a, idx.i1, dup, {});
+      K.storeFollowups(et, a, b.items);
+      var b2 = K.buildFollowups(et, a, idx.i1, good, { now: NOW + 9000 });
+      var ex = K.withFollowups(et, null), ix = K.itemIndex(et.package, ex), q = b.items[0].q_id;
+      var fa = K.startAttempt(et, ix[q], 'practice', NOW + 10000);
+      K.commit(et, fa, { choice: ['b'], confidence: 'sure' }, ix[q], NOW + 11000);
+      var el = K.eligibility(fa, ix[q]), sent = K.send(st, et, fa, ix[q], etutEnvAt(NOW + 11000));
+      var gone = clone2(et); delete gone.package; gone.package = clone2(et.package); gone.package.parts[0].kazanimlar[0].kazanim_id = 'k-gone';
+      var stale = K.withFollowups(gone, null);
+      return { pass: !b.problems.length && b.items.length === 2 && b.items[0].followup_of === a.id && b.items[0].validation === 'unverified' && b.items[0].use === 'practice' && b.items[0].part_id === 'p1' && b.items[0].units.join() === 'U1'
+        && b.items[0].option_notes.b === 'Correct.' && b.items[0].made_by.model === 'fake-model-1'
+        && rb.items.length === 0 && rb.problems.length >= 2 && rd.items.length === 0 && rd.problems.some(function (p) { return /repeats/.test(p); })
+        && et.progress.followups[q] && a.followup_items.length === 2 && b2.items[0].q_id !== q
+        && ix[q] && ix[q].followup_of === a.id && !el.eligible && /follow-up/i.test(el.reason) && st.reviews.length === 0 && !sent.eligible
+        && !(stale && stale.items && stale.items[q]),
+        detail: 'valid set kept (' + b.items.length + ' items, unverified, follow-up of the attempt) · broken set: ' + rb.problems.length + ' problems, nothing kept · follow-up attempt: ' + el.reason + ' · reviews sent: ' + st.reviews.length };
+    }],
+    ['Typed answers: a model proposal needs real quotes; confirmed as proposed it is recorded as "model" with provider and model, changed it is "self"; DSR rule unchanged', function () {
+      var t = answeredTyped('The gate is closed, because switch B is off.');
+      var K = t.K, p = K.checkGradingProposal(t.item, t.a, { summary: 'Both there.', criteria: [
+        { id: 'C-1', mark: 'met', quote: 'the gate is closed', reason: 'It says closed.' },
+        { id: 'C-2', mark: 'met', quote: 'because switch B is off', reason: 'Gives the reason.' }] });
+      var fake = K.checkGradingProposal(t.item, t.a, { summary: '', criteria: [
+        { id: 'C-1', mark: 'met', quote: 'words that are not in the answer', reason: 'x' }, { id: 'C-9', mark: 'met', quote: 'b', reason: '' }] });
+      var inputs = K.gradingInputs(t.item, t.a);
+      K.confirmModelGrading(t.a, t.item, p, p.marks, { now: NOW + 5000, meta: META, prompt: PROMPT });
+      // the same marks given by the learner alone
+      var s = answeredTyped('The gate is closed, because switch B is off.');
+      K.setCriteria(s.a, s.item, { 'C-1': 'met', 'C-2': 'met' });
+      // the learner changes one mark of the proposal
+      var c = answeredTyped('The gate is closed, because switch B is off.');
+      var pc = K.checkGradingProposal(c.item, c.a, { summary: '', criteria: [{ id: 'C-1', mark: 'met', quote: 'the gate is closed', reason: '' }, { id: 'C-2', mark: 'met', quote: 'switch B is off', reason: '' }] });
+      K.confirmModelGrading(c.a, c.item, pc, { 'C-1': 'met', 'C-2': 'not' }, { meta: META, prompt: PROMPT });
+      // a "not met" whose quote is not in the answer loses the quote and keeps its mark
+      var u = answeredTyped('Closed.');
+      var pu = K.checkGradingProposal(u.item, u.a, { summary: '', criteria: [{ id: 'C-1', mark: 'met', quote: 'Closed.', reason: '' }, { id: 'C-2', mark: 'not_met', quote: 'switch B is off', reason: 'No reason given.' }] });
+      K.confirmModelGrading(u.a, u.item, pu, pu.marks, { meta: META, prompt: PROMPT });
+      var strip = function (e) { return { eligible: e.eligible, signal: e.signal, rating: e.rating }; };
+      return { pass: p.marks['C-1'] === 'met' && p.marks['C-2'] === 'met' && fake.marks['C-1'] === 'unsure' && fake.marks['C-2'] === 'unsure' && fake.rows[0].quote === '' && fake.notes.length >= 2
+        && t.a.grading === 'model' && t.a.model_grading.by.provider === 'Fake provider' && t.a.model_grading.by.model === 'fake-model-1' && t.a.model_grading.changed.length === 0 && t.a.result.correct === true
+        && s.a.grading === 'self' && JSON.stringify(strip(K.eligibility(t.a, t.item))) === JSON.stringify(strip(K.eligibility(s.a, s.item))) && K.eligibility(t.a, t.item).eligible
+        && c.a.grading === 'self' && c.a.model_grading.changed.join() === 'C-2' && c.a.result.correct === false
+        && u.a.result.criteria['C-1'] === 'met' && u.a.result.criteria['C-2'] === 'not' && u.a.result.correct === false
+        && /Says closed\./.test(inputs.criteria) && /Closed, because B is off\./.test(inputs.model_answer) && /Says open/.test(inputs.rules),
+        detail: 'unquoted "met" → ' + fake.marks['C-1'] + ' · confirmed as proposed: ' + t.a.grading + ' (' + t.a.model_grading.by.provider + ', ' + t.a.model_grading.by.model + ') · same marks by hand: ' + s.a.grading + ', same eligibility · one mark changed: ' + c.a.grading + ' (changed ' + c.a.model_grading.changed + ')' };
+    }],
+    ['Feynman feedback: a quote must be in the learner\'s text, "covered" needs one, versions and "satisfied" are never touched', function () {
+      var K = global.KCycle, st = KStore.emptyState(), et = KEtut.importPackage(st, miniV2(), { now: NOW }).etut, pr = et.progress;
+      K.migrate(pr, et.package);
+      var text = 'The gate opens only when both switches are on. I think the display decides it.';
+      pr.feynman.k1 = [{ n: 1, text: text, at: NOW }]; pr.satisfied.k1 = null;
+      var k = et.package.parts[0].kazanimlar[0], inp = K.feynmanInputs(et, k, pr.feynman.k1[0]);
+      var before = JSON.stringify([pr.feynman, pr.satisfied]);
+      var rec = K.checkFeynmanFeedback(text, inp._ids, { criteria: [{ id: 'C-1', status: 'covered', quote: 'only when both switches are on', comment: 'Says the condition.' }], misstatements: [{ quote: 'the display decides it', comment: 'The source says the switches decide.' }, { quote: 'a sentence nobody wrote', comment: 'x' }], questions: ['What if A is off?'], overall: 'A good start.' });
+      var fake = K.checkFeynmanFeedback(text, inp._ids, { criteria: [{ id: 'C-1', status: 'covered', quote: 'invented words', comment: '' }], misstatements: [], questions: [], overall: '' });
+      var none = K.checkFeynmanFeedback(text, inp._ids, { criteria: [], misstatements: [], questions: [], overall: '' });
+      K.saveFeynmanFeedback(et, 'k1', 1, rec, { now: NOW + 9, meta: META, prompt: PROMPT });
+      K.saveFeynmanFeedback(et, 'k1', 1, fake, { now: NOW + 10, meta: META, prompt: PROMPT });
+      return { pass: inp._ids.join() === 'C-1' && /C-1: Criterion C-1/.test(inp.criteria) && inp.explanation === text && /Text/.test(inp.sources)
+        && rec.criteria[0].status === 'covered' && rec.criteria[0].quote === 'only when both switches are on' && rec.misstatements.length === 1 && rec.questions.length === 1
+        && fake.criteria[0].status === 'unclear' && fake.criteria[0].quote === '' && fake.notes.length === 1 && none.criteria[0].status === 'unclear'
+        && pr.feynman_feedback.k1.length === 2 && pr.feynman_feedback.k1[0].by.model === 'fake-model-1' && before === JSON.stringify([pr.feynman, pr.satisfied]),
+        detail: 'real quote kept · invented quote dropped (status ' + fake.criteria[0].status + ') · invented sentence in misstatements dropped · feedback kept per version, versions and "satisfied" unchanged' };
+    }],
+    ['Learner data: older study progress gets the two new empty lists and every other field is unchanged; a card question carries the card and its study text', function () {
+      var K = global.KCycle, st = KStore.emptyState(), et = KEtut.importPackage(st, miniV2(), { now: NOW }).etut;
+      var old = { v: 'c2', cv: 2, part: 0, topic: 0, stage: 'apply', started_at: NOW, finished_at: null, duration: 60, phase_ms: { apply: 5 }, seen: {}, notes: { k1: 'n' }, qlist: {}, feynman: { k1: [{ n: 1, text: 't', at: 1 }] },
+        satisfied: {}, maps: {}, evaluating: {}, mode: 'practice', attempts: [{ id: 'at-1', q_id: 'i1', committed_at: 5, result: { correct: true }, grading: 'auto', dsr: { status: 'sent' }, explain_requested: 7 }], current: null, final: null, warmup: null, visit_n: 3, misconceptions: { k1: true } };
+      var copy = clone2(old), m = K.migrate(clone2(old), et.package);
+      var kept = Object.keys(copy).every(function (k) { return JSON.stringify(m[k]) === JSON.stringify(copy[k]); });
+      var again = JSON.stringify(K.migrate(clone2(m), et.package)) === JSON.stringify(m);
+      var card = st.cards[et.card_map.k1], ask = global.KPrep.cardAskInputs(st, card, '  ');
+      var withQ = global.KPrep.cardAskInputs(st, card, 'Why B?');
+      return { pass: kept && again && JSON.stringify(m.followups) === '{}' && JSON.stringify(m.feynman_feedback) === '{}' && ask.card.indexOf('Front: ' + card.front) === 0 && /Back: /.test(ask.card)
+        && /U1 \[p\. 1\]: x/.test(ask.sources) && /Lesson text of this topic/.test(ask.sources) && /Explain why the answer/.test(ask.question) && withQ.question === 'Why B?',
+        detail: 'all ' + Object.keys(copy).length + ' earlier fields identical after migrate: ' + kept + ' · migrating twice changes nothing: ' + again + ' · card question has the card, its source units and lesson text' };
+    }]
+  );
+
   tests.push(
     ['Backup file: the export is the whole saved state and survives a round trip; inspectBackup rejects foreign or newer files', function () {
       var st = KStore.buildSampleState(NOW);

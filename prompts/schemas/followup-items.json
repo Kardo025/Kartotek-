@@ -1,0 +1,49 @@
+{
+  "type": "object",
+  "properties": {
+    "items": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "properties": {
+          "format": { "type": "string", "enum": ["mcq_single", "mcq_multi", "numeric", "typed"] },
+          "stem": { "type": "string" },
+          "options": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": { "id": { "type": "string" }, "md": { "type": "string" }, "note": { "type": "string" } },
+              "required": ["id", "md", "note"],
+              "additionalProperties": false
+            }
+          },
+          "key": { "type": "array", "items": { "type": "string" } },
+          "numeric_value": { "type": "number" },
+          "numeric_tol": { "type": "number" },
+          "numeric_unit": { "type": "string" },
+          "rubric_criteria": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": { "id": { "type": "string" }, "text": { "type": "string" }, "required": { "type": "boolean" } },
+              "required": ["id", "text", "required"],
+              "additionalProperties": false
+            }
+          },
+          "model_answer": { "type": "string" },
+          "accept": { "type": "array", "items": { "type": "string" } },
+          "contradictions": { "type": "array", "items": { "type": "string" } },
+          "solution": { "type": "string" },
+          "hints": { "type": "array", "items": { "type": "string" } },
+          "units": { "type": "array", "items": { "type": "string" } },
+          "difference": { "type": "string" }
+        },
+        "required": ["format", "stem", "options", "key", "numeric_value", "numeric_tol", "numeric_unit", "rubric_criteria", "model_answer", "accept", "contradictions", "solution", "hints", "units", "difference"],
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": ["items"],
+  "additionalProperties": false
+}

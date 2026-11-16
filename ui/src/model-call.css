@@ -1,0 +1,23 @@
+/* Calls to the model layer from the study screens (task E2); tokens from index.css */
+.mc-busy { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 8px 0; }
+.mc-spin { animation: mc-turn 1s linear infinite; }
+@keyframes mc-turn { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .mc-spin { animation: none; } }
+.mc-error { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 8px 0; white-space: normal; overflow-wrap: anywhere; }
+.mc-note { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin: 6px 0; }
+.mc-by { margin: 6px 0 0; }
+.mc-req { margin: 8px 0; }
+.mc-pre { white-space: pre-wrap; word-break: break-word; max-height: 280px; overflow: auto; padding: 8px 10px; border-radius: var(--k-r-md); background: var(--k-tile); font-size: 12px; line-height: 1.45; }
+.mc-quote { margin: 4px 0; padding: 2px 10px; border-left: 3px solid var(--k-accent); font-style: italic; color: var(--k-text-2); }
+.mc-rows { display: grid; gap: 10px; margin: 10px 0; }
+.mc-row { display: grid; gap: 2px; padding: 8px 10px; border-radius: var(--k-r-md); background: var(--k-tile); }
+.mc-row-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-weight: 600; }
+.mc-status { font-size: 12px; font-weight: 600; padding: 1px 8px; border-radius: 999px; border: 1px solid currentColor; }
+.mc-status[data-s="covered"] { color: var(--k-good); }
+.mc-status[data-s="partly"] { color: var(--k-hard); }
+.mc-status[data-s="missing"] { color: var(--k-again); }
+.mc-status[data-s="unclear"] { color: var(--k-muted); }
+.mc-prop { display: grid; gap: 6px; margin-top: 6px; }
+.mc-fu-list { margin: 8px 0 0; padding-left: 18px; }
+.mc-ask { display: grid; gap: 8px; margin-top: 10px; padding: 10px 12px; border-radius: var(--k-r-lg); background: var(--k-tile); }
+.mc-ask textarea, .mc-ask input { width: 100%; }

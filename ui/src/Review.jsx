@@ -1,8 +1,10 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { ArrowCounterClockwise, Lightbulb, Eye, CheckCircle, Warning, FilePdf, ChatCircleText, Minus, Check, Checks } from "@phosphor-icons/react";
 import { Count, EASE as E, DUR, STAGGER } from "./motion.jsx";
 import ModelHint from "./tabs/ModelHint.jsx";
+import { Md } from "./tabs/study/common.jsx";
+import { useModelReady, useModelCall, CallStatus, CopyPromptBtn, RequestPreview, byLine } from "./model-call.jsx";
 
 const EASE = E.out;
 // Each rating is told apart by icon, label and key as well as colour (design-philosophy.md 3)
@@ -25,17 +27,71 @@ function clozeView(text, revealed) {
 export const isCloze = (c) => c.card_type === "cloze" || /\{\{(?:c\d+::)?.+?\}\}/.test(c.front || "");
 
 function claudeLink(prompt) { return window.KConfig.claudeLink(prompt); }
-// Where the card comes from (book page, local extract) and a prefilled "Ask Claude" prompt
+// Where the card comes from (book page, local extract) and a way to ask about the card: a set-up model answers in the app
+// (task E2); otherwise the prefilled Claude Code link with its hint, as before
 function SourceRow({ card, S }) {
   const src = window.KPrep ? window.KPrep.cardSource(S, card) : null;
+  const mr = useModelReady("fast");
+  const [open, setOpen] = useState(false);
   const prompt = window.KCents.askPrompt({ front: card.front, back: card.back, explanation: card.explanation, itemId: src && src.itemId, extractPage: src && src.extractPage });
   return (
     <div className="k-card-src">
       {src && src.bookHref && <span className="k-small">Source: {src.label} · p. {src.printedPage}</span>}
       {src && src.bookHref && <a className="k-btn sm" href={src.bookHref} target="_blank" rel="noopener"><FilePdf size={14} aria-hidden="true" />Book page</a>}
       {src && src.localHref && <a className="k-btn sm" href={src.localHref} title="The page extract on this computer">Extract p. {src.extractPage}</a>}
-      <a className="k-btn sm" href={claudeLink(prompt)} title="Opens Claude Code with this card and its source pages; press Enter there to ask."><ChatCircleText size={14} aria-hidden="true" />Ask Claude</a>
-      <ModelHint what="answering questions about this card" />
+      {mr.ready ? (
+        <button type="button" className="k-btn sm" aria-expanded={open} onClick={() => setOpen(!open)} title="Ask your model about this card, with its source information."><ChatCircleText size={14} aria-hidden="true" />Ask about this card</button>
+      ) : (
+        <>
+          <a className="k-btn sm" href={claudeLink(prompt)} title="Opens Claude Code with this card and its source pages; press Enter there to ask."><ChatCircleText size={14} aria-hidden="true" />Ask Claude</a>
+          <CopyPromptBtn promptId="ask-card" vars={window.KPrep ? window.KPrep.cardAskInputs(S, card, "") : {}} />
+          <ModelHint what="answering questions about this card" />
+        </>
+      )}
+      {mr.ready && open && <AskCard card={card} S={S} />}
+    </div>
+  );
+}
+
+// "Ask about this card": the card, its source information and the text of its study go to the model; the answer is shown here
+// and not stored (a card is not changed by asking about it)
+function AskCard({ card, S }) {
+  const call = useModelCall();
+  const [question, setQuestion] = useState("");
+  const [out, setOut] = useState(null);
+  const [showAns, setShowAns] = useState(false);
+  const vars = () => window.KPrep.cardAskInputs(S, card, question);
+  const ask = async () => {
+    setOut(null); setShowAns(false);
+    const r = await call.run("ask-card", vars(), { feature: "ask-card", maxOutputTokens: 3000 });
+    if (r.ok) setOut({ ...r.json, by: r.meta });
+  };
+  return (
+    <div className="mc-ask">
+      <label className="k-field"><span className="k-field-label">Your question (optional)</span>
+        <input className="k-input" value={question} onChange={(e) => setQuestion(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !call.busy) ask(); }} placeholder="e.g. why is the answer not the other way round?" />
+      </label>
+      <div className="k-row-btns">
+        <button type="button" className="k-btn sm primary" disabled={call.busy} onClick={ask}>Ask</button>
+        <CopyPromptBtn promptId="ask-card" vars={vars()} />
+      </div>
+      <CallStatus call={call} />
+      {out && (
+        <div className="mc-answer">
+          <Md src={out.answer_md} />
+          {out.common_mistake && <p className="k-small"><b>Usual mistake:</b> {out.common_mistake}</p>}
+          {(out.refs || []).length > 0 && <p className="k-small k-muted">Sources: {out.refs.join(" · ")}</p>}
+          {out.limits && <p className="k-small k-muted">Limits: {out.limits}</p>}
+          {out.practice_question && (
+            <div className="k-small">
+              <p><b>Try this:</b> {out.practice_question}</p>
+              {showAns ? <p className="k-muted">{out.practice_answer}</p> : <button type="button" className="k-btn sm" onClick={() => setShowAns(true)}>Show the answer</button>}
+            </div>
+          )}
+          <p className="k-small k-muted mc-by">Answered by {byLine(out.by)}. Asking does not change the card or its schedule.</p>
+        </div>
+      )}
+      <RequestPreview promptId="ask-card" vars={vars()} />
     </div>
   );
 }

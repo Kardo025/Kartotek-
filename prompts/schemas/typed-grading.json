@@ -1,0 +1,22 @@
+{
+  "type": "object",
+  "properties": {
+    "criteria": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "mark": { "type": "string", "enum": ["met", "not_met", "unsure"] },
+          "quote": { "type": "string" },
+          "reason": { "type": "string" }
+        },
+        "required": ["id", "mark", "quote", "reason"],
+        "additionalProperties": false
+      }
+    },
+    "summary": { "type": "string" }
+  },
+  "required": ["criteria", "summary"],
+  "additionalProperties": false
+}

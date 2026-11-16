@@ -311,7 +311,9 @@
   // v: "c2" stays (other code checks it); cv 2 = topic cycles (04-topic-cycles.md)
   function newProgress() {
     return { v: 'c2', cv: 2, part: 0, topic: 0, stage: 'priming', started_at: null, finished_at: null, duration: 90, phase_ms: {}, seen: {},
-      notes: {}, qlist: {}, feynman: {}, satisfied: {}, maps: {}, evaluating: {}, mode: 'practice', attempts: [], current: null, final: null, warmup: null, visit_n: 0, misconceptions: {} };
+      notes: {}, qlist: {}, feynman: {}, satisfied: {}, maps: {}, evaluating: {}, mode: 'practice', attempts: [], current: null, final: null, warmup: null, visit_n: 0, misconceptions: {},
+      // task E2: kept in the learner data; migrate() adds the empty defaults to older progress, nothing else changes
+      followups: {}, feynman_feedback: {} };
   }
   // migrate(progress[, pkg]): fills missing fields; with the package it also turns part-level cycle progress into topic progress
   function migrate(p, pkg) {
@@ -839,7 +841,7 @@
         attempts: att.filter(function (a) { return a.committed_at; }).length,
         assisted: att.filter(function (a) { return a.committed_at && (assisted(a) || a.followup_of); }).length,
         hints: att.reduce(function (s, a) { return s + (a.hints || 0); }, 0),
-        explains: att.filter(function (a) { return a.explain_requested; }).length,
+        explains: att.filter(function (a) { return a.explain_requested || (a.explanations && a.explanations.length); }).length,
         disputed: att.filter(function (a) { return a.disputed; }).length,
         sent: att.filter(function (a) { return a.dsr && a.dsr.status === 'sent'; }).length
       },
@@ -861,12 +863,12 @@
     return locs.join('; ') || 'not given in the item';
   }
   function optText(item, id) { var o = (item.options || []).filter(function (x) { return x.id === id; })[0]; return o ? o.md : id; }
-  function explainRequest(et, attempt, item, depth, opts) {
+  // The facts of one attempt, shared by the Claude Code request below and the in-app Explain prompt (task E2)
+  function explainFacts(et, attempt, item, depth, opts) {
     opts = opts || {};
     var pkg = et.package, ci = criteriaIndex(pkg), r = attempt.result || {}, resp = attempt.response || {};
     var fmt = FORMAT_LABEL[item.format] || item.format;
     var lines = [
-      'Explain this attempt using the authorized source passages (Kartotek study, STUDY-RULES.md §v2 "Explain").',
       'Study: ' + pkg.title + ' (' + pkg.etut_id + ' v' + pkg.version + ') · item ' + item.q_id + ' v' + (item.version || 1) + ' · attempt ' + attempt.id + ' · ' + (attempt.mode === 'final' ? 'final test' : attempt.mode === 'check' ? 'check without help' : 'practice'),
       'Question: ' + item.stem,
       'Response type: ' + fmt + '.'
@@ -889,6 +891,12 @@
     lines.push('Source locations: ' + unitLocs(pkg, item) + '. ' + srcLine(pkg));
     lines.push('Depth: ' + (depth || 'standard') + '.');
     if (opts.note) lines.push('My question: ' + opts.note);
+    return lines;
+  }
+  function explainRequest(et, attempt, item, depth, opts) {
+    opts = opts || {};
+    var pkg = et.package;
+    var lines = ['Explain this attempt using the authorized source passages (Kartotek study, STUDY-RULES.md §v2 "Explain").'].concat(explainFacts(et, attempt, item, depth, opts));
     lines.push('First check that the question, every variable, the options, the key and the solution describe one consistent problem and are supported by the source. If anything is disputed, explain the item problem without presuming I made a mistake. Otherwise explain the governing idea and the relevant steps with page references, and distinguish what I selected correctly, what I omitted and any wrong selection. Do not infer my calculation or misconception when I gave no working; offer hypotheses only as hypotheses. End with optional source-supported next steps, but do not run them.');
     lines.push('Then save the same explanation into studies\\' + pkg.etut_id + '\\extras\\' + attempt.id + '.json (schema kstudy-extra-1, STUDY-RULES.md §v2, with "items": []), check it with python tools\\audit-study.py studies\\' + pkg.etut_id + ', and run powershell -ExecutionPolicy Bypass -File build.ps1 -SkipPdf, so it appears under this attempt in Kartotek.');
     lines.push(TAIL);
@@ -919,6 +927,294 @@
       'Write studies\\<id>\\etut.json with "schema_version": 2 and "workflow": "cycle-v2", run python tools\\audit-study.py studies\\<id> until it reports 0 blockers (list the warnings you leave), then run powershell -ExecutionPolicy Bypass -File build.ps1.',
       TAIL
     ].filter(Boolean).join('\n');
+  }
+
+  // ------------------------------------------------------------------ in-app model requests (task E2)
+  // The window builds the values of a prompt file (prompts\*.md) from the learner's own record; the main process fills the file in
+  // and calls the model. Everything a model answers is checked here before it is stored, and none of it reaches the scheduler:
+  // an explanation is text, follow-up items are never eligible (eligibility()), a grading is only a proposal until the learner confirms.
+  function squash(s) { return String(s == null ? '' : s).replace(/\s+/g, ' ').trim(); }
+  function clip(s, n) { s = squash(s); return s.length > n ? s.slice(0, n - 1) + '…' : s; }
+  // Text for the model: a lesson block as plain sentences
+  function blockText(b) {
+    if (!b || typeof b !== 'object') return '';
+    var out = [];
+    if (b.title) out.push(String(b.title));
+    if (b.md) out.push(String(b.md));
+    if (Array.isArray(b.items)) out.push(b.items.map(function (x) { return '- ' + (typeof x === 'string' ? x : x && (x.md || x.text) || ''); }).join('\n'));
+    if (Array.isArray(b.steps)) out.push(b.steps.map(function (x, i) { return (i + 1) + '. ' + (typeof x === 'string' ? x : x && (x.do || x.md || '')) + (x && x.why ? ' (' + x.why + ')' : ''); }).join('\n'));
+    if (Array.isArray(b.columns) && Array.isArray(b.rows)) out.push([b.columns.join(' | ')].concat(b.rows.map(function (r) { return (r || []).join(' | '); })).join('\n'));
+    if (b.problem) out.push(String(b.problem));
+    return out.filter(Boolean).join('\n');
+  }
+  // The lesson text of one topic (objective), as the study wrote it from the sources; capped
+  function lessonText(pkg, kid, max) {
+    var k = kazanimlarOf(pkg).filter(function (x) { return x.kazanim_id === kid; })[0];
+    if (!k) return '';
+    var t = (k.blocks || []).map(blockText).filter(Boolean).join('\n\n');
+    return t.length > (max || 5000) ? t.slice(0, (max || 5000) - 1) + '…' : t;
+  }
+  // The source units behind some ids: "U1 [S1 ¶1]: the text"
+  function unitLines(pkg, ids, max) {
+    var u = byId(pkg.units), out = [];
+    (ids || []).forEach(function (id) { if (u[id]) out.push(id + ' [' + (u[id].loc || 'no location') + ']: ' + clip(u[id].text, max || 700)); });
+    return out;
+  }
+  // What a model may rely on for one item: its source units, the topic's lesson text and the study's conventions
+  function sourcePassages(pkg, item, kid) {
+    var ids = item && item.units && item.units.length ? item.units : [];
+    if (!ids.length && item) {
+      // An item without its own units: the units of the outcomes it assesses
+      (pkg.outcomes || []).forEach(function (o) { if ((item.outcomes || []).indexOf(o.id) >= 0) (o.units || []).forEach(function (u) { if (ids.indexOf(u) < 0) ids.push(u); }); });
+    }
+    var out = unitLines(pkg, ids);
+    var lesson = lessonText(pkg, kid || (item && item.kazanim_id));
+    if (lesson) out.push('Lesson text of this topic (the study wrote it from the sources):\n' + lesson);
+    if ((pkg.conventions || []).length) out.push('Conventions of this study: ' + pkg.conventions.join(' '));
+    return out.length ? out.join('\n') : 'No source text is stored with this item. Say so where it matters; do not invent page content.';
+  }
+  // What a model may rely on for a whole topic: the source units of its outcomes and its lesson text (as lines)
+  function topicSources(pkg, kid) {
+    var units = {}, ids = [];
+    (pkg.outcomes || []).filter(function (o) { return o.kazanim_id === kid; }).forEach(function (o) { (o.units || []).forEach(function (u) { if (!units[u]) { units[u] = true; ids.push(u); } }); });
+    var out = unitLines(pkg, ids), lesson = lessonText(pkg, kid);
+    if (lesson) out.push('Lesson text of this topic (the study wrote it from the sources):\n' + lesson);
+    return out;
+  }
+  function criteriaLines(pkg, item) {
+    var ci = criteriaIndex(pkg);
+    return ((item.criteria || []).map(function (c) { return c + (ci[c] ? ' (' + ci[c].outcome.id + '): ' + ci[c].criterion.text : ''); }).join('\n')) || 'none listed';
+  }
+  function modelMeta(meta, prompt) {
+    meta = meta || {};
+    return { provider: meta.providerLabel || meta.provider || null, provider_id: meta.provider || null, model: meta.model || null,
+      prompt: prompt ? { id: prompt.promptId || null, version: prompt.promptVersion || null, hash: prompt.promptHash || null } : null,
+      cost_usd: typeof meta.costUsd === 'number' ? meta.costUsd : null, cost_kind: meta.costKind || null };
+  }
+  // Does a quoted passage really occur in the learner's text? Case, spacing, curly quotes and trailing punctuation are ignored.
+  function norm(s) { return String(s == null ? '' : s).toLowerCase().replace(/[‘’‚‛]/g, "'").replace(/[“”„‟]/g, '"').replace(/\s+/g, ' ').trim(); }
+  function quoteIn(quote, text) {
+    var q = norm(quote).replace(/^["'`]+|["'`.,;:!?…]+$/g, '').replace(/^\.\.\.|\.\.\.$/g, '').trim();
+    if (q.length < 3) return false;
+    return norm(text).indexOf(q) >= 0;
+  }
+
+  // ---- 1. Explain after an attempt: the same facts as the Claude Code request, answered in the app and saved with the attempt
+  function explainInputs(et, attempt, item, depth, opts) {
+    var pkg = et.package;
+    return { attempt: explainFacts(et, attempt, item, depth, opts || {}).join('\n'), sources: sourcePassages(pkg, item) };
+  }
+  // Checks an answer of the explain prompt and appends it to the attempt (never replaces an earlier one). Touches nothing else:
+  // no result, no grading, no dsr, no eligibility.
+  function saveExplanation(attempt, json, ctx) {
+    ctx = ctx || {};
+    if (!attempt || !attempt.committed_at) return { ok: false, error: 'The attempt is not answered yet.' };
+    if (!json || typeof json !== 'object' || !String(json.explanation_md || '').trim()) return { ok: false, error: 'The explanation is empty.' };
+    var list = attempt.explanations = Array.isArray(attempt.explanations) ? attempt.explanations : [];
+    var rec = Object.assign({
+      n: list.length + 1, at: ctx.now || Date.now(), depth: ctx.depth || 'standard', note: ctx.note ? cap(ctx.note) : null,
+      md: String(json.explanation_md).slice(0, 20000),
+      refs: (Array.isArray(json.refs) ? json.refs : []).map(function (r) { return clip(r, 120); }).filter(Boolean).slice(0, 20),
+      item_status: json.item_status === 'disputed' ? 'disputed' : 'consistent',
+      item_note: clip(json.item_note, 600) || null,
+      next_steps: (Array.isArray(json.next_steps) ? json.next_steps : []).map(function (r) { return clip(r, 300); }).filter(Boolean).slice(0, 6)
+    }, { by: modelMeta(ctx.meta, ctx.prompt) });
+    list.push(rec);
+    return { ok: true, explanation: rec };
+  }
+  // All explanations of one attempt: the ones a file brought (Claude Code) and the ones asked in the app, oldest first
+  function explanationsOf(attempt, extras) {
+    var out = [], f = extras && extras.explanations && extras.explanations[attempt.id];
+    if (f) out.push({ n: 0, from_file: true, md: f.md, refs: f.refs || [], item_status: f.item_status === 'disputed' ? 'disputed' : 'consistent', item_note: f.item_note || null, by: { provider: 'Claude Code (file)', model: null } });
+    return out.concat(Array.isArray(attempt.explanations) ? attempt.explanations : []);
+  }
+
+  // ---- 2. Practice this again: 1–2 follow-up items for the same outcome and criteria, checked by validateExtra, kept in the learner data
+  function followupInputs(et, attempt, item, opts) {
+    opts = opts || {};
+    var pkg = et.package, resp = attempt.response || {}, lines = [
+      'Original question: ' + item.stem,
+      'Response type: ' + (FORMAT_LABEL[item.format] || item.format) + '.'
+    ];
+    if (item.format === 'mcq_single' || item.format === 'mcq_multi') {
+      lines.push('Options: ' + (item.options || []).map(function (o) { return o.id + ') ' + o.md; }).join(' | '));
+      lines.push('Key: ' + (item.key || []).join(', ') + '.');
+    } else if (item.format === 'numeric' && item.numeric) lines.push('Answer: ' + item.numeric.value + ' ± ' + item.numeric.tol + (item.numeric.unit ? ' ' + item.numeric.unit : '') + '.');
+    else if (item.format === 'typed' && item.rubric) lines.push('Model answer: ' + (item.rubric.model || item.solution || ''));
+    if (item.solution) lines.push('Solution text: ' + item.solution);
+    lines.push('What I did: ' + (attempt.result && attempt.result.correct ? 'answered correctly' : attempt.result && attempt.result.correct === false ? 'did not answer correctly' : 'not graded') + (assisted(attempt) ? ' (with help)' : '') + '; my answer: ' + (item.format === 'mcq_single' || item.format === 'mcq_multi' ? ((resp.choice || []).join(', ') || 'nothing') : item.format === 'numeric' ? (resp.number == null ? 'none' : resp.number) : '"' + (resp.text || '') + '"') + '.');
+    return { original: lines.join('\n'), criteria: criteriaLines(pkg, item), sources: sourcePassages(pkg, item), count: String(opts.count === 1 ? 1 : 2), problems: opts.problems && opts.problems.length ? opts.problems.join('\n') : 'none' };
+  }
+  function followupIds(et) {
+    var ids = {};
+    Object.keys(itemIndex(et.package, null)).forEach(function (q) { ids[q] = true; });
+    Object.keys((et.progress && et.progress.followups) || {}).forEach(function (q) { ids[q] = true; });
+    return ids;
+  }
+  // Turns the answer of the follow-up prompt into items of the study (never stored here) and runs KCycle.validateExtra on them.
+  // → { items, problems }: when problems is not empty, nothing may be stored.
+  function buildFollowups(et, attempt, item, json, ctx) {
+    ctx = ctx || {};
+    var pkg = et.package, problems = [], items = [], taken = followupIds(et), seq = 0;
+    var raw = json && Array.isArray(json.items) ? json.items.slice(0, 2) : [];
+    if (!raw.length) return { items: [], problems: ['The model returned no items.'] };
+    var unitIds = byId(pkg.units), critOf = {};
+    (item.criteria || []).forEach(function (c) { critOf[c] = true; });
+    raw.forEach(function (r, i) {
+      if (!r || typeof r !== 'object') { problems.push('item ' + (i + 1) + ' is not an object'); return; }
+      var fmt = r.format, it;
+      do { seq++; it = 'fu-' + String(attempt.id).replace(/[^A-Za-z0-9]/g, '').slice(-10) + '-' + seq; } while (taken[it]);
+      taken[it] = true;
+      var o = { q_id: it, version: 1, origin: 'generated', use: 'practice', format: fmt, followup_of: attempt.id,
+        part_id: item.part_id, kazanim_id: item.kazanim_id, outcomes: (item.outcomes || []).slice(), criteria: [], units: [],
+        performance: item.performance || 'solve', difficulty: 'medium', family: 'fu-' + attempt.id + '-' + seq, stem: String(r.stem || '').trim().slice(0, 4000),
+        validation: 'unverified', validation_note: 'Written by a model for follow-up practice; not independently verified.',
+        solution: String(r.solution || '').trim().slice(0, 4000), hints: (Array.isArray(r.hints) ? r.hints : []).map(function (h) { return clip(h, 500); }).filter(Boolean).slice(0, 3),
+        difference: clip(r.difference, 400) };
+      o.units = (Array.isArray(r.units) ? r.units : []).filter(function (u) { return unitIds[u]; });
+      if (!o.units.length) o.units = (item.units || []).slice();
+      if (fmt === 'mcq_single' || fmt === 'mcq_multi') {
+        o.options = (Array.isArray(r.options) ? r.options : []).map(function (x) { return { id: String(x && x.id || '').trim(), md: String(x && x.md || '').trim() }; });
+        o.key = (Array.isArray(r.key) ? r.key : []).map(String);
+        var notes = {};
+        (Array.isArray(r.options) ? r.options : []).forEach(function (x) { if (x && x.id && String(x.note || '').trim()) notes[String(x.id).trim()] = String(x.note).trim().slice(0, 600); });
+        o.option_notes = notes;
+        o.criteria = (item.criteria || []).slice();
+      } else if (fmt === 'numeric') {
+        o.numeric = { value: Number(r.numeric_value), tol: Number(r.numeric_tol), unit: String(r.numeric_unit || '').slice(0, 20) };
+        if (!isFinite(o.numeric.value) || !isFinite(o.numeric.tol)) problems.push('item ' + (i + 1) + ': the number and its tolerance must be numbers');
+        o.criteria = (item.criteria || []).slice();
+      } else if (fmt === 'typed') {
+        var rc = (Array.isArray(r.rubric_criteria) ? r.rubric_criteria : []).map(function (c) { return { id: String(c && c.id || '').trim(), text: String(c && c.text || '').trim().slice(0, 400), required: !(c && c.required === false) }; })
+          .filter(function (c) { return c.id && c.text; });
+        // A criterion of the rubric names a criterion of the study, so the grading says which one was met
+        o.rubric = { criteria: rc, model: String(r.model_answer || '').trim().slice(0, 4000), accept: (Array.isArray(r.accept) ? r.accept : []).map(function (a) { return clip(a, 200); }).filter(Boolean).slice(0, 6), contradictions: (Array.isArray(r.contradictions) ? r.contradictions : []).map(function (a) { return clip(a, 200); }).filter(Boolean).slice(0, 6) };
+        o.criteria = rc.map(function (c) { return c.id; }).filter(function (c) { return critOf[c]; });
+        if (!o.criteria.length) o.criteria = (item.criteria || []).slice();
+      } else problems.push('item ' + (i + 1) + ': format must be one of ' + FORMATS.join(', '));
+      items.push(o);
+    });
+    var extra = { schema: 'kstudy-extra-1', etut_id: pkg.etut_id, attempt_id: attempt.id, created_at: new Date(ctx.now || Date.now()).toISOString(), explanation: null, items: items };
+    validateExtra(extra, pkg).forEach(function (e) { problems.push(e); });
+    // The same stem twice, or the original again, is not new practice
+    var stems = {};
+    stems[squash(item.stem).toLowerCase()] = true;
+    items.forEach(function (o, i) { var s = squash(o.stem).toLowerCase(); if (stems[s]) problems.push('item ' + (i + 1) + ' repeats a question already asked'); stems[s] = true; });
+    var by = modelMeta(ctx.meta, ctx.prompt);
+    items.forEach(function (o) { o.made_by = Object.assign({ at: ctx.now || Date.now() }, by); });
+    return { items: problems.length ? [] : items, problems: problems };
+  }
+  // Keeps the checked items in the learner data (progress.followups) and notes them on the attempt. Never replaces one.
+  function storeFollowups(et, attempt, items) {
+    var pr = et.progress;
+    pr.followups = pr.followups || {};
+    items.forEach(function (o) { if (!pr.followups[o.q_id]) pr.followups[o.q_id] = o; });
+    attempt.followup_items = (attempt.followup_items || []).concat(items.map(function (o) { return o.q_id; }));
+    attempt.followup_requested = attempt.followup_requested || Date.now();
+    return items.length;
+  }
+  // The file extras plus the follow-up items kept in the learner data, for partItems / itemIndex / nextItem. An item whose part or
+  // objective is gone from a newer package version is left out (it stays in the data).
+  function withFollowups(et, extras) {
+    var fu = (et && et.progress && et.progress.followups) || {}, ids = Object.keys(fu);
+    if (!ids.length) return extras || null;
+    var pkg = et.package, kids = {}, parts = {};
+    kazanimlarOf(pkg).forEach(function (k) { kids[k.kazanim_id] = true; });
+    (pkg.parts || []).forEach(function (p) { parts[p.part_id] = true; });
+    var out = { explanations: Object.assign({}, extras && extras.explanations), items: Object.assign({}, extras && extras.items), problems: (extras && extras.problems || []).slice() };
+    ids.forEach(function (q) { var it = fu[q]; if (it && kids[it.kazanim_id] && parts[it.part_id] && !out.items[q]) out.items[q] = it; });
+    return out;
+  }
+
+  // ---- 5. Typed answers: the model proposes met / not met / unsure per criterion with the quote it relied on; the learner confirms
+  function gradingInputs(item, attempt) {
+    var rb = item.rubric || {}, resp = attempt.response || {};
+    return {
+      question: item.stem,
+      answer: resp.text || '',
+      working: resp.working ? resp.working : 'not provided',
+      criteria: (rb.criteria || []).map(function (c) { return c.id + ' (' + (c.required === false ? 'optional' : 'required') + '): ' + c.text; }).join('\n'),
+      model_answer: rb.model || item.solution || 'none',
+      rules: [(rb.accept || []).length ? 'Also accepted: ' + rb.accept.join('; ') : '', (rb.contradictions || []).length ? 'An answer that says this is not accepted, whatever else it gets right: ' + rb.contradictions.join('; ') : ''].filter(Boolean).join('\n') || 'none'
+    };
+  }
+  // Checks a proposal: every criterion of the rubric gets a mark; "met" needs a quote that really occurs in the learner's answer;
+  // otherwise the mark becomes "unsure". → { marks: {id: met|not|unsure}, rows: [...], summary, notes: [...] }
+  function checkGradingProposal(item, attempt, json) {
+    var crit = (item.rubric && item.rubric.criteria) || [], resp = attempt.response || {};
+    var text = [resp.text, resp.working].filter(Boolean).join('\n');
+    var given = {}, notes = [];
+    (json && Array.isArray(json.criteria) ? json.criteria : []).forEach(function (r) { if (r && r.id != null) given[String(r.id)] = r; });
+    var rows = crit.map(function (c) {
+      var r = given[c.id], mark = 'unsure', quote = '', reason = '', found = false;
+      if (r) {
+        mark = r.mark === 'met' ? 'met' : r.mark === 'not_met' ? 'not' : 'unsure';
+        quote = squash(r.quote); reason = clip(r.reason, 500);
+        found = !!quote && quoteIn(quote, text);
+        if (quote && !found) { notes.push(c.id + ': the quoted words are not in your answer, so the quote was dropped'); quote = ''; }
+        if (mark === 'met' && !found) { mark = 'unsure'; reason = (reason ? reason + ' ' : '') + '(No quote from your answer backs this, so it is not proposed as met.)'; }
+      } else { reason = 'The model gave no judgement for this criterion.'; notes.push(c.id + ': no judgement from the model'); }
+      return { id: c.id, text: c.text, mark: mark, quote: quote, quote_found: found, reason: reason };
+    });
+    var marks = {};
+    rows.forEach(function (r) { marks[r.id] = r.mark; });
+    return { marks: marks, rows: rows, summary: clip(json && json.summary, 600), notes: notes };
+  }
+  // The learner's confirmed marks (the proposal as shown or edited) go through the same setCriteria as a self-check. The grading is
+  // "model" when the learner confirmed exactly what the model proposed, "self" when they changed any mark; what the model proposed,
+  // which marks were changed, the provider and the model stay on the attempt. eligibility() reads only result / confidence, as before.
+  function confirmModelGrading(attempt, item, proposal, finalMarks, ctx) {
+    ctx = ctx || {};
+    var res = setCriteria(attempt, item, finalMarks);
+    if (!res) return null;
+    var changed = (proposal.rows || []).filter(function (r) { return finalMarks[r.id] !== r.mark; }).map(function (r) { return r.id; });
+    attempt.model_grading = { at: ctx.now || Date.now(), summary: proposal.summary || '', rows: (proposal.rows || []).map(function (r) { return { id: r.id, mark: r.mark, quote: r.quote, reason: r.reason }; }), changed: changed, final: Object.assign({}, res.criteria), by: modelMeta(ctx.meta, ctx.prompt) };
+    if (attempt.grading === 'self' && !changed.length) attempt.grading = 'model';
+    return res;
+  }
+
+  // ---- 4. Feynman feedback: against the topic's criteria, quoting the learner's own sentences; never a rewrite
+  function feynmanInputs(et, k, version) {
+    var pkg = et.package, fy = k.feynman || {}, ci = criteriaIndex(pkg);
+    var ids = fy.criteria && fy.criteria.length ? fy.criteria : (pkg.outcomes || []).filter(function (o) { return o.kazanim_id === k.kazanim_id; }).reduce(function (a, o) { return a.concat((o.criteria || []).map(function (c) { return c.id; })); }, []);
+    var src = topicSources(pkg, k.kazanim_id);
+    return {
+      prompt: fy.prompt || 'Explain "' + k.title + '" to a classmate who missed it: the ideas, how they connect and the conditions.',
+      criteria: ids.map(function (c) { return c + ': ' + (ci[c] ? ci[c].criterion.text : c); }).join('\n') || 'none listed',
+      explanation: version.text,
+      sources: src.join('\n') || 'No source text is stored for this topic.',
+      _ids: ids
+    };
+  }
+  // Checks an answer of the feynman-feedback prompt against the learner's text. A quote that is not in the text is dropped, and a
+  // criterion cannot be "covered" without one. → the record to store, or null
+  function checkFeynmanFeedback(text, ids, json) {
+    if (!json || typeof json !== 'object') return null;
+    var given = {}, notes = [];
+    (Array.isArray(json.criteria) ? json.criteria : []).forEach(function (r) { if (r && r.id != null) given[String(r.id)] = r; });
+    var rows = ids.map(function (id) {
+      var r = given[id], status = 'unclear', quote = '', comment = '';
+      if (r) {
+        status = ['covered', 'partly', 'missing', 'unclear'].indexOf(r.status) >= 0 ? r.status : 'unclear';
+        quote = squash(r.quote); comment = clip(r.comment, 600);
+        if (quote && !quoteIn(quote, text)) { notes.push(id + ': a quote was not in your explanation and was dropped'); quote = ''; if (status === 'covered' || status === 'partly') { status = 'unclear'; comment = (comment ? comment + ' ' : '') + '(No sentence of yours could be quoted for this.)'; } }
+        if ((status === 'covered' || status === 'partly') && !quote) { status = 'unclear'; comment = (comment ? comment + ' ' : '') + '(No sentence of yours could be quoted for this.)'; }
+      } else comment = 'The model gave no feedback on this criterion.';
+      return { id: id, status: status, quote: quote, comment: comment };
+    });
+    var mis = (Array.isArray(json.misstatements) ? json.misstatements : []).map(function (m) { return { quote: squash(m && m.quote), comment: clip(m && m.comment, 600) }; })
+      .filter(function (m) { return m.quote && m.comment && quoteIn(m.quote, text); }).slice(0, 5);
+    return { criteria: rows, misstatements: mis, questions: (Array.isArray(json.questions) ? json.questions : []).map(function (q) { return clip(q, 300); }).filter(Boolean).slice(0, 4), overall: clip(json.overall, 800), notes: notes };
+  }
+  // Appends the feedback for one saved version; the version text is never touched
+  function saveFeynmanFeedback(et, kid, versionN, record, ctx) {
+    ctx = ctx || {};
+    var pr = et.progress;
+    pr.feynman_feedback = pr.feynman_feedback || {};
+    var list = pr.feynman_feedback[kid] = pr.feynman_feedback[kid] || [];
+    var rec = Object.assign({ n: versionN, at: ctx.now || Date.now() }, record, { by: modelMeta(ctx.meta, ctx.prompt) });
+    list.push(rec);
+    return rec;
   }
 
   // ------------------------------------------------------------------ extras (Explain texts + follow-up items written by Claude Code)
@@ -1003,6 +1299,11 @@
     outcomeEvidence: outcomeEvidence, stateOf: stateOf, nextItem: nextItem, partEvidence: partEvidence,
     blueprint: blueprint, planFinal: planFinal, finalPosition: finalPosition, nextBlock: nextBlock, report: report,
     explainRequest: explainRequest, followupPrompt: followupPrompt, newStudyPrompt: newStudyPrompt,
+    lessonText: lessonText, sourcePassages: sourcePassages, topicSources: topicSources, quoteIn: quoteIn,
+    explainInputs: explainInputs, saveExplanation: saveExplanation, explanationsOf: explanationsOf,
+    followupInputs: followupInputs, buildFollowups: buildFollowups, storeFollowups: storeFollowups, withFollowups: withFollowups,
+    gradingInputs: gradingInputs, checkGradingProposal: checkGradingProposal, confirmModelGrading: confirmModelGrading,
+    feynmanInputs: feynmanInputs, checkFeynmanFeedback: checkFeynmanFeedback, saveFeynmanFeedback: saveFeynmanFeedback,
     validateExtra: validateExtra, indexExtras: indexExtras, attachPackage: attachPackage, bundledMatches: bundledMatches,
     progressFraction: progressFraction, progressLabel: progressLabel, shuffledIds: shuffledIds
   };

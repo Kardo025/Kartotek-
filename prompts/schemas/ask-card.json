@@ -1,0 +1,13 @@
+{
+  "type": "object",
+  "properties": {
+    "answer_md": { "type": "string" },
+    "common_mistake": { "type": "string" },
+    "refs": { "type": "array", "items": { "type": "string" } },
+    "practice_question": { "type": "string" },
+    "practice_answer": { "type": "string" },
+    "limits": { "type": "string" }
+  },
+  "required": ["answer_md", "common_mistake", "refs", "practice_question", "practice_answer", "limits"],
+  "additionalProperties": false
+}
