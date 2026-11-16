@@ -425,6 +425,47 @@ async function main() {
       } catch (e) { problems.push('F1: the answer screen failed: ' + e.message); }
     }
 
+    // Find my level and the plan map (F3): Priming shows both; the self-rating route (no model) stores a probe record, the map colours the
+    // topic, it can be skipped (counts as complete) and nothing reaches the reviews
+    {
+      const SID = 'c2-first';
+      try {
+        const before = await page.evaluate((id) => {
+          const App = window.App, et = App.S.etuts[id];
+          window.KCycle.goto(et, 0, 0, 'priming', Date.now()); App.EtutUI.commit(et); App.switchTab('etut'); App.goStudy(id); App.render();
+          return { reviews: App.S.reviews.length, topics: window.KGraph.topicsOf(et.package).length, first: et.package.parts[0].kazanimlar[0].kazanim_id };
+        }, SID);
+        await page.waitForSelector('.pm .gv-node', { timeout: 8000, state: 'attached' });
+        await page.$eval('.pm', (d) => { d.open = true; });
+        const nodes = await page.$$eval('.pm .gv-node', (l) => l.length);
+        await page.click('.pb button:has-text("Rate myself instead")');
+        const rows = await page.$$eval('.pm-self-row', (l) => l.length);
+        for (let i = 0; i < rows; i++) await page.click('.pm-self-row >> nth=' + i + ' >> button:has-text("Yes")');
+        await page.click('.pb button:has-text("Save my rating")');
+        await page.waitForTimeout(500);
+        await page.$eval('.pm', (d) => { d.open = true; });
+        const labels = await page.$$eval('.pm .gv-node', (l) => l.map((n) => n.getAttribute('aria-label')));
+        // every topic was rated held; a topic earlier blocks answered wrongly is redrawn from that evidence as "gap found" and cannot be skipped
+        const gapAt = labels.findIndex((l) => /gap found in Applying/.test(l)), heldAt = labels.findIndex((l) => /, held/.test(l));
+        let gapOk = true;
+        if (gapAt >= 0) {
+          await page.click('.pm .gv-node >> nth=' + gapAt);
+          gapOk = (await page.$$('.pm-detail button:has-text("Skip this topic")')).length === 0 && /show a gap/.test(await page.$eval('.pm-detail', (d) => d.innerText));
+        }
+        if (heldAt < 0) throw new Error('no topic is coloured held after the rating: ' + labels.join(' | '));
+        const k = await page.evaluate(({ id, i }) => window.KGraph.topicsOf(window.App.S.etuts[id].package)[i].kid, { id: SID, i: heldAt });
+        await page.click('.pm .gv-node >> nth=' + heldAt);
+        await page.click('.pm-detail button:has-text("Skip this topic")');
+        await page.waitForTimeout(400);
+        const after = await page.evaluate(({ id, k }) => { const S = window.App.S, et = S.etuts[id]; return { probes: et.progress.probes.length, source: et.progress.probes.slice(-1)[0].source, skipped: !!et.progress.skipped[k], done: window.KCycle.cycleDone(et, k), reviews: S.reviews.length, chip: !!document.querySelector('.cy-nav-skip') }; }, { id: SID, k });
+        if (nodes !== before.topics) problems.push('F3: the plan map shows ' + nodes + ' topics, the study has ' + before.topics);
+        if (!gapOk) problems.push('F3: a topic with a gap in Applying could still be skipped, or no reason was shown');
+        if (after.probes < 1 || after.source !== 'self' || !after.skipped || !after.done || !after.chip || after.reviews !== before.reviews) problems.push('F3: self-rating or skipping went wrong: ' + JSON.stringify(after));
+        await page.evaluate(({ id, k }) => { const et = window.App.S.etuts[id]; window.KPlan.unskip(et, k); window.App.EtutUI.commit(et); window.App.render(); }, { id: SID, k });
+        console.log('Find my level and plan map: Priming showed both; a self-rating was stored as a probe and coloured the map; a held topic was skipped (complete for End), ' + (gapAt >= 0 ? 'a topic with a gap in Applying could not be' : 'no topic had a gap') + '; the reviews did not change');
+      } catch (e) { problems.push('F3: Priming, Find my level or the plan map failed: ' + e.message); }
+    }
+
     // Planning home and Euro apply without a folder (D2): Kartotek's own rows, what is missing, and a setup row instead of the app
     await clickMode('planning');
     await page.click('.k-nav-item[data-tab="home"]');

@@ -1,8 +1,7 @@
 ---
 id: shared-confidence
-title: Shared fragment: reading confidence (draft)
+title: Shared fragment: reading confidence
 version: 1
-status: draft
 adapted_from: LearnHarness 0.6.0, src/agent/prompts/shared/25-confidence.md (Amos Blomqvist, AGPL-3.0-only)
 ---
 ## Confidence: reading the learner's self-assessment

@@ -1,0 +1,67 @@
+{
+  "type": "object",
+  "properties": {
+    "kind": { "type": "string", "enum": ["goal_question", "strands", "question"] },
+    "goal_concrete": { "type": "string" },
+    "goal_question": {
+      "type": "object",
+      "properties": {
+        "stem": { "type": "string" },
+        "options": { "type": "array", "items": { "type": "string" } }
+      },
+      "required": ["stem", "options"],
+      "additionalProperties": false
+    },
+    "strands": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "label": { "type": "string" },
+          "levels": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["id", "label", "levels"],
+        "additionalProperties": false
+      }
+    },
+    "question": {
+      "type": "object",
+      "properties": {
+        "strand": { "type": "string" },
+        "level": { "type": "string" },
+        "intent": { "type": "string", "enum": ["probe", "dig", "confirm"] },
+        "stem": { "type": "string" },
+        "options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "text": { "type": "string" },
+              "wrong_model": { "type": "string" }
+            },
+            "required": ["id", "text", "wrong_model"],
+            "additionalProperties": false
+          }
+        },
+        "key": { "type": "string" },
+        "why": { "type": "string" },
+        "difficulty": { "type": "integer" }
+      },
+      "required": ["strand", "level", "intent", "stem", "options", "key", "why", "difficulty"],
+      "additionalProperties": false
+    },
+    "last_answer": {
+      "type": "object",
+      "properties": {
+        "misconception": { "type": "string" },
+        "note": { "type": "string" }
+      },
+      "required": ["misconception", "note"],
+      "additionalProperties": false
+    }
+  },
+  "required": ["kind", "goal_concrete", "goal_question", "strands", "question", "last_answer"],
+  "additionalProperties": false
+}

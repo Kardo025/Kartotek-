@@ -1,0 +1,26 @@
+{
+  "type": "object",
+  "properties": {
+    "approach": { "type": "string" },
+    "nodes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "label": { "type": "string" },
+          "kind": { "type": "string", "enum": ["held", "learn", "goal"] },
+          "depends_on": { "type": "array", "items": { "type": "string" } },
+          "units": { "type": "array", "items": { "type": "string" } },
+          "why": { "type": "string" },
+          "mode": { "type": "string", "enum": ["socratic", "expository"] }
+        },
+        "required": ["id", "label", "kind", "depends_on", "units", "why", "mode"],
+        "additionalProperties": false
+      }
+    },
+    "uncertain": { "type": "array", "items": { "type": "string" } }
+  },
+  "required": ["approach", "nodes", "uncertain"],
+  "additionalProperties": false
+}

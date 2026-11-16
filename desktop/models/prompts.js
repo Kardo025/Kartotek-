@@ -5,6 +5,9 @@
 // Schemas (<app>\prompts\schemas\) are never user-editable. Templating is plain {{name}} replacement with no code; every inserted
 // value is fenced so learner text cannot read as instructions. Every rendered prompt carries its id, version and, for an override,
 // a short hash of its text.
+// Shared fragments (decision D16, task F3): prompts\shared\<name>.md, listed and edited as the prompt 'shared-<name>' (override
+// <userData>\prompts\shared-<name>.md). A prompt names the fragments it uses in its front matter (includes: [shared/voice, ...]); render()
+// inserts them before the prompt's closing "Answer with JSON only" paragraph, so each rule is written once for every agent.
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
@@ -52,16 +55,27 @@ function createPrompts(opts) {
   const shippedDir = opts.shippedDir;             // <app>\prompts
   const overrideDir = path.join(opts.userDir, 'prompts');
 
+  // A shared fragment 'shared-<name>' is the file prompts\shared\<name>.md (decision D16, task F3)
+  function shippedFile(id) {
+    const top = path.join(shippedDir, id + '.md');
+    if (/^shared-/.test(id) && !fs.existsSync(top)) return path.join(shippedDir, 'shared', id.slice(7) + '.md');
+    return top;
+  }
   function readShipped(id) {
     if (!ID_RE.test(id)) return null;
-    try { return parsePromptFile(fs.readFileSync(path.join(shippedDir, id + '.md'), 'utf8')); } catch (e) { return null; }
+    try { return parsePromptFile(fs.readFileSync(shippedFile(id), 'utf8')); } catch (e) { return null; }
   }
+  // 'shared/voice' (as written in includes:) -> 'shared-voice'
+  const fragmentId = (name) => 'shared-' + String(name || '').replace(/^shared[\\/-]/, '');
   function readOverride(id) {
     if (!ID_RE.test(id)) return null;
     try { return parsePromptFile(fs.readFileSync(path.join(overrideDir, id + '.md'), 'utf8')); } catch (e) { return null; }
   }
   function ids() {
-    try { return fs.readdirSync(shippedDir).filter((f) => /\.md$/.test(f) && f !== 'README.md').map((f) => f.slice(0, -3)).filter((id) => ID_RE.test(id)).sort(); } catch (e) { return []; }
+    let top = [], shared = [];
+    try { top = fs.readdirSync(shippedDir).filter((f) => /\.md$/.test(f) && f !== 'README.md').map((f) => f.slice(0, -3)); } catch (e) { /* none */ }
+    try { shared = fs.readdirSync(path.join(shippedDir, 'shared')).filter((f) => /\.md$/.test(f)).map((f) => 'shared-' + f.slice(0, -3)); } catch (e) { /* none */ }
+    return top.concat(shared).filter((id) => ID_RE.test(id)).sort();
   }
 
   function list() {
@@ -69,6 +83,7 @@ function createPrompts(opts) {
       const s = readShipped(id), o = readOverride(id);
       const version = s.meta.version || 1;
       return { id, title: s.meta.title || id, version, slot: s.meta.slot || null, variables: s.meta.variables || variablesIn(s.body), schema: s.meta.schema || null,
+        fragment: /^shared-/.test(id), includes: Array.isArray(s.meta.includes) ? s.meta.includes.map(fragmentId) : [], draft: s.meta.status === 'draft',
         edited: !!o, basedOn: o ? (o.meta.based_on || null) : null, defaultChanged: !!o && (o.meta.based_on || 0) < version };
     });
   }
@@ -116,10 +131,25 @@ function createPrompts(opts) {
   // Renders a prompt: { text, promptId, promptVersion, promptHash (override only), slot, schema }
   function render(id, vars) {
     const p = get(id);
-    const text = p.overrideText != null ? p.overrideText : p.defaultText;
+    let text = p.overrideText != null ? p.overrideText : p.defaultText;
+    let edited = p.overrideText != null;
     const v = vars || {};
-    const out = text.replace(/\{\{\s*([a-z_][a-z0-9_]*)\s*\}\}/gi, (all, name) => (Object.prototype.hasOwnProperty.call(v, name) ? fence(v[name]) : all));
-    return { text: out, promptId: id, promptVersion: p.meta.version || 1, promptHash: p.overrideText != null ? hashOf(p.overrideText) : null, slot: p.meta.slot || null, schema: p.schema };
+    // values first, so neither a learner's text nor a fragment is ever searched for placeholders
+    text = text.replace(/\{\{\s*([a-z_][a-z0-9_]*)\s*\}\}/gi, (all, name) => (Object.prototype.hasOwnProperty.call(v, name) ? fence(v[name]) : all));
+    // shared fragments (includes:), each the shipped text or its override, before the closing "Answer with JSON only" paragraph
+    const inc = Array.isArray(p.meta.includes) ? p.meta.includes : [];
+    if (inc.length) {
+      const block = inc.map((name) => {
+        const fid = fragmentId(name), s = readShipped(fid);
+        if (!s) throw new Error('Prompt ' + id + ' includes an unknown fragment: ' + name);
+        const o = readOverride(fid);
+        if (o) edited = true;
+        return (o ? o.body : s.body).trim();
+      }).join('\n\n');
+      const at = text.search(/^Answer with JSON only/m);
+      text = at >= 0 ? text.slice(0, at) + block + '\n\n' + text.slice(at) : text + '\n\n' + block;
+    }
+    return { text, promptId: id, promptVersion: p.meta.version || 1, promptHash: edited ? hashOf(text) : null, slot: p.meta.slot || null, schema: p.schema };
   }
 
   return { list, get, saveOverride, resetOverride, render };

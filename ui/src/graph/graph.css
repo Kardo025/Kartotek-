@@ -1,0 +1,52 @@
+/* GraphView (task F3, reused in F6): dependency map with pan and zoom. Tones follow the state pills (DESIGN.md: colour for meaning). */
+.gv { display: flex; flex-direction: column; gap: 8px; }
+.gv-canvas { position: relative; border: 1px solid var(--k-line); border-radius: 12px; background: var(--k-bg); overflow: hidden; cursor: grab; touch-action: none; }
+.gv-canvas:active { cursor: grabbing; }
+.gv-canvas svg { display: block; }
+.gv-tools { position: absolute; right: 10px; top: 10px; display: flex; gap: 4px; }
+.gv-tools .k-btn { padding: 4px 7px; background: var(--k-raised); }
+
+.gv-col rect { fill: var(--k-panel); stroke: var(--k-line); stroke-width: 1; }
+.gv-col text { fill: var(--k-muted); font-size: 12px; font-weight: 600; }
+
+.gv-edge { fill: none; stroke: var(--k-line-strong); stroke-width: 1.6; }
+.gv-edge.order { stroke-width: 1.2; opacity: .85; }
+.gv-edge.rel { stroke: var(--k-text-3, var(--k-muted)); stroke-dasharray: 5 5; stroke-width: 1.3; }
+.gv-arrow { fill: var(--k-line-strong); }
+.gv-arrow.rel { fill: var(--k-text-3, var(--k-muted)); }
+
+.gv-node { cursor: pointer; outline: none; }
+.gv-node .gv-box { fill: var(--k-raised); stroke: var(--k-line-strong); stroke-width: 1.2; transition: fill var(--k-dur-ui, .24s) ease, stroke var(--k-dur-ui, .24s) ease; }
+.gv-node .gv-band { fill: var(--gv-tone-t, var(--k-line-strong)); transition: fill var(--k-dur-ui, .24s) ease; }
+.gv-node:hover .gv-box { stroke: var(--gv-tone-t, var(--k-text-2)); }
+.gv-node:focus-visible .gv-box, .gv-node[data-sel] .gv-box { stroke: var(--k-accent); stroke-width: 2; }
+.gv-node[data-skip] { opacity: .62; }
+.gv-node[data-skip] .gv-box { stroke-dasharray: 4 3; }
+.gv-text { display: flex; flex-direction: column; justify-content: center; height: 100%; gap: 2px; font-size: 12.5px; line-height: 1.25; color: var(--k-text); pointer-events: none; }
+.gv-label { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-weight: 550; }
+.gv-sub { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--gv-tone-t, var(--k-muted)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.gv-node[data-tone="held"], .gv-legend [data-tone="held"] { --gv-tone: var(--k-pill-review); --gv-tone-t: var(--k-pill-review-t); }
+.gv-node[data-tone="edge"], .gv-legend [data-tone="edge"] { --gv-tone: var(--k-pill-learning); --gv-tone-t: var(--k-pill-learning-t); }
+.gv-node[data-tone="gap"], .gv-legend [data-tone="gap"] { --gv-tone: var(--k-pill-learning); --gv-tone-t: var(--k-pill-learning-t); }
+.gv-node[data-tone="missing"], .gv-legend [data-tone="missing"] { --gv-tone: var(--k-pill-relearning); --gv-tone-t: var(--k-pill-relearning-t); }
+.gv-node[data-tone="learn"], .gv-legend [data-tone="learn"] { --gv-tone: var(--k-pill-new); --gv-tone-t: var(--k-text-2); }
+.gv-node[data-tone="open"], .gv-legend [data-tone="open"] { --gv-tone: var(--k-pill-new); --gv-tone-t: var(--k-muted); }
+.gv-node[data-tone="goal"], .gv-legend [data-tone="goal"] { --gv-tone: var(--k-pill-new); --gv-tone-t: var(--k-text); }
+.gv-node[data-tone="held"] .gv-box, .gv-node[data-tone="edge"] .gv-box, .gv-node[data-tone="gap"] .gv-box, .gv-node[data-tone="missing"] .gv-box { fill: var(--gv-tone); }
+.gv-node[data-tone="goal"] .gv-box { stroke: var(--k-text-2); stroke-width: 2; }
+
+/* "You are here": coral is the colour of position (DESIGN.md) */
+.gv-here-ring { fill: none; stroke: var(--k-accent); stroke-width: 2; animation: gv-pulse 2.4s var(--k-ease, ease) infinite; }
+.gv-here rect { fill: var(--k-accent-fill, var(--k-accent)); }
+.gv-here text { fill: var(--k-accent-text, #fff); font-size: 10.5px; font-weight: 650; }
+@keyframes gv-pulse { 0%, 100% { stroke-opacity: 1; } 50% { stroke-opacity: .35; } }
+@media (prefers-reduced-motion: reduce) { .gv-here-ring { animation: none; } }
+
+.gv-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; list-style: none; margin: 0; padding: 0; color: var(--k-text-2); }
+.gv-legend li { display: inline-flex; align-items: center; gap: 6px; }
+.gv-dot { width: 10px; height: 10px; border-radius: 3px; background: var(--gv-tone); border: 1.5px solid var(--gv-tone-t); }
+.gv-legend [data-tone="here"] { color: var(--k-accent); }
+.gv-line { width: 20px; border-top: 1.6px solid var(--k-line-strong); }
+.gv-line.rel { border-top: 1.3px dashed var(--k-muted); }
+.gv-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }

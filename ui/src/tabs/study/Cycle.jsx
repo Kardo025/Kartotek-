@@ -13,6 +13,7 @@ import { Md, Html, Chip, Blocks, Scale } from "./common.jsx";
 import { QuestionsList } from "./QList.jsx";
 import Item from "./cycle/Item.jsx";
 import { FinalPlan, FinalRun, Report } from "./cycle/Final.jsx";
+import { FindMyLevel, PlanMapPanel } from "./PlanMap.jsx";
 import { A, KC, KE, EU, extrasOf, itemsOf, partOf, save, refsText, criterionText, when } from "./cycle/lib.js";
 import "./cycle/cycle.css";
 
@@ -140,7 +141,7 @@ function Navigator({ et }) {
                     <motion.path d="M3.5 8.4l3 3L12.6 5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"
                       initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: DUR.scene, ease: E.out, delay: 0.15 }} />
                   </svg>
-                ) : ti + 1}</span><span className="cy-nav-name">{k.title}</span>
+                ) : ti + 1}</span><span className="cy-nav-name">{k.title}{(pr.skipped || {})[k.kazanim_id] ? <span className="cy-nav-skip" title="Skipped after Find my level found it held. It stays in the final test.">skipped</span> : null}</span>
               </button>
               <div className="cy-nav-stages">
                 {K.STAGES.map((st) => (
@@ -250,6 +251,8 @@ function Priming({ et }) {
         )}
         <p className="k-small k-muted">A preview, not the lesson: nothing here is scored.</p>
       </section>
+      <FindMyLevel et={et} />
+      <PlanMapPanel et={et} open={!!window.KPlan.lastProbe(et)} />
       <section className="k-panel k-sec">
         <label className="k-field">
           <span className="k-field-label">Your thinking: first guesses and connections (optional)</span>

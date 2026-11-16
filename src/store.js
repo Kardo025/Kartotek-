@@ -45,6 +45,8 @@
       cents: { sel: ['read', 'math', 'reason', 'bio', 'chem', 'phys'], done: {}, selV: 2 },
       tud: { sel: ['math', 'phys', 'fy'] },
       param_history: [],
+      // task F3 (LEARNING-PROTOCOL 2.4, 2.5): live sessions and the learner's own knowledge-graph records (seeded package nodes are never stored)
+      sessions: {}, graph: { nodes: {}, chains: {}, hidden: [] },
       created_at: Date.now()
     };
   }
@@ -61,6 +63,10 @@
     // v2 added the Reading and comprehension section (CEnT-S 2026-27): switch it on once for older saves
     if (out.cents.selV !== 2) { if (out.cents.sel.indexOf('read') < 0) out.cents.sel = ['read'].concat(out.cents.sel); out.cents.selV = 2; }
     out.tud = Object.assign({ sel: ['math', 'phys', 'fy'] }, out.tud || {});
+    // task F3: older saves get the empty containers; nothing in them is touched
+    if (!out.sessions || typeof out.sessions !== 'object' || Array.isArray(out.sessions)) out.sessions = {};
+    if (!out.graph || typeof out.graph !== 'object' || Array.isArray(out.graph)) out.graph = { nodes: {}, chains: {}, hidden: [] };
+    else { out.graph.nodes = out.graph.nodes || {}; out.graph.chains = out.graph.chains || {}; out.graph.hidden = Array.isArray(out.graph.hidden) ? out.graph.hidden : []; }
     out.reviews = (out.reviews || []).slice().sort(function (a, b) { return a.reviewed_at - b.reviewed_at; });
     Object.keys(out.cards).forEach(function (id) { if (!out.mem[id]) out.mem[id] = newMem(id, out.params); });
     if (!hadLang || out.lang !== UI_LANG) migrateSampleLanguage(out);
@@ -637,6 +643,7 @@
     ['mocks', 'Mock exams'], ['mockAttempts', 'Mock exam attempts'],
     ['mindMaps', 'Mind maps'], ['mindVersions', 'Mind-map versions'], ['mindCorrections', 'Mind-map corrections'], ['mindAttempts', 'Mind-map attempts'], ['mindTurns', 'Mind-map coaching turns'],
     ['examMarks', 'Exam plans: done marks and selections'], ['examDates', 'Exam plans: exam dates'], ['applyTicks', 'Exam plans: application ticks'],
+    ['studyProbes', 'Find my level probes'], ['liveSessions', 'Live sessions'], ['graphRecords', 'Knowledge-graph records'],
     ['settings', 'Settings'], ['params', 'Model parameters'], ['paramHistory', 'Parameter history entries']
   ];
 
@@ -662,6 +669,9 @@
       examMarks: nkeys(cents.done) + alen(cents.sel) + alen(tud.sel),
       examDates: (cents.examDate ? 1 : 0) + (tud.examDate ? 1 : 0),
       applyTicks: ticks,
+      studyProbes: sumOver(et, function (r) { return r.progress && Array.isArray(r.progress.probes) ? r.progress.probes.length : 0; }),
+      liveSessions: nkeys(s.sessions),
+      graphRecords: s.graph && typeof s.graph === 'object' ? nkeys(s.graph.nodes) + nkeys(s.graph.chains) : 0,
       settings: nkeys(s.settings), params: nkeys(s.params), paramHistory: alen(s.param_history)
     };
   }

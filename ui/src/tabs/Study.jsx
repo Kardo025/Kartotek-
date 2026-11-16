@@ -4,11 +4,16 @@ import React, { useReducer } from "react";
 import Library from "./study/Library.jsx";
 import Runner from "./study/Runner.jsx";
 import Cycle from "./study/Cycle.jsx";
+import Live from "./study/Live.jsx";
 import "./study.css";
 
 export default function Study() {
   const [, redraw] = useReducer((x) => x + 1, 0);
   const App = window.App, S = App.S, U = App.EtutUI;
+  // a live session (task F3) opens on its own screen
+  const live = App.liveOpen && S.sessions && S.sessions[App.liveOpen];
+  if (live) return <Live key={live.id} session={live} />;
+  App.liveOpen = null;
   const et = App.etutOpen && S.etuts && S.etuts[App.etutOpen];
   if (!et || et.removed || !et.package) {
     App.etutOpen = null;
