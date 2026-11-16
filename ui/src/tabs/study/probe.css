@@ -94,3 +94,12 @@
 .lt-tr .st-md p { margin: 2px 0; }
 .cy-live-switch { display: flex; justify-content: flex-end; }
 .cy-live-mode { border-left: 3px solid var(--k-accent); }
+
+/* adaptive practice (task F5) */
+.pr-levels { display: flex; gap: 6px; align-items: flex-end; list-style: none; margin: 0; padding: 0; height: 34px; }
+.pr-levels li { width: 16px; height: calc(var(--lv) * 5px + 4px); border-radius: 4px 4px 2px 2px; background: var(--k-pill-new); border: 1px solid var(--k-line-strong); transition: background var(--k-dur-ui) ease; }
+.pr-levels li[data-o="solved"] { background: var(--k-pill-review-t); border-color: var(--k-pill-review-t); }
+.pr-levels li[data-o="solved_with_hints"] { background: var(--k-pill-learning-t); border-color: var(--k-pill-learning-t); }
+.pr-levels li[data-o="given_up"], .pr-levels li[data-o="moved_on"] { background: var(--k-pill-relearning-t); border-color: var(--k-pill-relearning-t); }
+.pr-levels li[data-retest] { border-style: dashed; }
+.pr-levels li[data-disputed] { opacity: .35; }

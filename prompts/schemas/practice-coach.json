@@ -1,0 +1,55 @@
+{
+  "type": "object",
+  "properties": {
+    "task": { "type": "string", "enum": ["problem", "check", "verdict", "own"] },
+    "problem": {
+      "type": "object",
+      "properties": {
+        "statement": { "type": "string" },
+        "setting": { "type": "string" },
+        "template": { "type": "string" },
+        "targets": { "type": "array", "items": { "type": "string" } },
+        "solution": { "type": "string" },
+        "answer": { "type": "string" }
+      },
+      "required": ["statement", "setting", "template", "targets", "solution", "answer"],
+      "additionalProperties": false
+    },
+    "check": {
+      "type": "object",
+      "properties": {
+        "sound": { "type": "boolean" },
+        "issue": { "type": "string" },
+        "solution": { "type": "string" },
+        "answer": { "type": "string" }
+      },
+      "required": ["sound", "issue", "solution", "answer"],
+      "additionalProperties": false
+    },
+    "verdict": {
+      "type": "object",
+      "properties": {
+        "result": { "type": "string", "enum": ["solved", "not_yet"] },
+        "moves": { "type": "string" },
+        "first_break": { "type": "string" },
+        "feedback": { "type": "string" }
+      },
+      "required": ["result", "moves", "first_break", "feedback"],
+      "additionalProperties": false
+    },
+    "own": {
+      "type": "object",
+      "properties": {
+        "solvable": { "type": "boolean" },
+        "issue": { "type": "string" },
+        "solution": { "type": "string" },
+        "answer": { "type": "string" },
+        "targets": { "type": "array", "items": { "type": "string" } }
+      },
+      "required": ["solvable", "issue", "solution", "answer", "targets"],
+      "additionalProperties": false
+    }
+  },
+  "required": ["task", "problem", "check", "verdict", "own"],
+  "additionalProperties": false
+}

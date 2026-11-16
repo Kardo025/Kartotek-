@@ -15,6 +15,7 @@ import Item from "./cycle/Item.jsx";
 import { FinalPlan, FinalRun, Report } from "./cycle/Final.jsx";
 import { FindMyLevel, PlanMapPanel } from "./PlanMap.jsx";
 import { createSession, openSession } from "./Live.jsx";
+import { PracticeRun, summaryLine } from "./Practice.jsx";
 import { A, KC, KE, EU, extrasOf, itemsOf, partOf, save, refsText, criterionText, when } from "./cycle/lib.js";
 import "./cycle/cycle.css";
 
@@ -616,6 +617,12 @@ function History({ et, attempts, idx }) {
 
 // ------------------------------------------------------------------ Evaluating (per topic): deliberately deferred
 function Evaluate({ et }) {
+  const mr = useModelReady("strong");
+  const sid = window.KPractice.evaluatingFor(et, topicOf(et).kazanim_id), S = A().S, ps = sid && S.sessions && S.sessions[sid];
+  if (mr.ready || ps) return <EvaluatePractice et={et} s={ps} />;
+  return <EvaluateDeferred et={et} />;
+}
+function EvaluateDeferred({ et }) {
   const K = KC(), pr = et.progress, pkg = et.package, k = topicOf(et), all = K.topicsOf(pkg);
   const here = all.filter((t) => t.kid === k.kazanim_id)[0], after = here ? all[here.n + 1] : null;
   const leftOthers = K.topicsLeft(et).filter((t) => t.kid !== k.kazanim_id);
@@ -630,7 +637,7 @@ function Evaluate({ et }) {
       <Hourglass size={26} aria-hidden="true" />
       <p className="cy-kicker">Part {pr.part + 1} · Topic {(pr.topic || 0) + 1} of {partOf(et).kazanimlar.length} · {k.title}</p>
       <h2 className="cy-h2">Evaluating · deferred</h2>
-      <p>This stage is reserved and will be designed later. Nothing is asked or scored here. Continuing records that it was deferred and completes this topic's cycle.</p>
+      <p>Adaptive practice needs a model in the strong slot (Settings, Models). Without it this stage stays deferred: nothing is asked or scored here, and continuing records that it was deferred and completes this topic's cycle.</p>
       <p className="k-small k-muted">Topic cycles complete: <b className="k-num">{done}/{all.length}</b>{K.cycleDone(et, k.kazanim_id) ? " (this one included)" : ""}. The final test opens when all are complete.</p>
       <Btn kind="primary" onClick={() => go(et)}>{label}<ArrowRight size={17} weight="bold" aria-hidden="true" /></Btn>
     </section>
@@ -672,6 +679,49 @@ function LiveSwitch({ et, k }) {
       <Btn size="sm" onClick={start} title="A live session on this topic's source units: a short probe, a plan, then one reasoning step at a time with your predictions and checks. Nothing goes to your reviews.">
         {s ? "Continue this topic live" : "Study this topic live"}<ArrowRight size={14} weight="bold" aria-hidden="true" />
       </Btn>
+    </div>
+  );
+}
+
+// Evaluating as adaptive practice (task F5, LEARNING-PROTOCOL 3.8): problems on this topic's outcomes, rising in difficulty, later ones
+// mixing in earlier topics of the part; finishing the run completes the topic's cycle ("practised"). Skipping stays possible and records
+// "deferred_by_user" as before.
+function EvaluatePractice({ et, s }) {
+  const App = A(), pr = et.progress, k = topicOf(et), kid = k.kazanim_id, KP = window.KPractice;
+  const keep = () => { App.store.commit({ meta: true, etuts: [et.etut_id] }); App.render(); };
+  const start = () => {
+    const sess = KP.newSession(App.S, { purpose: "evaluating", title: "Evaluating: " + k.title, etut_id: et.etut_id, kids: [kid], targets: KP.targetsFor(et.package, kid), now: Date.now() });
+    KP.linkEvaluating(et, kid, sess);
+    keep();
+  };
+  const finish = () => { KP.completeEvaluating(et, kid, s, Date.now()); keep(); go(et); };
+  const earlier = KP.targetsFor(et.package, kid).filter((t) => t.earlier).length;
+  return (
+    <div className="cy-col">
+      <section className="k-panel k-sec">
+        <p className="cy-kicker">Part {pr.part + 1} · Topic {(pr.topic || 0) + 1} of {partOf(et).kazanimlar.length} · Evaluating</p>
+        <h2 className="cy-h2">{k.title}</h2>
+        {!s ? (
+          <>
+            <p>Adaptive practice on this topic's outcomes: {KP.RUN} problems, one at a time, written for you by your model and checked by it before you see them. They start approachable and get harder as you solve them: more ideas combined, less familiar settings{earlier ? "; later ones mix in earlier topics of this part" : ""}. You work in the thinking field; hints come one step at a time; a missed problem comes back once in a new setting.</p>
+            <p className="k-small k-muted">Generated problems are practice: they never go to your reviews and never change the outcome states. You can also skip Evaluating, as before.</p>
+            <div className="cy-actions">
+              <Btn kind="primary" onClick={start}>Start practice<ArrowRight size={17} weight="bold" aria-hidden="true" /></Btn>
+              <Btn onClick={() => go(et)} title="Records that Evaluating was deferred and completes this topic's cycle.">Skip Evaluating</Btn>
+            </div>
+          </>
+        ) : s.status === "done" ? (
+          <>
+            <p className="k-small">Practice finished: {summaryLine(KP.summary(s))}.</p>
+            <div className="cy-actions"><Btn kind="primary" onClick={() => go(et)}>Continue<ArrowRight size={17} weight="bold" aria-hidden="true" /></Btn></div>
+          </>
+        ) : (
+          <div className="cy-actions">
+            <Btn size="sm" onClick={finish} title="Ends the run with what was done so far and completes this topic's cycle.">End practice and continue</Btn>
+          </div>
+        )}
+      </section>
+      {s && s.status !== "done" && <PracticeRun s={s} pkg={et.package} commit={keep} onComplete={finish} completeLabel="Finish Evaluating and continue" />}
     </div>
   );
 }

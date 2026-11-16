@@ -431,6 +431,16 @@ What LearnHarness does not have and Kartotek keeps: the audited package and sour
 
 ## 13. As built
 
+### F5: adaptive practice (2026-11-18)
+
+Built as 3.8 and 3.9 say, with these choices inside them (code: `src\practice-core.js`; details in `docs\ARCHITECTURE.md` 10.0l):
+- **Difficulty** is one level from 1 to 6, made of the number of ideas a problem combines and how unfamiliar its setting is (the owner's two knobs); the coach's modes follow the level (recall, discrimination, composition). Code chooses the targets, the level and retests by the selection rules of 3.8; the coach writes to that specification.
+- **"Commit before posing"** is two calls: the coach writes and solves, then solves its own statement again from scratch and fixes or rejects it before it is shown.
+- **Verdicts** come from the coach and are checked in code against the committed answer; a "not yet" must localise the first break without the correction; hints are the F2 ladder; any rung makes the outcome "solved with hints".
+- **Arc:** five main problems, then every missed problem once more in a different setting; from the third problem on, multi-idea problems mix in an earlier topic of the same part.
+- **Evidence (D1):** session evidence only. Generated problems never reach the scheduler or the outcome states; the report shows "Evaluating practice: n problems, n solved without help, … (generated, not verified)". "Report a problem" marks a problem disputed, which leaves every count.
+- **Evaluating** completes the topic's cycle as "practised" when the run ends; "Skip Evaluating" records `deferred_by_user` as before.
+
 ### F4: step-by-step teaching (2026-11-17)
 
 Built as 3.7 says, with these choices inside it (code: `src\live-core.js`; details in `docs\ARCHITECTURE.md` 10.0k):

@@ -507,6 +507,41 @@ async function main() {
       } catch (e) { problems.push('F4: the live teaching screen failed: ' + e.message); }
     }
 
+    // Adaptive practice (F5): Evaluating shows the open problem; work typed on screen is stored as a claim; "Report a problem" marks it
+    // disputed and ends it; nothing reaches the reviews. The problem is put in place directly, so no model call is needed.
+    {
+      const SID = 'c2-first';
+      try {
+        const sid = await page.evaluate((id) => {
+          const App = window.App, et = App.S.etuts[id], KP = window.KPractice, kid = et.package.parts[0].kazanimlar[0].kazanim_id;
+          const s = KP.newSession(App.S, { purpose: 'evaluating', title: 'Smoke practice', etut_id: id, kids: [kid], targets: KP.targetsFor(et.package, kid), now: Date.now() });
+          KP.linkEvaluating(et, kid, s);
+          const E = { problem: { statement: '', setting: '', template: '', targets: [], solution: '', answer: '' }, check: { sound: true, issue: '', solution: '', answer: '' }, verdict: { result: 'not_yet', moves: '', first_break: '', feedback: '' }, own: { solvable: true, issue: '', solution: '', answer: '', targets: [] } };
+          const sp = KP.nextSpec(s);
+          KP.applyReply(s, 'write', Object.assign(JSON.parse(JSON.stringify(E)), { task: 'problem', problem: { statement: 'Smoke problem: which setting opens the gate?', setting: 'gate', template: '', targets: sp.targets, solution: 'Both switches on.', answer: 'both on' } }), { now: Date.now() });
+          KP.applyReply(s, 'check', Object.assign(JSON.parse(JSON.stringify(E)), { task: 'check', check: { sound: true, issue: '', solution: 'Both switches on.', answer: 'both on' } }), { now: Date.now() });
+          window.KCycle.goto(et, 0, 0, 'evaluate', Date.now());
+          App.liveOpen = null; App.practiceOpen = null;   // the F4 block left the live session open
+          App.store.commit({ meta: true, etuts: [id] }); App.switchTab('etut'); App.goStudy(id); App.render();
+          return s.id;
+        }, SID);
+        await page.waitForSelector('.pr .pb-q textarea[data-f="thinking"]', { timeout: 8000 });
+        const before = await page.evaluate(() => window.App.S.reviews.length);
+        await page.fill('.pr .pb-q textarea[data-f="thinking"]', 'Both switches must be on, by the rule.');
+        await page.fill('.pr .pb-q input.k-input', 'both on');
+        await page.click('.pr button:has-text("Check my work")');
+        await page.waitForTimeout(800);
+        await page.click('.pr button:has-text("Report a problem")');
+        await page.fill('.pr .cy-actions input.k-input', 'smoke report');
+        await page.click('.pr button:has-text("Report")');
+        await page.waitForTimeout(500);
+        const r = await page.evaluate((id) => { const s = window.App.S.sessions[id], p = s.problems[0]; return { subs: p.submissions.length, thinking: p.submissions[0] && p.submissions[0].thinking, answer: p.submissions[0] && p.submissions[0].answer, disputed: !!p.disputed && p.disputed.note, status: p.status, reviews: window.App.S.reviews.length, counted: window.KPractice.summary(s).problems }; }, sid);
+        if (r.subs !== 1 || r.thinking !== 'Both switches must be on, by the rule.' || r.answer !== 'both on') problems.push('F5: the work typed on screen was not stored: ' + JSON.stringify(r));
+        if (r.disputed !== 'smoke report' || r.status !== 'ended' || r.counted !== 0 || r.reviews !== before) problems.push('F5: "Report a problem" did not mark it disputed or something reached the reviews: ' + JSON.stringify(r));
+        console.log('Adaptive practice: Evaluating showed the problem; the work was stored as a claim; "Report a problem" marked it disputed and ended it; no review event');
+      } catch (e) { problems.push('F5: the practice screen failed: ' + e.message); }
+    }
+
     // Planning home and Euro apply without a folder (D2): Kartotek's own rows, what is missing, and a setup row instead of the app
     await clickMode('planning');
     await page.click('.k-nav-item[data-tab="home"]');

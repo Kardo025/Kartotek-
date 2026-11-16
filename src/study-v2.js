@@ -401,7 +401,8 @@
     else if (pr.stage === 'apply') { pr.stage = 'evaluate'; pr.current = null; pr.warmup = null; }
     else if (pr.stage === 'evaluate') {
       var k = curTopic(et);
-      if (k) pr.evaluating[k.kazanim_id] = 'deferred_by_user';
+      // an Evaluating practice run that ended keeps its "practised" (task F5); otherwise continuing records the deferral as before
+      if (k && !pr.evaluating[k.kazanim_id]) pr.evaluating[k.kazanim_id] = 'deferred_by_user';
       var all = topicsOf(pkg), here = k ? all.filter(function (t) { return t.kid === k.kazanim_id; })[0] : null;
       var skipped = pr.skipped || {};
       var after = here ? all.slice(here.n + 1).filter(function (t) { return !skipped[t.kid]; })[0] : null;
@@ -874,6 +875,10 @@
         skipped: topicsOf(pkg).filter(function (t) { return (pr.skipped || {})[t.kid]; }).map(function (t) { return t.kid; }),
         probes: (pr.probes || []).filter(function (p) { return p.status === 'done' || p.status === 'stopped'; }).length,
         // task F4: live sessions attached to this study (session evidence, LEARNING-PROTOCOL 4: never a state, never DSR)
+        // task F5: generated practice on this study (session evidence: never a state, never DSR)
+        practice: Object.keys((state && state.sessions) || {}).map(function (k) { return state.sessions[k]; })
+          .filter(function (s) { return s && s.kind === 'practice' && s.attached && s.attached.etut_id === et.etut_id && (s.problems || []).length; })
+          .map(function (s) { var m = global.KPractice ? global.KPractice.summary(s) : { problems: (s.problems || []).length }; return { id: s.id, title: s.title, purpose: s.purpose, topics: s.attached.topics.slice(), problems: m.problems, solved: m.solved, with_hints: m.with_hints, missed: m.missed, retests: m.retests, disputed: m.disputed }; }),
         live: Object.keys((state && state.sessions) || {}).map(function (k) { return state.sessions[k]; })
           .filter(function (s) { return s && s.kind === 'live' && s.attached && s.attached.etut_id === et.etut_id && (s.steps || []).length; })
           .map(function (s) { var m = global.KLive ? global.KLive.summary(s) : { steps: (s.steps || []).length }; return { id: s.id, title: s.title, topics: s.attached.topics.slice(), status: s.status, steps: m.steps, right_first: m.right_first, after_repair: m.after_repair, gaps: m.gaps }; }),
