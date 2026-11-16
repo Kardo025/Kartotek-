@@ -441,6 +441,7 @@ Fixed after the run (tested): unit ids removed from learner text at save; "numbe
 - **Confidence:** proposed bands 0–39 Guess, 40–79 Unsure, 80–100 Sure, so the scheduler rule is unchanged; old records keep their word and are never given a number.
 - **Eight agent drafts** in `prompts\` (`prober`, `planner`, `teacher`, `practice-coach`, `hint-giver`, `graph-extractor`, `side-answerer`, `researcher`), written from scratch, marked `status: draft`, no schema yet. LearnHarness's prompt files were not opened. They already appear in Settings, Models, Prompts (the list shows every file); no feature uses them until its F task.
 - `CLAUDE.md`: the docs line no longer says LEARNING-PROTOCOL.md is missing; drafts in `prompts\` are explained.
+- One test-only fix (no app code): after the merge, git checked the prompt files out with Windows line endings, and three writing-job tests failed because the fake model in `scripts\job-tests.cjs` searched the prompt text for plain `\n`. It now turns `\r\n` into `\n` before reading; 15/15 pass again. The app itself reads both line endings.
 
 ### How you can check it
 Read `docs\LEARNING-PROTOCOL.md`, sections 0 (principles), 1 (flows), 4 (evidence summary), 9 (STUDY-RULES changes), 10 (build order), 11 (decisions). `npm test` still passes (nothing in the code changed).
