@@ -130,7 +130,11 @@ export function ResearchPanel() {
   const [key, setKey] = useState("");
   const [msg, setMsg] = useState("");
   if (!RJ()) return null;
-  const save = async () => { const r = await RJ().setKey(key); setKey(""); setMsg(r && r.ok ? "Saved." : (r && r.error) || "Could not save."); refreshResearchStatus(); };
+  const save = async () => {
+    let r = null;
+    try { r = await RJ().setKey(key); } catch (e) { r = { ok: false, error: "Could not save: " + ((e && e.message) || "no answer") + ". Reload the page and try again." }; }
+    setKey(""); setMsg(r && r.ok ? "Saved." : (r && r.error) || "Could not save."); refreshResearchStatus();
+  };
   const clear = async () => { await RJ().clearKey(); setMsg("Removed."); refreshResearchStatus(); };
   return (
     <section className="k-panel k-sec rs-panel">
