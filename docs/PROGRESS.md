@@ -425,3 +425,10 @@ Fixed after the run (tested): unit ids removed from learner text at save; "numbe
 - **Ollama on the NVIDIA GPU permanently:** setting the user environment variable `HIP_VISIBLE_DEVICES=-1` (and restarting Ollama) makes the tray app use the RTX 5070. That is your setting to make. The two models take about 37 GB (`ollama rm qwen3.6:35b-a3b` / `gpt-oss:20b` frees it).
 - **Smart App Control** blocked `electron.exe` again this afternoon (it allowed it this morning); `npm start` and `npm run smoke` cannot run while it does.
 - Not verified with a real provider: the lesson-test, mock-exam and mind-map jobs (tested with the fake model only), and an API-key provider.
+
+### Later the same day
+- **Fixed: the Mock exam page went black.** An import of the writing-job components was missing in `ui/src/tabs/Mock.jsx` (an automatic edit had not applied). Checked by opening all 17 tabs in a temp-profile window and by `npm run smoke` (passes: 37 sidebar entries, Algorithm 53/53, 0 unexpected console errors). The smoke test had not been run during E3 because Smart App Control blocked Electron at that time.
+- **Browser preview** (`node scripts/bridge-preview.cjs --persist`, or the `kartotek-preview` entry in `.claude/launch.json`): now runs the model layer, the prompt files and the writing jobs too, with keys encrypted by Windows DPAPI in its own profile (`%APPDATA%Kartotek-preview`), a Windows file picker and a token on every bridge call. For days when Smart App Control blocks `electron.exe`.
+- **Anthropic API key** added by you in the desktop app (dev profile); the connection test passed (Opus 5.5, $0.0014). Slots set: strong and vision `claude-sonnet-5-5`, fast `claude-haiku-5-5`. No monthly budget is set yet (Settings, Models, Usage and budget).
+- **Please delete the API key that was pasted in the chat** (Console, API keys) if you have not yet; use only the one you pasted into Kartotek.
+- The Ollama server started for this session with only the NVIDIA GPU visible stops when this session ends; afterwards the tray app uses the AMD GPU again (see the open question above).
