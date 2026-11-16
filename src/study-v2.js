@@ -310,10 +310,12 @@
   // ------------------------------------------------------------------ progress
   // v: "c2" stays (other code checks it); cv 2 = topic cycles (04-topic-cycles.md)
   function newProgress() {
-    return { v: 'c2', cv: 2, part: 0, topic: 0, stage: 'priming', started_at: null, finished_at: null, duration: 90, phase_ms: {}, seen: {},
+    return { v: 'c2', cv: 3, part: 0, topic: 0, stage: 'priming', started_at: null, finished_at: null, duration: 90, phase_ms: {}, seen: {},
       notes: {}, qlist: {}, feynman: {}, satisfied: {}, maps: {}, evaluating: {}, mode: 'practice', attempts: [], current: null, final: null, warmup: null, visit_n: 0, misconceptions: {},
       // task E2: kept in the learner data; migrate() adds the empty defaults to older progress, nothing else changes
-      followups: {}, feynman_feedback: {} };
+      followups: {}, feynman_feedback: {},
+      // task F1 (cv 3, LEARNING-PROTOCOL 2.6): thinking while reading per topic; the other three are filled by the later F tasks
+      reading_thinking: {}, topic_mode: {}, live: {}, skipped: {} };
   }
   // migrate(progress[, pkg]): fills missing fields; with the package it also turns part-level cycle progress into topic progress
   function migrate(p, pkg) {
@@ -323,12 +325,21 @@
       if (old && pkg && Array.isArray(pkg.parts)) toTopics(p, pkg);
       else if (old) delete p.cv;  // without the package, convert on the next call that has it
       if (pkg && Array.isArray(pkg.parts)) clampTopic(p, pkg);
+      if (p.cv === 2) upgradeTo3(p);
       return p;
     }
     var np = newProgress();
     // A study whose package became v2: its old progress stays readable (journal, error log); nothing is replayed into DSR
     if (p && typeof p === 'object' && (p.started_at || Object.keys(p.answers || {}).length)) np.progress_legacy = p;
     return np;
+  }
+  // cv 2 -> 3 (task F1): the new containers are already filled in by migrate(); an attempt's word 'working' is also kept as 'thinking'.
+  // Nothing is removed or rewritten, and no confidence number is invented for an old answer.
+  function upgradeTo3(p) {
+    (p.attempts || []).forEach(function (a) {
+      if (a && a.thinking === undefined && a.response && String(a.response.working || '').trim()) a.thinking = String(a.response.working);
+    });
+    p.cv = 3;
   }
   function toTopics(p, pkg) {
     p.cv = 2; p.topic = 0; p.seen = p.seen || {};
@@ -437,7 +448,7 @@
       topic_id: item.use === 'final' || mode === 'final' ? null : placementOf(et.package, item),
       family: item.family || null, format: item.format, mode: mode, warmup: !!opts.warmup, at: now, committed_at: null,
       order: ids.length ? (item.keep_order ? ids : shuffledIds(ids, opts.rng)) : [],
-      response: null, confidence: null, hints: 0, steps: 0, solution_shown: false, pane_open: leftFinal, left_final: leftFinal || undefined,
+      response: null, confidence: null, confidence_pct: null, help: [], hints: 0, steps: 0, solution_shown: false, pane_open: leftFinal, left_final: leftFinal || undefined,
       prior_item_exposure: earlier.length > 0,
       prior_family_exposure: !!item.family && committedOf(pr, function (x) { return x.family === item.family && x.q_id !== item.q_id; }).length > 0,
       last_same_item_part_visit: earlier.length ? earlier[earlier.length - 1].visit || null : null,
@@ -453,11 +464,14 @@
   function useHelp(attempt, kind) {
     if (!attempt || attempt.committed_at && kind !== 'pane') return false;
     if (attempt.mode !== 'practice') return false;
+    var logKind = { hint: 'pkg_hint', step: 'pkg_step', solution: 'solution', pane: 'lesson_pane' }[kind];
     if (kind === 'hint') attempt.hints += 1;
     else if (kind === 'step') attempt.steps += 1;
     else if (kind === 'solution') attempt.solution_shown = true;
     else if (kind === 'pane') { if (!attempt.committed_at) attempt.pane_open = true; }
     else return false;
+    // The log of help (LEARNING-PROTOCOL 2.1); the counters above are still written so older readers see the same
+    (attempt.help = Array.isArray(attempt.help) ? attempt.help : []).push({ kind: logKind, at: Date.now() });
     return true;
   }
   // Automatic grading where it is deterministic; typed answers wait for the criterion self-check, recall for the rating
@@ -481,9 +495,24 @@
   function commit(et, attempt, resp, item, now) {
     if (!attempt || attempt.committed_at) return null;
     resp = resp || {};
-    attempt.response = { choice: (resp.choice || []).slice(0, 12), text: cap(resp.text), working: cap(resp.working), number: resp.number == null ? null : String(resp.number).slice(0, 40) };
-    if (resp.confidence) attempt.confidence = resp.confidence;
+    // The thinking text (task F1) is kept as typed and mirrored into response.working, which older readers still use
+    var thinking = String(resp.thinking != null ? resp.thinking : resp.working == null ? '' : resp.working).slice(0, 4000);
+    attempt.response = { choice: (resp.choice || []).slice(0, 12), text: cap(resp.text), working: thinking, number: resp.number == null ? null : String(resp.number).slice(0, 40) };
     attempt.committed_at = now || Date.now();
+    if (thinking.trim()) { attempt.thinking = thinking; attempt.thinking_at = attempt.committed_at; }
+    // "I don't know" is a gap, not a wrong guess: no confidence, counted as not correct (a free recall is rated by the learner instead)
+    if (resp.dont_know && item.format !== 'recall') {
+      attempt.dont_know = true;
+      var dk = { correct: false, dont_know: true, criteria: {} };
+      ((item.rubric && item.rubric.criteria) || []).forEach(function (c) { dk.criteria[c.id] = 'not'; });
+      if (item.format === 'mcq_single' || item.format === 'mcq_multi') dk.set = gradeAuto(item, { choice: [] }).set;
+      attempt.result = dk; attempt.grading = 'auto';
+      if (et.progress.current === attempt.id && attempt.mode === 'final') et.progress.current = null;
+      return attempt.result;
+    }
+    // Confidence: a 0-100 number (kept) and its band (what the scheduler reads), or an old word
+    var cf = global.KEtut.confidenceOf(resp.confidence_pct != null ? resp.confidence_pct : resp.confidence);
+    if (cf.confidence) { attempt.confidence = cf.confidence; attempt.confidence_pct = cf.confidence_pct; }
     var auto = gradeAuto(item, attempt.response);
     if (auto) { attempt.result = auto; attempt.grading = 'auto'; }
     else { attempt.result = { correct: null, criteria: {} }; attempt.grading = 'pending'; }
@@ -516,7 +545,7 @@
     attempt.disputed = true; attempt.dispute_note = cap(note || '');
     return true;
   }
-  function assisted(a) { return a.hints > 0 || a.steps > 0 || a.solution_shown || a.pane_open; }
+  function assisted(a) { return a.hints > 0 || a.steps > 0 || a.solution_shown || a.pane_open || (Array.isArray(a.help) && a.help.length > 0) || a.model_hints > 0; }
 
   // The DSR adapter rule (03-design §7). Returns {eligible, reason, signal, rating?}
   function eligibility(attempt, item) {
@@ -536,7 +565,7 @@
     if (attempt.prior_item_exposure) return { eligible: false, reason: 'A repeated question whose answer you have seen' };
     if (attempt.grading === 'uncertain') return { eligible: false, reason: 'Grading uncertain' };
     if (!attempt.result || attempt.result.correct == null) return { eligible: false, reason: 'Not graded yet' };
-    if (!attempt.confidence) return { eligible: false, reason: 'No confidence given' };
+    if (!attempt.confidence && !attempt.dont_know) return { eligible: false, reason: 'No confidence given' };
     var signal = attempt.mode === 'final' ? 'final' : 'quiz';
     var mapped = DSR.mapEtutSignal({ signal: signal, correct: attempt.result.correct, confidence: attempt.confidence });
     return { eligible: true, signal: signal, rating: mapped.rating, misconception: mapped.misconception };
@@ -877,7 +906,9 @@
     if (item.format === 'mcq_single' || item.format === 'mcq_multi') lines.push('My response: ' + ((resp.choice || []).map(function (id) { return optText(item, id) + ' [' + id + ']'; }).join('; ') || 'nothing selected'));
     else if (item.format === 'numeric') lines.push('My response: ' + (resp.number == null ? 'none' : resp.number) + (item.numeric && item.numeric.unit ? ' ' + item.numeric.unit : ''));
     else lines.push('My response: "' + (resp.text || '') + '"');
-    lines.push('My working: ' + (resp.working ? '"' + resp.working + '"' : 'not provided'));
+    lines.push('My thinking: ' + ((attempt.thinking || resp.working) ? '"' + (attempt.thinking || resp.working) + '"' : 'not provided'));
+    if (attempt.dont_know) lines.push('I chose "I do not know": a gap, not a wrong guess. Say what the question asks and how to start, and do not treat it as a mistake.');
+    else if (attempt.confidence_pct != null) lines.push('My stated confidence that my answer is right: ' + attempt.confidence_pct + '%.');
     lines.push('Assistance already used: ' + (assisted(attempt) ? [attempt.hints + ' hint(s)', attempt.steps + ' step(s)', attempt.solution_shown ? 'solution shown' : 'solution not shown', attempt.pane_open ? 'lesson open' : 'lesson closed'].join(', ') : 'none') + (attempt.followup_of ? '; this was a follow-up after an earlier explanation' : '') + '.');
     var status = attempt.disputed ? 'disputed by me' + (attempt.dispute_note ? ' ("' + attempt.dispute_note + '")' : '') : (item.validation || 'unverified') + (item.validation_note ? ' (' + item.validation_note + ')' : '');
     if (item.format === 'mcq_single' || item.format === 'mcq_multi') {
@@ -927,6 +958,18 @@
       'Write studies\\<id>\\etut.json with "schema_version": 2 and "workflow": "cycle-v2", run python tools\\audit-study.py studies\\<id> until it reports 0 blockers (list the warnings you leave), then run powershell -ExecutionPolicy Bypass -File build.ps1.',
       TAIL
     ].filter(Boolean).join('\n');
+  }
+
+  // Thinking while reading (Learn & digest): versions per topic, like the Feynman explanation. Never required, never evidence.
+  function saveReadingThinking(et, kid, text, now) {
+    var pr = et.progress, t = String(text == null ? '' : text).slice(0, 4000);
+    if (!t.trim()) return null;
+    pr.reading_thinking = pr.reading_thinking || {};
+    var list = pr.reading_thinking[kid] = pr.reading_thinking[kid] || [];
+    if (list.length && list[list.length - 1].text === t) return null;
+    var rec = { n: list.length + 1, at: now || Date.now(), text: t };
+    list.push(rec);
+    return rec;
   }
 
   // ------------------------------------------------------------------ in-app model requests (task E2)
@@ -1299,7 +1342,7 @@
     outcomeEvidence: outcomeEvidence, stateOf: stateOf, nextItem: nextItem, partEvidence: partEvidence,
     blueprint: blueprint, planFinal: planFinal, finalPosition: finalPosition, nextBlock: nextBlock, report: report,
     explainRequest: explainRequest, followupPrompt: followupPrompt, newStudyPrompt: newStudyPrompt,
-    lessonText: lessonText, sourcePassages: sourcePassages, topicSources: topicSources, quoteIn: quoteIn,
+    saveReadingThinking: saveReadingThinking, lessonText: lessonText, sourcePassages: sourcePassages, topicSources: topicSources, quoteIn: quoteIn,
     explainInputs: explainInputs, saveExplanation: saveExplanation, explanationsOf: explanationsOf,
     followupInputs: followupInputs, buildFollowups: buildFollowups, storeFollowups: storeFollowups, withFollowups: withFollowups,
     gradingInputs: gradingInputs, checkGradingProposal: checkGradingProposal, confirmModelGrading: confirmModelGrading,

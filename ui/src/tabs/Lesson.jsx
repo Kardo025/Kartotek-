@@ -7,6 +7,7 @@ import {
 } from "@phosphor-icons/react";
 import { EASE, PageHead, Panel, Btn, ConfirmBtn, Lvl, Tag, Kpi, Bar } from "./kit.jsx";
 import "./lesson.css";
+import ConfidenceSlider from "./study/ConfidenceSlider.jsx";
 import { NewJob, JobsPanel, jobsAvailable } from "./Jobs.jsx";
 
 const LETTERS = ["A", "B", "C", "D"];
@@ -342,12 +343,12 @@ function McqItem({ ls, it, nextLabel }) {
     const a = document.activeElement;
     if (first.current && (!a || a === document.body)) first.current.focus({ preventScroll: true });
   }, []);
-  const missing = [choice == null && "choice", !conf && "conf"].filter(Boolean);
+  const missing = [choice == null && "choice", conf == null && "conf"].filter(Boolean);
   const next = () => {
-    if (choice == null || !conf) return;
-    saveAnswer(ls, { choice, correct: choice === q.correct, confidence: conf, dont_know: false }, shownAt.current);
+    if (choice == null || conf == null) return;
+    // the number is kept; the band is what the review calendar and the lesson score read (Sure 80-100, Unsure 40-79, Guess 0-39)
+    saveAnswer(ls, { choice, correct: choice === q.correct, confidence: KEtut.confBand(conf), confidence_pct: conf, dont_know: false }, shownAt.current);
   };
-  const CONF = KEtut.CONFIDENCE_TR;
   return (
     <>
       <Md className="k-ls-stem" text={q.stem} />
@@ -366,9 +367,7 @@ function McqItem({ ls, it, nextLabel }) {
         })}
       </ol>
       <div className="k-ls-conf">
-        <span className="k-small k-muted">How sure are you?</span>
-        <Scale name="conf" label="How sure are you?" value={conf} onChange={setConf}
-          options={["guess", "unsure", "sure"].map((c) => ({ v: c, label: CONF[c] }))} />
+        <ConfidenceSlider value={conf} onChange={setConf} />
       </div>
       <div className="k-ls-actions">
         <Btn kind="primary" data-act="next" disabled={missing.length > 0} onClick={next}>{nextLabel}<ArrowRight size={16} weight="bold" aria-hidden="true" /></Btn>

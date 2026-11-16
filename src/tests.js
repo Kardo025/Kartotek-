@@ -758,13 +758,124 @@
       var old = { v: 'c2', cv: 2, part: 0, topic: 0, stage: 'apply', started_at: NOW, finished_at: null, duration: 60, phase_ms: { apply: 5 }, seen: {}, notes: { k1: 'n' }, qlist: {}, feynman: { k1: [{ n: 1, text: 't', at: 1 }] },
         satisfied: {}, maps: {}, evaluating: {}, mode: 'practice', attempts: [{ id: 'at-1', q_id: 'i1', committed_at: 5, result: { correct: true }, grading: 'auto', dsr: { status: 'sent' }, explain_requested: 7 }], current: null, final: null, warmup: null, visit_n: 3, misconceptions: { k1: true } };
       var copy = clone2(old), m = K.migrate(clone2(old), et.package);
-      var kept = Object.keys(copy).every(function (k) { return JSON.stringify(m[k]) === JSON.stringify(copy[k]); });
+      var kept = m.cv === 3 && Object.keys(copy).every(function (k) { return k === 'cv' || JSON.stringify(m[k]) === JSON.stringify(copy[k]); });
       var again = JSON.stringify(K.migrate(clone2(m), et.package)) === JSON.stringify(m);
       var card = st.cards[et.card_map.k1], ask = global.KPrep.cardAskInputs(st, card, '  ');
       var withQ = global.KPrep.cardAskInputs(st, card, 'Why B?');
       return { pass: kept && again && JSON.stringify(m.followups) === '{}' && JSON.stringify(m.feynman_feedback) === '{}' && ask.card.indexOf('Front: ' + card.front) === 0 && /Back: /.test(ask.card)
         && /U1 \[p\. 1\]: x/.test(ask.sources) && /Lesson text of this topic/.test(ask.sources) && /Explain why the answer/.test(ask.question) && withQ.question === 'Why B?',
         detail: 'all ' + Object.keys(copy).length + ' earlier fields identical after migrate: ' + kept + ' · migrating twice changes nothing: ' + again + ' · card question has the card, its source units and lesson text' };
+    }]
+  );
+
+  // ------------------------------------------------------------------ thinking fields and the 0-100 confidence (task F1)
+  tests.push(
+    ['Confidence 0-100: the bands are 0-39 guess, 40-79 unsure, 80-100 sure; a word keeps itself and gets no number; the scheduler rule is unchanged', function () {
+      var b = function (x) { return KEtut.confBand(x); };
+      var bands = [b(0), b(39), b(40), b(79), b(80), b(100), b(null), b(''), b(101), b(-1), b('x')];
+      var w = KEtut.confidenceOf('unsure'), n = KEtut.confidenceOf(79.6), nn = KEtut.confidenceOf(null);
+      // the same rule as before for every number: only "sure" turns a right answer into Good and a wrong one into a misconception
+      var rule = true, i;
+      for (i = 0; i <= 100; i++) {
+        var band = KEtut.confBand(i), r = DSR.mapEtutSignal({ signal: 'quiz', correct: true, confidence: band }), x = DSR.mapEtutSignal({ signal: 'quiz', correct: false, confidence: band });
+        if ((r.rating === 'good') !== (i >= 80) || r.rating === 'again' || x.rating !== 'again' || x.misconception !== (i >= 80)) rule = false;
+      }
+      return { pass: bands.join() === 'guess,guess,unsure,unsure,sure,sure,,,,,' && w.confidence === 'unsure' && w.confidence_pct === null && n.confidence === 'sure' && n.confidence_pct === 80 && nn.confidence === null && rule && KEtut.BAND_PCT.sure === 90,
+        detail: 'bands at 0, 39, 40, 79, 80, 100: ' + bands.slice(0, 6).join(' ') + ' · out of range or empty: none · scheduler rule holds for all 101 values: ' + rule };
+    }],
+    ['A new attempt keeps the thinking text and a numeric confidence; the word band goes to the scheduler; the text never changes evidence', function () {
+      var K = global.KCycle, st = KStore.emptyState(), et = KEtut.importPackage(st, miniV2(), { now: NOW }).etut, idx = K.itemIndex(et.package);
+      var a = K.startAttempt(et, idx.i1, 'practice', NOW), long = new Array(4100).join('x');
+      K.commit(et, a, { choice: ['b'], thinking: long, confidence_pct: 85 }, idx.i1, NOW + 1000);
+      var el = K.eligibility(a, idx.i1);
+      K.send(st, et, a, idx.i1, etutEnvAt(NOW + 1000));
+      var b = K.startAttempt(et, idx.i1, 'practice', NOW + 5000);
+      K.commit(et, b, { choice: ['b'], confidence: 'sure', working: 'old style' }, idx.i1, NOW + 6000);   // an older caller still works
+      var c = K.startAttempt(et, idx.i2, 'practice', NOW + 7000);
+      K.commit(et, c, { choice: ['a', 'b'], confidence_pct: 79 }, idx.i2, NOW + 8000);
+      var empty = K.startAttempt(et, idx.i2, 'practice', NOW + 9000);
+      K.commit(et, empty, { choice: ['a', 'b'], confidence_pct: 90, thinking: '   ' }, idx.i2, NOW + 9500);
+      return { pass: a.confidence === 'sure' && a.confidence_pct === 85 && a.thinking.length === 4000 && a.response.working === a.thinking && a.thinking_at === NOW + 1000 && el.eligible && el.rating === 'good'
+        && b.confidence === 'sure' && b.confidence_pct === null && b.thinking === 'old style'
+        && c.confidence === 'unsure' && c.confidence_pct === 79 && K.eligibility(c, idx.i2).rating === 'hard' && c.thinking === undefined && empty.thinking === undefined
+        && st.reviews.length === 1 && st.reviews[0].confidence === 'sure',
+        detail: '85 → ' + a.confidence + '/Good, thinking kept (' + a.thinking.length + ' characters, cap 4000) and mirrored into working · 79 → ' + c.confidence + '/Hard · an empty thinking box stores nothing · an old caller with a word still works' };
+    }],
+    ['"I don\'t know": not correct, no confidence, eligible as Again without the misconception flag; free recall is unaffected', function () {
+      var K = global.KCycle, st = KStore.emptyState(), et = KEtut.importPackage(st, typedV2(), { now: NOW }).etut, idx = K.itemIndex(et.package);
+      var a = K.startAttempt(et, idx.i1, 'practice', NOW);
+      K.commit(et, a, { dont_know: true, thinking: 'no idea where to start' }, idx.i1, NOW + 1000);
+      var el = K.eligibility(a, idx.i1); K.send(st, et, a, idx.i1, etutEnvAt(NOW + 1000));
+      var t = K.startAttempt(et, idx.t1, 'practice', NOW + 2000);
+      K.commit(et, t, { dont_know: true }, idx.t1, NOW + 3000);
+      var tel = K.eligibility(t, idx.t1);
+      var n = K.startAttempt(et, idx.i2, 'practice', NOW + 4000);
+      K.commit(et, n, { dont_know: true }, idx.i2, NOW + 5000);
+      var ri = idx['recall:k1'], r = K.startAttempt(et, ri, 'practice', NOW + 6000);
+      K.commit(et, r, { text: 'Answer', dont_know: true }, ri, NOW + 7000);
+      return { pass: a.dont_know === true && a.confidence === null && a.confidence_pct === null && a.result.correct === false && a.grading === 'auto' && el.eligible && el.rating === 'again' && !el.misconception
+        && st.reviews.length === 1 && st.reviews[0].rating === 'again' && !(et.progress.misconceptions && et.progress.misconceptions.k1)
+        && t.result.correct === false && t.result.criteria['C-1'] === 'not' && tel.eligible && n.result.set.missed.join() === 'a,b'
+        && !r.dont_know && r.result.correct === null && a.thinking === 'no idea where to start',
+        detail: 'MCQ and typed: ' + el.rating + ', misconception flag ' + !!el.misconception + ' · typed criteria all "not" · free recall ignores it (' + (r.dont_know ? 'no' : 'yes') + ')' };
+    }],
+    ['The help log: every hint, step, solution and lesson is recorded with its time, makes the attempt assisted, and the old counters are still written', function () {
+      var K = global.KCycle, st = KStore.emptyState(), et = KEtut.importPackage(st, miniV2(), { now: NOW }).etut, idx = K.itemIndex(et.package);
+      var a = K.startAttempt(et, idx.i1, 'practice', NOW), none = K.assisted(a);
+      K.useHelp(a, 'hint'); K.useHelp(a, 'solution'); K.useHelp(a, 'pane');
+      K.commit(et, a, { choice: ['b'], confidence_pct: 90 }, idx.i1, NOW + 1000);
+      var logged = JSON.stringify(a.help.map(function (h) { return h.kind; }));
+      var old = { hints: 0, steps: 0, solution_shown: false, pane_open: false }, oldAssisted = K.assisted(old);
+      var viaLog = K.assisted({ hints: 0, steps: 0, help: [{ kind: 'model_hint' }] });
+      return { pass: !none && K.assisted(a) && logged === '["pkg_hint","solution","lesson_pane"]' && a.hints === 1 && a.solution_shown === true && a.pane_open === true && !oldAssisted && viaLog && !K.eligibility(a, idx.i1).eligible,
+        detail: 'logged ' + logged + ' · counters kept · an old record without a log reads as before' };
+    }],
+    ['Migration cv 2 → 3: new containers, "thinking" copied from an old "working", nothing removed, no confidence number invented, idempotent', function () {
+      var K = global.KCycle, st = KStore.emptyState(), et = KEtut.importPackage(st, miniV2(), { now: NOW }).etut;
+      var old = { v: 'c2', cv: 2, part: 0, topic: 0, stage: 'apply', started_at: NOW, finished_at: null, duration: 60, phase_ms: {}, seen: {}, notes: { k1: 'n' }, qlist: {}, feynman: {}, satisfied: {}, maps: {}, evaluating: {}, mode: 'practice',
+        attempts: [{ id: 'a1', q_id: 'i1', committed_at: 5, confidence: 'sure', response: { choice: ['b'], text: '', working: 'I thought of the rule', number: null }, result: { correct: true }, grading: 'auto', dsr: { status: 'sent' } },
+          { id: 'a2', q_id: 'i2', committed_at: 6, confidence: 'unsure', response: { choice: ['a'], text: '', working: '', number: null }, result: { correct: false }, grading: 'auto' }],
+        current: null, final: null, warmup: null, visit_n: 1, misconceptions: {} };
+      var copy = clone2(old), m = K.migrate(clone2(old), et.package), again = JSON.stringify(K.migrate(clone2(m), et.package)) === JSON.stringify(m);
+      var same = Object.keys(copy).every(function (k) { return k === 'cv' || k === 'attempts' || JSON.stringify(m[k]) === JSON.stringify(copy[k]); });
+      var a1 = m.attempts[0], a2 = m.attempts[1], strip = function (a) { var c = clone2(a); delete c.thinking; return JSON.stringify(c); };
+      // progress from before topic cycles (no cv) ends at 3 as well
+      var legacy = clone2(old); delete legacy.cv; legacy.topic = undefined;
+      var ml = K.migrate(legacy, et.package);
+      return { pass: m.cv === 3 && same && again && a1.thinking === 'I thought of the rule' && a1.response.working === 'I thought of the rule' && a2.thinking === undefined && strip(a1) === JSON.stringify(copy.attempts[0]) && strip(a2) === JSON.stringify(copy.attempts[1])
+        && a1.confidence === 'sure' && a1.confidence_pct === undefined && JSON.stringify([m.reading_thinking, m.topic_mode, m.live, m.skipped]) === '[{},{},{},{}]' && ml.cv === 3,
+        detail: 'cv 2 → ' + m.cv + ' · working kept and copied to thinking · the answer without working untouched · old "sure" has no number · migrating twice changes nothing: ' + again };
+    }],
+    ['Calibration: banded table over study items, lesson tests and older answers; the fine view uses only numbered, unassisted answers; "I don\'t know" is left out', function () {
+      var K = global.KCycle, st = KStore.emptyState(), et = KEtut.importPackage(st, miniV2(), { now: NOW }).etut, idx = K.itemIndex(et.package);
+      var go = function (item, choice, pct, word, help) {
+        var a = K.startAttempt(et, item, 'practice', NOW + et.progress.attempts.length * 100000);
+        if (help) K.useHelp(a, 'hint');
+        K.commit(et, a, { choice: choice, confidence_pct: pct, confidence: word }, item, NOW + 1);
+        return a;
+      };
+      go(idx.i1, ['b'], 90);           // right, 90
+      go(idx.i1, ['a'], 90);           // wrong, 90
+      go(idx.i1, ['b'], 30);           // right, 30
+      go(idx.i1, ['b'], 95, null, true);  // right, assisted: banded yes, fine no
+      go(idx.i1, ['b'], null, 'sure'); // an old word record: banded only
+      var dk = K.startAttempt(et, idx.i1, 'practice', NOW + 9e6); K.commit(et, dk, { dont_know: true }, idx.i1, NOW + 9e6 + 1);
+      var fu = K.startAttempt(et, idx.i1, 'practice', NOW + 9e7); fu.followup_of = 'x'; K.commit(et, fu, { choice: ['b'], confidence_pct: 50 }, idx.i1, NOW + 9e7 + 1);
+      st.lessons.l1 = { progress: { runs: [{ answers: { 'q:1': { type: 'mcq', confidence: 'sure', confidence_pct: 82, correct: true }, 'q:2': { type: 'mcq', confidence: 'guess', correct: false }, 'q:3': { type: 'mcq', dont_know: true, confidence: null, correct: false }, 'r:1': { type: 'recall', text: 'x' } } }] } };
+      var rec = KMeta.confidenceRecords(st), band = KMeta.confidenceAccuracy(st), fine = KMeta.confidenceCurve(st);
+      var bin90 = fine.bins[9], bin30 = fine.bins[3], bin80 = fine.bins[8];
+      // Brier: (0.9-1)^2 + (0.9-0)^2 + (0.3-1)^2 + (0.82-1)^2 over 4 answers
+      var brier = (0.01 + 0.81 + 0.49 + 0.0324) / 4;
+      return { pass: rec.length === 7 && band.sure.n === 5 && band.sure.correct === 4 && band.unsure.n === 0 && band.guess.n === 2 && band.guess.correct === 1
+        && fine.n === 4 && bin90.n === 2 && bin90.correct === 1 && bin30.n === 1 && bin80.n === 1 && Math.abs(fine.brier - brier) < 1e-9 && Math.abs(fine.accuracy - 0.75) < 1e-9 && Math.abs(fine.mean_conf - (90 + 90 + 30 + 82) / 4) < 1e-9,
+        detail: 'records ' + rec.length + ' (study 5 incl. assisted and a word-only one, lesson 2) · banded: sure ' + band.sure.correct + '/' + band.sure.n + ', guess ' + band.guess.correct + '/' + band.guess.n + ' · fine view n=' + fine.n + ', Brier ' + (fine.brier == null ? '-' : fine.brier.toFixed(3)) };
+    }],
+    ['Thinking while reading: versions per topic, an unchanged or empty text saves nothing, 4000 characters at most', function () {
+      var K = global.KCycle, st = KStore.emptyState(), et = KEtut.importPackage(st, miniV2(), { now: NOW }).etut;
+      var r1 = K.saveReadingThinking(et, 'k1', 'first note', NOW), same = K.saveReadingThinking(et, 'k1', 'first note', NOW + 1), blank = K.saveReadingThinking(et, 'k1', '   ', NOW + 2);
+      var r2 = K.saveReadingThinking(et, 'k1', new Array(4100).join('y'), NOW + 3), l = et.progress.reading_thinking.k1;
+      return { pass: r1.n === 1 && same === null && blank === null && r2.n === 2 && l.length === 2 && l[0].text === 'first note' && l[1].text.length === 4000 && l[1].at === NOW + 3,
+        detail: 'versions: ' + l.length + ' · unchanged and empty texts saved nothing · cap ' + l[1].text.length };
     }]
   );
 

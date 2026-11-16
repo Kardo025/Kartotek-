@@ -256,6 +256,7 @@ function Metacog({ App }) {
   const strat = KMeta.strategyEffect(S);
   const lv = KMeta.promptLevel(S);
   const answered = conf.guess.n + conf.unsure.n + conf.sure.n;
+  const fine = KMeta.confidenceCurve(S);
 
   if (!preds.length && !jol.n && !answered) {
     return (
@@ -320,7 +321,7 @@ function Metacog({ App }) {
         </Panel>
       </div>
       <div className="k-grid2">
-        <Panel title="Accuracy by confidence">
+        <Panel title="Accuracy by confidence band">
           {answered ? (
             <>
               {[["sure", "Sure"], ["unsure", "Unsure"], ["guess", "Guess"]].map(([k, l]) => {
@@ -332,6 +333,19 @@ function Metacog({ App }) {
               )}
             </>
           ) : <Note>No quiz answers yet.</Note>}
+          {answered > 0 && <p className="k-small k-muted">Sure is 80–100 on the slider, Unsure 40–79, Guess 0–39. Answers from before the slider are counted here by the word you chose; answers to study items, lesson tests and older studies are counted together. Answers marked “I don’t know” have no confidence and are left out.</p>}
+        </Panel>
+        <Panel title="Calibration on the 0–100 slider">
+          {fine.n ? (
+            <>
+              <p className="k-small">You said <b className="k-num">{Math.round(fine.mean_conf)}%</b> on average and were right <b className="k-num">{pct(fine.accuracy)}</b> of the time ({fine.n} answers). Brier score <b className="k-num">{fine.brier.toFixed(2)}</b> (0 is perfect; always saying 50% scores 0.25).</p>
+              {fine.bins.filter((b) => b.n).map((b) => {
+                const r = b.correct / b.n;
+                return <PartBar key={b.lo} label={b.lo + "–" + b.hi} frac={r} color="var(--k-good)" value={pct(r) + " right · said " + Math.round(b.conf) + "% · " + b.correct + "/" + b.n} />;
+              })}
+              <p className="k-small k-muted">Each row is a ten-point range of what you said; a well-calibrated row is right about as often as the number you gave. Only answers with a number, given without help, are shown; verified study items and lesson tests only.</p>
+            </>
+          ) : <Note>No answers with a number yet. Answer an item with the slider and they appear here.</Note>}
         </Panel>
         <Panel title="Error types">
           {dist.length ? (

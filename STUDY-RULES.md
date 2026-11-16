@@ -19,16 +19,20 @@ Part 1 · topic 2: the same … → the part ends after its last topic → Part 
 … after the last topic of the last part → final test (now, tomorrow by default, 2, 3 or 7 days) → report
 ```
 
-**Navigation.** A navigator above the stage lists the parts, each part's topics and each topic's four stages. Any part, topic and stage can be opened at any time, forwards or back. Only **End** (final test and report) is locked until every topic's cycle is complete, that is, until each topic's Evaluating has been passed; once a final test is planned, End stays open. "Continue" follows the order above; after the last topic it goes to End, or to the first unfinished topic if one is left. Leaving an unfinished final-test block for a lesson is allowed, but every final answer given after that is recorded as with help ("lesson open"): it is not sent to DSR and is not independent evidence.
+**Navigation.** A navigator above the stage lists the parts, each part's topics and each topic's four stages. Any part, topic and stage can be opened at any time, forwards or back. Only **End** (final test and report) is locked until every topic's cycle is complete, that is, until each topic's Evaluating has been passed; once a final test is planned, End stays open. A topic may be **skipped after a probe** by the learner's choice (F3): it then counts as complete for opening End and stays in the final test. "Continue" follows the order above; after the last topic it goes to End, or to the first unfinished topic if one is left. Leaving an unfinished final-test block for a lesson is allowed, but every final answer given after that is recorded as with help ("lesson open"): it is not sent to DSR and is not independent evidence.
 
 | Stage (per topic) | Package data it uses | What happens |
 |---|---|---|
-| Priming | the topic's `priming` (`summary_md`, `keywords`, `purpose`, `prereq`); the part's `orientation`, `summary`, `conventions` | A preview only: the topic's short summary with keywords and purpose. The part's orientation and summary are open on the part's first topic and folded ("This part at a glance") on the others. Without a topic `priming`, the topic's objective and outcomes are shown. An optional "my assumptions" box (per topic) and the part's Questions list. No pretest, no score, no gate. |
-| Learn & digest | the topic's `blocks` (with `refs`), `practice` (embedded checks) and `feynman`; on the part's last topic also the part's `connect` blocks | The left pane is **this topic's** lesson with its source references; the part's last topic adds "Connect the topics of part n". The right pane has three tabs: **Explain it** (Feynman per topic: the learner writes, saves versions and marks "I'm satisfied", which means readiness, not mastery; without a topic prompt a generic one is shown with the part's prompt below it), **Mind map** (start a map for the topic, continue the previous topic's map or link any map; the learner draws it) and **Questions**. "Get feedback" on the explanation is shown disabled: the Feynman feedback assistant is not built. |
+| Priming | the topic's `priming` (`summary_md`, `keywords`, `purpose`, `prereq`); the part's `orientation`, `summary`, `conventions` | A preview only: the topic's short summary with keywords and purpose. The part's orientation and summary are open on the part's first topic and folded ("This part at a glance") on the others. Without a topic `priming`, the topic's objective and outcomes are shown. An optional "my assumptions" box (per topic, labelled "Your thinking": it is thinking text) and the part's Questions list. An optional **"Find my level" probe** (generated questions, never package items; no score and no gate; built in F3). No pretest, no score, no gate. |
+| Learn & digest | the topic's `blocks` (with `refs`), `practice` (embedded checks) and `feynman`; on the part's last topic also the part's `connect` blocks | The left pane is **this topic's** lesson with its source references; the part's last topic adds "Connect the topics of part n". The right pane has four tabs: **Thinking while reading** (an optional free-text box saved as versions, like Feynman; stored in `progress.reading_thinking`, never required, never evidence), **Explain it** (Feynman per topic: the learner writes, saves versions and marks "I'm satisfied", which means readiness, not mastery; without a topic prompt a generic one is shown with the part's prompt below it), **Mind map** (start a map for the topic, continue the previous topic's map or link any map; the learner draws it) and **Questions**. "Get feedback" on the explanation is answered by the model when one is set up (v2.10b). |
 | Applying | the topic's `recall`, the part's `items` placed at this topic, extras | One item at a time from **this topic's** pool. The free recall comes first and one of the topic's items follows right after it; then outcomes not yet practised, then unresolved errors; then the **connecting items** placed here (labelled "Connects n topics"); then outcomes shown only with help, then outcomes that still need a changed-context item. A warm-up offers earlier topics (any part) with the lowest memory. Practice mode allows hints, steps, the solution and the lesson (for a connecting item, the lessons of all its topics), and records each one. "Check without help" mode allows none of them. Each answer gets option- or criterion-level feedback, then Explain, Practice this again and Report a problem. |
-| Evaluating | none | A visible placeholder: "deferred". Continuing records `deferred_by_user` for the topic and completes its cycle. Do not write reflection questions for it. |
+| Evaluating | none | Today a visible placeholder: "deferred". Continuing records `deferred_by_user` for the topic and completes its cycle. Do not write reflection questions for it. Planned (F5): adaptive practice with generated problems, or deferred; generated problems never reach the scheduler (v2.13). |
 | Final test | `final_test`, `final_blueprint` | Blocks of up to 10 items in shuffled order, with no help. Feedback comes at the end of each block. Taken at once, the result is labelled "immediate performance". |
 | Report | everything | One row per outcome with a descriptive state (not assessed, evidence uncertain, needs further work, demonstrated with assistance, demonstrated independently now, retained on a later check, applied in a new supported context), the criteria, the gaps, the process history and the objective cards' next reviews. There is no mastery score. |
+
+## v2.1a Topic mode (F4)
+
+Each topic has a mode, `cycle` (default, everything above) or `live`. A live topic replaces Learn & digest by an attached live session that is limited to the topic's units and taught by a model; Applying is unchanged. A live session is the learner's own record (`sessions` in the learner data, v2.13) and never edits the package. Until F4 is built every topic is `cycle`.
 
 ## v2.2 Ground rules
 
@@ -39,6 +43,7 @@ Part 1 · topic 2: the same … → the part ends after its last topic → Part 
 5. **No uploading.** Mentions of other products (MathGPT, NotebookLM) do not authorize sending the source to them or to any other service.
 6. **Honest claims.** Nothing says "mastered". A percentage always shows its numerator and denominator. A delayed check is one observation, not proof of permanent retention.
 7. **English** for all study content. Data keys stay as written (`kazanimlar`, `kazanim_id`, `kind` values, `dikkat` / `ipucu`).
+8. **Generated during a session** (a question, an explanation, a problem, a hint, a proposition written by a model while the learner studies) is labelled `origin: "generated"` and `validation: "unverified"`, never reaches the scheduler and is never written into a package.
 
 ## v2.3 Workflow
 
@@ -126,6 +131,8 @@ Part 1 · topic 2: the same … → the part ends after its last topic → Part 
 - `priming`, topic `feynman` and `connect` are optional for the app (it falls back to the part's text), but every new module writes them; the audit warns when topics lack them.
 - `studies\sample-cycle-v2\etut.json` is a complete small example (synthetic, `"sample": true`), with topic Priming, topic Feynman, a `connect` block and one connecting item (`i7`).
 
+Two optional fields serve the knowledge graph (F3, F6) and are recommended for new modules, never required: `outcomes[].proposition` (one sentence that states the outcome as a claim, for example "The high noise margin is VOH − VIH"; fallback: the criteria joined) and `relations[].premises` / `relations[].conclusion` (outcome ids; fallback: derived from `from`, `to` and `units`).
+
 ## v2.5 Items
 
 ```jsonc
@@ -170,6 +177,8 @@ Part 1 · topic 2: the same … → the part ends after its last topic → Part 
 - **`integrates`** (optional): the topics (`kazanim_id`s, 2 or more, different, including the item's own `kazanim_id`) that a connecting item brings together. A practice item is placed in the Applying of the latest of them and must be stored in that topic's part. On a final item it is only a label.
 - **`key_source`** (optional): `"book"` when the book's answer key confirmed your key, `"solved"` when the key is your own independent solution because the extract has no answer key (the usual case for CEnT-S extracts, whose answers are at the back of the book). Either can be `verified`; say which in `validation_note` when the field is absent.
 
+**Help and thinking while answering.** In Practice mode help is recorded in `attempt.help` (`pkg_hint`, `pkg_step`, `solution`, `lesson_pane`, and from F2 `model_hint` rungs R0–R5 and `side_question`); every entry makes the attempt assisted. Rewording what a question asks (a statement repair, F2) is recorded but is not help. Every answer has an optional free-text "Your thinking" box (`attempt.thinking`); it is never required and never changes evidence. Confidence is a 0–100 slider (v2.8), or "I don't know".
+
 ## v2.6 Quality gates (every item, before the audit)
 
 1. **Consistency:** the stem, variables, figure, options, key, solution, option notes and rubric all describe the same problem.
@@ -196,16 +205,18 @@ Only these attempts reach the objective's card, through the legacy mapping (`sou
 | Attempt | Sent when | Rating | `signal` |
 |---|---|---|---|
 | Free recall (the objective's `recall`) | answered without the lesson pane or help | the learner's Again / Hard / Good / Easy | `recall` |
-| Applying item | the first attempt at this item version, no hint, steps, solution or lesson, `verified`, not reported, grading not uncertain, confidence given | wrong → Again (+ misconception flag if Sure); right + Guess/Unsure → Hard; right + Sure → Good | `quiz` |
+| Applying item | the first attempt at this item version, no hint, steps, solution or lesson, `verified`, not reported, grading not uncertain, confidence given (or "I don't know") | wrong → Again (+ misconception flag if Sure); right + Guess/Unsure → Hard; right + Sure → Good; "I don't know" → Again without the flag | `quiz` |
 | Final item | the same rules, in the final test | the same | `final` |
 
-- Follow-ups, repeated items, assisted answers, embedded checks, Feynman versions, maps and Explain texts never reach DSR.
+- **Confidence is a 0–100 slider** (the learner's stated probability that the answer is correct; no default position, so no confidence until it is moved; keys 1, 2, 3 set 20, 60, 90). The table above stays in three **bands**, written to `attempt.confidence` together with the number in `attempt.confidence_pct`: **Sure = 80–100, Unsure = 40–79, Guess = 0–39**. Only Sure turns a right answer into Good and a wrong one into a misconception, so the scheduler behaves as before. Old records keep their word and never get a number.
+- **"I don't know"** records `dont_know: true` and no confidence. It counts as not correct, is DSR-eligible as Again without the misconception flag (honest evidence of not knowing), and is left out of confidence calibration. On lesson tests it keeps score 0.
+- Follow-ups, repeated items, assisted answers, embedded checks, Feynman versions, maps, thinking text, Explain texts and everything generated during a session never reach DSR.
 - When a problem is reported right after answering, the review it sent is withdrawn (like Undo); once later reviews build on it, it stays and only the study's evidence leaves it out.
 - Study events do not use the Review tab's daily limits. Only `recall` signals feed calibration and parameter fitting.
 
 ## v2.9 Explain
 
-When the learner presses **Explain** on an attempt, Kartotek opens Claude Code with a visible, editable request. The request contains the item and its version, the rendered option order, the selection, the key and its validation status, the per-option result, the working (or "not provided"), the help used, the outcomes, the criteria, the source locations and the depth (short, standard or deep). Answer it like this:
+When the learner presses **Explain** on an attempt, Kartotek opens Claude Code with a visible, editable request. The request contains the item and its version, the rendered option order, the selection, the key and its validation status, the per-option result, the thinking text (`attempt.thinking`, formerly "the working"; or "not provided"), the help used, the outcomes, the criteria, the source locations and the depth (short, standard or deep). Answer it like this:
 
 1. **Audit the item first:** key, convention, wording and source. If the item is wrong, say "Question under review", explain the problem and do not presume a learner error.
 2. Give a short status recap, the principle, explicit steps, the source references and the distinction or condition the item tests.
@@ -270,7 +281,13 @@ With a model set up, five requests that used to be Claude Code hand-offs run thr
 - topics without a topic `priming` or a topic `feynman` (one line each, with the count);
 - a topic `priming` longer than 6 sentences.
 
+**Warning, not a blocker:** an outcome without `proposition`, only for modules written after the graph change (F3); nothing is reported for older ones.
+
 `connect` block refs count as teaching locations. The tool also prints the number of topics and connecting items.
+
+## v2.13 Sessions and the graph (F3–F6)
+
+A **live session** or **generated practice** is the learner's own record (`sessions` in the learner data); its questions, problems, hints and propositions are generated and unverified (v2.2 rule 8). In the outcome report they appear only as separate **session evidence** rows ("n right without help / n"); they never change an outcome's evidence state (the seven states are driven by verified package items only) and never reach DSR. The knowledge graph seeds its nodes from the packages' outcomes and relations; what a session adds is stored only after the learner accepts it. Confidence calibration shows generated questions separately, so a wrong model key never makes the learner look miscalibrated. Built in F3–F6; the rules are fixed here so packages and sessions stay compatible.
 
 For legacy (v1) packages the tool reports the correct-option position balance.
 

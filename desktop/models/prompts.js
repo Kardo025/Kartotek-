@@ -11,9 +11,11 @@ const crypto = require('crypto');
 
 const ID_RE = /^[a-z0-9][a-z0-9-]{0,60}$/;
 
-function parsePromptFile(text) {
-  const m = /^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/.exec(String(text || ''));
-  if (!m) return { meta: {}, body: String(text || '').trim() };
+function parsePromptFile(raw) {
+  // A file checked out with Windows line endings reads the same as one with Unix endings
+  const text = String(raw || '').replace(/\r\n/g, '\n');
+  const m = /^---\n([\s\S]*?)\n---\n?([\s\S]*)$/.exec(text);
+  if (!m) return { meta: {}, body: text.trim() };
   const meta = {};
   m[1].split(/\r?\n/).forEach((line) => {
     const x = /^([a-z_]+):\s*(.*)$/.exec(line.trim());
