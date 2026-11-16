@@ -466,6 +466,47 @@ async function main() {
       } catch (e) { problems.push('F3: Priming, Find my level or the plan map failed: ' + e.message); }
     }
 
+    // Live teaching (F4): a prediction answered through the screen is kept with its thinking and confidence; Pause, a window reload (the
+    // data files are read again, as after a restart) and Resume continue the session at the same point. No model call is needed for this.
+    {
+      try {
+        const sid = await page.evaluate(() => {
+          const App = window.App, PL = window.KPlan, KL = window.KLive, S = App.S;
+          const s = PL.newSession(S, { goal_words: 'Smoke live session', now: Date.now() });
+          s.probe = { status: 'done', source: 'model', strands: [], questions: [], goal: { concrete: 'Smoke goal', questions: [] }, result: { strands: [], asked: 0, closing: '', levels: {} }, generator: [] };
+          s.status = 'plan';
+          const node = (id, kind, deps) => ({ id, label: 'Node ' + id, kind, depends_on: deps, units: [], why: '', mode: 'socratic' });
+          PL.addPlanVersion(s, { approach: 'Smoke plan.', nodes: [node('held', 'held', []), node('step-one', 'learn', ['held']), node('goal-smoke', 'goal', ['step-one'])], uncertain: [] }, { now: Date.now() });
+          PL.acceptPlan(s, Date.now());
+          const E = { resolves: '', md: '', refs: [], uncertain: [], gap: { label: '', why: '', before: '' } };
+          KL.applyReply(s, 'predict', { phase: 'predict', node: 'step-one', question: { kind: 'open', stem: 'What has to change for the smoke step?', options: [], key: '', why: '' }, teach: E, check: { stem: '', options: [], key: '' }, done_summary: '' }, { now: Date.now() });
+          App.store.commit({ meta: true });
+          App.liveOpen = s.id; App.switchTab('etut'); App.render();
+          return s.id;
+        });
+        await page.waitForSelector('.lt-step .pb-q textarea.k-input:not([data-f])', { timeout: 8000 });
+        await page.fill('.lt-step .pb-q textarea.k-input:not([data-f])', 'The second rule replaces the first.');
+        await page.fill('.lt-step .th textarea', 'I compared it with the last case.');
+        await page.focus('.lt-step .cf-range');
+        await page.keyboard.press('2');
+        await page.click('.lt-step button:has-text("Send my prediction")');
+        await page.click('.st-run-head button:has-text("Pause")');
+        await page.waitForTimeout(800);
+        const before = await page.evaluate((id) => { const s = window.App.S.sessions[id], a = s.steps[0].predict.answer; return { status: s.status, text: a && a.text, pct: a && a.confidence_pct, thinking: a && a.thinking, phase: window.KLive.phase(s) }; }, sid);
+        await page.reload();
+        await page.waitForSelector('main', { timeout: 15000 });
+        await page.waitForFunction(() => window.App && window.App.S && window.App.store.mode === 'file', null, { timeout: 15000 });
+        await page.evaluate((id) => { window.App.liveOpen = id; window.App.switchTab('etut'); window.App.render(); }, sid);
+        await page.waitForSelector('.st-run-head button:has-text("Resume")', { timeout: 8000 });
+        await page.click('.st-run-head button:has-text("Resume")');
+        await page.waitForTimeout(500);
+        const after = await page.evaluate((id) => { const s = window.App.S.sessions[id], a = s.steps[0].predict.answer; return { status: s.status, text: a && a.text, pct: a && a.confidence_pct, phase: window.KLive.phase(s), pauses: (s.pauses || []).length, reviews: window.App.S.reviews.length }; }, sid);
+        if (before.status !== 'paused' || before.text !== 'The second rule replaces the first.' || before.pct !== 60 || before.thinking !== 'I compared it with the last case.') problems.push('F4: the prediction or the pause was not saved: ' + JSON.stringify(before));
+        if (after.status !== 'teach' || after.text !== before.text || after.phase !== 'teach' || after.pauses !== 1) problems.push('F4: the session did not resume where it was after a reload: ' + JSON.stringify(after));
+        console.log('Live teaching: a prediction answered on screen kept its thinking and 60 %; paused, reloaded and resumed at the same point (the teacher is asked next)');
+      } catch (e) { problems.push('F4: the live teaching screen failed: ' + e.message); }
+    }
+
     // Planning home and Euro apply without a folder (D2): Kartotek's own rows, what is missing, and a setup row instead of the app
     await clickMode('planning');
     await page.click('.k-nav-item[data-tab="home"]');

@@ -126,6 +126,10 @@ RPC['jobs.start'] = wrap((id, choice) => jobs.start(String(id), choice || undefi
 RPC['jobs.pause'] = wrap((id) => jobs.pause(String(id)));
 RPC['jobs.skipFixes'] = wrap((id) => jobs.skipFixes(String(id)));
 RPC['jobs.remove'] = wrap((id) => jobs.remove(String(id)));
+// Live sessions on own files (task F4), as desktop/main.js does it
+const liveFiles = require('../desktop/live').createLiveFiles({ dir: profile, extract: require('../desktop/jobs/extract') });
+RPC['live.readFiles'] = wrap((sid, tokens) => liveFiles.read(String(sid), (tokens || []).map((t) => { const p = picked.get(String(t)); if (!p) throw new Error('Choose the file again.'); return p; })));
+RPC['live.material'] = wrap((sid) => liveFiles.get(String(sid)));
 RPC['jobs.openFolder'] = wrap(async () => { throw new Error('Not available in the preview. Profile: ' + profile); });
 RPC['jobs.events'] = async (since) => ({ ok: true, value: { next: eventSeq, events: jobEvents.filter((x) => x.seq > (Number(since) || 0)).map((x) => x.ev) } });
 // Only this page may call the bridge: every call carries a token that the page gets with the shim
@@ -146,6 +150,7 @@ const SHIM = `/* bridge-preview: stand-in for desktop/preload.js */
   api.models.test = function (id, p, m) { return test(id, p, m); };
   api.prompts = {}; ['list', 'get', 'saveOverride', 'resetOverride', 'render'].forEach(function (n) { api.prompts[n] = call('prompts.' + n); });
   api.jobs = {}; ['pickFiles', 'list', 'get', 'create', 'start', 'pause', 'skipFixes', 'remove', 'openFolder'].forEach(function (n) { api.jobs[n] = call('jobs.' + n); });
+  api.live = { readFiles: call('live.readFiles'), material: call('live.material') };
   var ev = call('jobs.events'), cursor = 0, listeners = [];
   setInterval(function () {
     if (!listeners.length) return;

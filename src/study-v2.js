@@ -873,6 +873,10 @@
         deferred: topicsOf(pkg).filter(function (t) { return (pr.evaluating || {})[t.kid]; }).length,
         skipped: topicsOf(pkg).filter(function (t) { return (pr.skipped || {})[t.kid]; }).map(function (t) { return t.kid; }),
         probes: (pr.probes || []).filter(function (p) { return p.status === 'done' || p.status === 'stopped'; }).length,
+        // task F4: live sessions attached to this study (session evidence, LEARNING-PROTOCOL 4: never a state, never DSR)
+        live: Object.keys((state && state.sessions) || {}).map(function (k) { return state.sessions[k]; })
+          .filter(function (s) { return s && s.kind === 'live' && s.attached && s.attached.etut_id === et.etut_id && (s.steps || []).length; })
+          .map(function (s) { var m = global.KLive ? global.KLive.summary(s) : { steps: (s.steps || []).length }; return { id: s.id, title: s.title, topics: s.attached.topics.slice(), status: s.status, steps: m.steps, right_first: m.right_first, after_repair: m.after_repair, gaps: m.gaps }; }),
         feynman_versions: Object.keys(pr.feynman || {}).reduce(function (a, k) { return a + (pr.feynman[k] || []).length; }, 0),
         maps: Object.keys(pr.maps || {}).map(function (k) { return pr.maps[k]; }).filter(function (v, i, a) { return v && a.indexOf(v) === i; }).length,
         left_final: pr.final && pr.final.left_n || 0,

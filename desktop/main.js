@@ -430,6 +430,16 @@ handleModel('jobs:pickFiles', async (e, which) => {
     return { token, name: path.basename(p), size };
   });
 });
+// Live sessions on the learner's own files (task F4): the picked files are read here and cached in <userData>\live\<session>\
+const { createLiveFiles } = require('./live');
+let liveFiles = null;
+const live = () => liveFiles || (liveFiles = createLiveFiles({ dir: app.getPath('userData'), extract: jobExtract }));
+handleModel('live:readFiles', (e, sessionId, tokens) => {
+  if (!isStr(sessionId, 60) || !Array.isArray(tokens)) throw new Error('Invalid request.');
+  const files = tokens.map((t) => { const p = pickedFiles.get(String(t)); if (!p) throw new Error('A chosen file is no longer available; choose it again.'); return p; });
+  return live().read(sessionId, files);
+});
+handleModel('live:material', (e, sessionId) => { if (!isStr(sessionId, 60)) throw new Error('Invalid request.'); return live().get(sessionId); });
 // Tests drive the window without the native picker: in development only, and only when asked for, a file can be "picked" here
 if (DEV && process.env.KARTOTEK_TEST_PICK === '1') {
   global.__kartotekTestPick = (file) => { const token = require('crypto').randomBytes(12).toString('hex'); pickedFiles.set(token, path.resolve(file)); return token; };

@@ -99,6 +99,7 @@ function runDesktopTests() {
   try { (await require('./model-tests.cjs').run()).forEach((l) => console.log(l)); } catch (err) { console.log('FAIL  model layer tests: ' + (err && err.stack || err)); code = 1; }
   try { (await require('./study-model-tests.cjs').run()).forEach((l) => console.log(l)); } catch (err) { console.log('FAIL  study model tests: ' + (err && err.stack || err)); code = 1; }
   try { (await require('./probe-tests.cjs').run()).forEach((l) => console.log(l)); } catch (err) { console.log('FAIL  probe and plan map tests: ' + (err && err.stack || err)); code = 1; }
+  try { (await require('./live-tests.cjs').run()).forEach((l) => console.log(l)); } catch (err) { console.log('FAIL  live teaching tests: ' + (err && err.stack || err)); code = 1; }
   try { const k = await require('./euro-tests.cjs').run(); console.log('Euro apply connection and Planning timeline tests: ' + k + '/' + k + ' passed'); } catch (err) { console.log('FAIL  euro apply tests: ' + (err && err.stack || err)); code = 1; }
   try { if (!(await require('./job-tests.cjs').main())) code = 1; } catch (err) { console.log('FAIL  writing job tests: ' + (err && err.stack || err)); code = 1; }
   process.exit(code);

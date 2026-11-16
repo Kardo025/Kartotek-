@@ -70,6 +70,11 @@ contextBridge.exposeInMainWorld('kartotek', Object.freeze({
     test: (callId, id, model, onEvent) => withEvents(callId, onEvent, () => ipcRenderer.invoke('models:test', callId, id, model)),
     cancel: (callId) => ipcRenderer.invoke('models:cancel', callId),
   }),
+  // Live sessions on the learner's own files (task F4): read picked files (tokens) for a session; get the cached text back
+  live: Object.freeze({
+    readFiles: (sessionId, tokens) => ipcRenderer.invoke('live:readFiles', sessionId, tokens),
+    material: (sessionId) => ipcRenderer.invoke('live:material', sessionId),
+  }),
   // Writing jobs (task E3). Files are chosen in the main process's picker; the window only holds tokens.
   jobs: Object.freeze({
     pickFiles: (which) => ipcRenderer.invoke('jobs:pickFiles', which),

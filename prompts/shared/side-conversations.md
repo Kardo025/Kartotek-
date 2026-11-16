@@ -1,8 +1,7 @@
 ---
 id: shared-side-conversations
-title: Shared fragment: side conversations in the context (draft)
+title: Shared fragment: side conversations in the context
 version: 1
-status: draft
 adapted_from: LearnHarness 0.6.0, src/agent/prompts/shared/35-side-conversations.md (Amos Blomqvist, AGPL-3.0-only)
 ---
 ## Side conversations

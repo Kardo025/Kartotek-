@@ -247,9 +247,13 @@
   function liveMap(s, versionIndex) {
     var i = versionIndex == null ? (s.plan ? s.plan.current : -1) : versionIndex, v = s.plan && s.plan.versions[i];
     if (!v) return { nodes: [], edges: [], position: null };
+    // task F4: a node with a finished teaching step (its check answered right) is drawn as taught
+    var taught = {};
+    (s.steps || []).forEach(function (st) { if (st.outcome === 'right' || st.outcome === 'right_after_repair') taught[st.node] = (taught[st.node] || 0) + 1; });
     var nodes = v.nodes.map(function (n) {
-      return { id: n.id, label: n.label, sub: n.kind === 'held' ? 'you hold this' : n.kind === 'goal' ? 'the goal' : n.mode ? 'to learn · ' + n.mode : 'to learn',
-        status: n.kind === 'held' ? 'held' : n.kind === 'goal' ? 'goal' : (v.inserted === n.id ? 'gap_found' : 'learn'), kind: n.kind, why: n.why, units: n.units, current: s.plan.position === n.id };
+      var status = n.kind === 'held' ? 'held' : taught[n.id] ? 'taught' : n.kind === 'goal' ? 'goal' : (v.inserted === n.id ? 'gap_found' : 'learn');
+      return { id: n.id, label: n.label, sub: n.kind === 'held' ? 'you hold this' : taught[n.id] ? taught[n.id] + ' step' + (taught[n.id] === 1 ? '' : 's') + ' checked' : n.kind === 'goal' ? 'the goal' : n.mode ? 'to learn · ' + n.mode : 'to learn',
+        status: status, kind: n.kind, why: n.why, units: n.units, current: s.plan.position === n.id };
     });
     var edges = [];
     v.nodes.forEach(function (n) { (n.depends_on || []).forEach(function (d) { edges.push({ from: d, to: n.id, kind: 'requires' }); }); });
