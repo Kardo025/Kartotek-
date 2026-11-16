@@ -1,6 +1,8 @@
 # Kartotek learning protocol (task F0, 2026-11-16)
 
-Design only: no code changes. This document specifies how the thirteen ideas of `research\harness-integration\03-decisions.md` (section 3) enter Kartotek, how the packaged study cycle and the new live session live side by side, and what each idea changes in the data, the model calls, the scheduler and the evidence. Tasks F1–F8 build from it. The agent instructions it relies on are drafted in `prompts\` (section 8); they were written from scratch from the ideas in `02-comparison.md`; no LearnHarness prompt file was opened.
+Design only: no code changes. This document specifies how the thirteen ideas of `research\harness-integration\03-decisions.md` (section 3) enter Kartotek, how the packaged study cycle and the new live session live side by side, and what each idea changes in the data, the model calls, the scheduler and the evidence. Tasks F1–F8 build from it. The agent instructions it relies on are drafted in `prompts\` and `prompts\shared\` (section 8).
+
+**Licence and LearnHarness (owner decision, 2026-11-16).** The first version of this document was written from `02-comparison.md` only. The owner then decided that Kartotek becomes **AGPL-3.0-only**, so LearnHarness 0.6.0 (Amos Blomqvist, AGPL-3.0-only) could be read in full, code and prompts included, and its good parts adapted. Section 12 lists what was taken, changed or left out and why; the drafts in `prompts\` now adapt LearnHarness's agent instructions and name their source in `adapted_from`. No LearnHarness program code is in Kartotek.
 
 Words used here: **package** = a Study v2 `etut.json`; **topic** = one objective (`kazanim`) with its own cycle; **attempt** = one answer record in `progress.attempts` (append-only); **verified item** = a package item with `validation: "verified"`; **generated** = anything a model writes during a session (a question, an explanation, a problem, a hint, a proposition).
 
@@ -73,6 +75,8 @@ Existing fields stay: `hints`, `steps`, `solution_shown`, `pane_open` are still 
 | 40–79 | `unsure` | right → Hard, wrong → Again | 0.7 | no |
 | 80–100 | `sure` | right → **Good**, wrong → Again | 1.0 | **yes** |
 
+- **What the number means** (from LearnHarness): the learner's stated probability that the answer they gave is correct. For a question with n options chance is 100/n; a confidence at or below chance on a chosen answer means the learner distrusts their own pick, which is honesty, not error. Wrong + high confidence is the strongest signal a model receives (`prompts\shared\confidence.md`).
+- **"I don't know"** (from LearnHarness): a button next to the slider. It records `dont_know: true` and no confidence. It is a gap, never a wrong guess: the answer counts as not correct; for DSR it is eligible like a wrong answer without misconception (Again), because declining to guess is honest evidence of not knowing (decision D13); it is excluded from confidence calibration.
 - The rule the scheduler sees is exactly today's: only `sure` turns a right answer into Good and a wrong one into a misconception. No old record changes meaning: an old `sure` stays `sure`.
 - The slider has no default position; until it is moved there is no confidence, and an item without confidence is not DSR-eligible (as today). Keys `1`, `2`, `3` set 20 / 60 / 90 for speed; arrows move by 5.
 - Old records are never given a number. Fine-grained statistics (reliability curve, Brier score) use only records with `confidence_pct`; banded statistics use both (2.3).
@@ -164,31 +168,37 @@ Each idea: where it appears, data, model call (request → structured reply), no
 
 - **Built in E1** (decision 14): `prompts\*.md` with front matter, overrides in the user data, Settings › Models › Prompts with editor, reset and "default changed" flag. F1's third item is therefore done.
 - **This task adds** the eight agent drafts (section 8); each later F task turns its draft into a shipped prompt with a schema file (`prompts\schemas\`), bumps its `version` when the text changes, and lists its variables.
+- **Shared fragments** (from LearnHarness's prompt composition): the voice, accuracy, thinking, confidence and side-conversation rules live once in `prompts\shared\*.md`, and an agent prompt lists the ones it uses in `includes:`. The prompt service composes the agent text with its fragments in that order; each fragment can be edited and reset on its own in Settings, Prompts, and an edit applies to every agent that includes it (D16). Until that is built (proposed with E2), the drafts are not used.
 - **Effects:** none on evidence. Every generated object records `prompt_id`, `prompt_version` and, for an override, the hash (already in the usage log), so a learner can see which instruction text produced it.
 
 ### 3.4 Hint ladder
 
-Levels (model hints; the package's own hints, steps and solution stay as they are):
+Rungs (adapted from LearnHarness's practice doctrine; the package's own hints, steps and solution stay as they are):
 
-| Level | Gives | Example (noise margin, "find NMH") |
+| Rung | Gives | Example (noise margin, "find NMH") |
 | --- | --- | --- |
-| L1 attention | points at what to look at, names no method | "Which two of the four voltages describe the high side?" |
-| L2 principle | names the rule or concept to use | "The high margin compares what a driver guarantees for 1 with what a receiver needs for 1." |
-| L3 first step | does the first step, leaves the rest | "Start from VOH = 2.4 V; what is subtracted from it?" |
-| L4 worked step | completes the step where the learner is stuck, with the numbers | "NMH = VOH − VIH = 2.4 − 2.0 = …" |
-| L5 solution | the full worked solution | as the package solution |
+| R0 attention redirect | points at what to re-read or look at | "Re-read which voltages describe the high side." |
+| R1 pattern re-description | names the kind of pattern, no idea named | "You are comparing a guarantee with a requirement." |
+| R2 candidate class | narrows to a group of results | "One of the two noise-margin definitions applies." |
+| R3 the idea, named | the retrieval is given away | "Use the high noise margin, NMH = VOH − VIH." |
+| R4 the move outlined | running it is given away | "Subtract the receiver's VIH from the driver's VOH." |
+| R5 the worked step | everything except the lesson | "NMH = 2.4 − 2.0 = 0.4 V." |
 
-- **Packaged:** Applying in Practice mode, "Ask for a hint". Each press gives the next level, starting from where the learner's thinking shows they are stuck (the model may start at L1 even after a wrong answer; it never jumps levels). Check-without-help mode and the final test: no hints (unchanged).
+- **The rule:** from the thinking, find the first question in the solving loop the learner cannot answer (or answered wrongly) and answer exactly that, at the coarsest grain that unblocks; one rung per request. When the trace grinds at execution with the wrong idea, the first failure is earlier: give a **verification nudge** ("check the assumption behind your move"), never the correction.
+- **Statement repair is free:** "I don't understand what is asked" is fixed fully and immediately; it is recorded as `{ kind: "statement_repair" }` and **does not count as help** (it is logistics, not the material). Kartotek checks that a repair reply contains no solution step (the reply's `reveals` must be empty).
+- **The rung needed is a difficulty readout:** R0–R1 means the problem was about right, R3 and above means it was over the edge; practice uses it for the next problem (3.8).
+- **Packaged:** Applying in Practice mode, "Ask for a hint"; each press gives the next rung. Check-without-help mode and the final test: no hints (unchanged).
 - **Live:** in checks and practice problems.
-- **Data:** `help: [{ kind: "model_hint", level, at }]`, `model_hints` = highest level.
-- **Model request:** item (stem, options, the package key, solution and criteria; for generated problems their solution), learner response so far, thinking text, levels already given, the level requested. **Reply:** `{ level, stuck_at, hint_md, reveals: ["what it gives away"] }`. The app refuses a reply whose `level` is higher than requested and shows the package help instead.
+- **Data:** `help: [{ kind: "model_hint", level: "R0"…"R5", at }]`, `model_hints` = highest rung (0–5, R0 = 0 counts as help).
+- **Model request:** item (stem, options, the package key, solution and criteria; for generated problems their committed solution), learner response so far, thinking, rungs already given, the rung requested. **Reply:** `{ rung, stuck_at, hint, reveals }`. Kartotek refuses a reply whose rung is higher than requested and shows the package help instead.
 - **No model:** the package's hints → steps → solution, as today.
-- **Effects:** any model hint makes the attempt assisted: not DSR-eligible; at best `assisted` in the states (as package hints today). Calibration unaffected (assisted answers are still answers; the confidence was given before the hint or is recorded as given after it, see decision D7). Report: the process history lists the highest hint level per attempt.
+- **Effects:** any model hint (R0 included) makes the attempt assisted: not DSR-eligible; at best `assisted` in the states (as package hints today); a statement repair alone does not. Calibration: assisted answers stay out of the fine chart (D7). Report: the process history lists the highest rung per attempt.
 
 ### 3.5 Probe
 
 - **Live (required):** first makes the goal concrete (one or two questions: "what should you be able to do at the end?"), then asks adaptive multiple-choice questions one at a time, each chosen from the previous answer, its confidence and the thinking text, to find per prerequisite strand the hardest thing reliably right and the first thing wrong. Stops when every strand is located or after a question budget (default 15, decision D4).
 - **Packaged (optional):** "Find my level" in Priming of the topic or of the part; the strands come from the topic's outcomes, its relations and the part's prerequisites (computed, no model). Questions are generated (never package items: using them would mark later attempts as "repeated" and cost DSR eligibility).
+- **From LearnHarness** (`prompts\prober.md`): read the learner's knowledge graph first (strands held solidly need no re-probing); make the goal concrete with multiple-choice questions before measuring; **enter each strand near the top**, not at the basics; let strands inform each other; jump sharply after a confident right answer, step gently after a hesitant one, narrow down after a miss; dig into a misunderstanding's extent before moving on; every question must move an edge. The conclusion gives, per strand, the floor, the ceiling, the misunderstandings and what to build from. Kartotek adds the question budget and grades every probe answer in code against the committed key.
 - **Data:** `session.probe = { strands: [{ id, label, outcome_ids?, unit_ids? }], questions: [{ id, strand, stem, options, key, why, answer, confidence_pct, thinking, at, generated… }], result: { <strand>: { status: "held" | "edge" | "missing", held_up_to, first_miss, notes } }, goal }`; packaged: `progress.probe` keeps the latest result.
 - **Model request** (prober): goal, strands (with unit text when attached), answered questions so far with confidence and thinking. **Reply:** `{ next: { strand, stem, options[2–5], key, rationale, difficulty } | null, strand_status: { <strand>: "held" | "edge" | "missing" | "open" }, done, summary_md }`. The app checks the question (options unique, one key, no "all of the above") before showing it; the learner's answer is graded by the code against `key`.
 - **No model:** live sessions are unavailable (the Study library says what to set up). Packaged: the button shows the topic's outcomes and criteria as a self-rating list ("I can already …" yes / not sure / no), stored the same way with `source: "self"`.
@@ -211,6 +221,14 @@ One reasoning step per turn, following the plan:
 2. **Teach:** a short explanation that resolves the prediction (right: confirm and extend; wrong: name what the prediction missed) and builds only on held nodes; at most about 150 words and one figure description; attached sessions cite unit pages; anything the model is not sure of is marked `uncertain` (and offered to the researcher, 3.12).
 3. **Check:** shown after the learner presses "I've read it": a question that needs the step applied (not recalled). A miss means **repair** (re-teach the step another way, then a new check) before the plan moves on.
 
+- **From LearnHarness** (`prompts\teacher.md`):
+  - *The end of a session* is reached when the goal **feels obviously true** to the learner; Kartotek asks it at the end as a self-report ("Does this now feel obviously true?" yes / not yet), stored with the session, never used as evidence (D14).
+  - *Two principles:* unconditional truths first (facts that can be accepted at face value; universal statements and real definitions are the strongest), and "how could I have discovered this?" (every step motivated by the problem that demands it).
+  - *Socratic or expository per step:* the learner attempts the discovery first where they can plausibly reason there; otherwise the teacher narrates the motivated path.
+  - *Predictions arrive open, checks arrive closed:* the check is shown behind "Check your understanding" after the teaching text, so nothing interrupts reading; a check without teaching before it is a failed check.
+  - *Question principles for checks:* answerable from the session, never parroting, prefer application, built so that each wrong option corresponds to a specific wrong model.
+  - *The map moves:* the plan is a hypothesis; a check that reveals a missing foundation adds it, a held node is pruned, and a repair is never rushed to get back on plan. Every question carries its plan node and its type (predict or check), which is how the map shows the position.
+  - *No narration of the method:* no "Node 3:" chapters, no "now I will establish X".
 - **Data:** `session.steps[] = { node, predict: { q, options?, answer, thinking, confidence_pct, correct }, teach: { md, refs, uncertain: [] }, check: { q, options?, key, answer, thinking, confidence_pct, verdict: "right" | "partly" | "wrong", help: [] }, repairs: n, at }`.
 - **Model request** (teacher): plan and position, the step's node, held nodes, attached units and source text (attached) or the learner's material, the last turns, the learner's prediction/answer with thinking and confidence. **Reply** (one of): `{ phase: "predict", question, options?, why }` · `{ phase: "teach", md, refs, uncertain, next: "check" }` · `{ phase: "check", question, options?, key?, rubric?, why }` · `{ phase: "verdict", verdict, feedback_md, repair: bool }`.
 - **No model:** unavailable.
@@ -219,9 +237,17 @@ One reasoning step per turn, following the plan:
 ### 3.8 Adaptive practice (Evaluating, live Practice, free practice)
 
 - **Packaged:** fills **Evaluating** for the topic: generated problems on the topic's outcomes, one at a time; later problems mix in earlier topics of the same part; skipping stays possible (`deferred_by_user`). **Live:** the Practice phase after teaching. **Free practice:** from the Study library or from selected graph nodes.
-- **Rules for the coach:** writes a problem, solves it and checks its own solution before showing it; difficulty moves along two axes (number of ideas combined, unfamiliarity of the setting) toward problems solved with effort (target: right about four times in five on the first try, decision D6); reads the thinking field to decide whether the problem is solved (a final answer box is optional), otherwise offers the hint ladder; a missed problem returns once in another setting before the run ends.
-- **Data:** `session.problems[] = { id, outcomes, ideas: n, setting: "familiar" | "new", stem, solution, answer?, thinking, confidence_pct, verdict, model_hints, returned_of?, disputed?, generated… }`; packaged Evaluating stores the session id in `progress.evaluating_sessions[k]` and `evaluating[k] = "practised"`.
-- **Model request** (practice coach): outcomes and criteria (attached: units and source text), earlier problems with verdicts and hint levels, the learner's thinking and answer. **Reply:** `{ problem: { stem, solution, answer?, outcomes, ideas, setting } }` or `{ verdict: "solved" | "partly" | "not_yet", feedback_md, offer_hint: bool }`.
+- **Rules for the coach** (adapted from LearnHarness's practice doctrine, `prompts\practice-coach.md`):
+  - *The theory:* practice exercises an idea while it is **inactive**, so only the situation can bring it to mind; a problem's yield is its number of **decision points**; retries land in a fresh setting; targets are **interleaved**, never blocked.
+  - *Difficulty:* aim at about **85 % success per retrieval event** (per decision point, not per problem; D6), at the edge of the band because hints can rescue a stall.
+  - *Three modes in order:* recall → discrimination → composition; a failure in a later mode sends the target back to the earlier one. Templates: reverse (conclusion given, grounds asked), discriminate, probe the premises.
+  - *Selection:* the weakest target first, then the most-served (ideas feeding many chains: for packaged studies, outcomes that are premises of many relations), then the least recently active; the cheapest mode not yet shown; one notch up after a clean solve, hold after a helped solve, one notch down after a miss; two misses in a row on a target switches target.
+  - *Arc:* open warm (one to three easy recall problems), interleaved main body, close by retesting every miss, hint-heavy and given-up problem in a fresh setting.
+  - *Commit before posing:* the coach solves the problem, commits the model solution, tries to break it (a shortcut that skips the target makes it unsound), and only then shows it.
+  - *Reading work:* the learner works in the thinking field; a claimed answer gets a verdict that localises the first break without the correction; a claimed answer is not a reason to move on; the problem ends when it is solved or the learner gives up; after it ends, the learner may ask about it, and the next problem comes only on "Next problem".
+- **Data:** `session.problems[] = { id, targets, mode: "recall" | "discrimination" | "composition", template?, difficulty, setting, statement, model_solution, answer?, submissions: [{ thinking, claimed, verdict, at }], outcome: "solved" | "solved_with_hints" | "moved_on" | "given_up", highest_rung, retest, returned_of?, disputed?, generated… }`; packaged Evaluating stores the session id in `progress.evaluating_sessions[k]` and `evaluating[k] = "practised"`.
+- **Model request** (practice coach): targets with criteria (attached: units and source text), earlier problems with modes, outcomes and rungs, the learner's turn. **Reply:** a new problem, a verdict on a claimed answer, a conclusion (outcome, highest rung, retest), or a reply in the pause.
+- **Left out:** LearnHarness classifies every miss (cue, discrimination, execution, careless, structural). Model error classification is out of scope by the owner's decision, so the coach does not do it.
 - **"Report a problem"** marks a generated problem `disputed` (as package items today).
 - **No model:** Evaluating stays the deferred placeholder; free practice unavailable.
 - **Effects:** never DSR; states: session evidence only (D1); calibration: "Generated questions"; report: "Generated practice: 5 problems, 4 solved without help (not verified)".
@@ -237,6 +263,14 @@ One reasoning step per turn, following the plan:
 
 - **Seeding (no model, at run time):** for every Study v2 package: one **proposition** per outcome (`pkg:<etut>:<LO>`; text = `proposition` or the criteria; origin = package, topic, pages of its units) and one **chain** per relation (`pkg:<etut>:<R>`): conclusion = the outcome that lists the relation (first one), premises = the other outcomes that cover any of the relation's units; when there are no other outcomes the chain is shown as a labelled self-link on the conclusion. Ids stay stable across package versions as long as the package keeps its ids (STUDY-RULES v2.3 step 12 already requires that).
 - **Growth (live):** after a session the graph extractor proposes propositions and chains from the transcript, each linked to the turn it came from and, when it matches, to existing nodes; the learner accepts, edits or rejects each one before anything is stored (`graph.nodes`, `graph.chains`). Accepted live nodes are generated content the learner approved; they stay labelled "from a live session".
+- **From LearnHarness:**
+  - every node has a short **name** (a glossary-style handle shown on the canvas), a precise **statement** (the identity of the node) and **aliases** (other phrasings that were linked to it);
+  - a chain's premises **jointly entail** its conclusion (historical or narrative links are not chains); a chain with several premises is drawn through a small implication node, a single-premise chain as a direct arrow;
+  - the graph holds **true ideas about the world only**, never statements about the learner; a misunderstanding enters as its correction;
+  - **identity**: Kartotek finds up to five candidate records per new idea by text similarity (locally, no model), the extractor decides link or create, the learner confirms; a linked idea adds its wording as an alias;
+  - **coverage**: each session turn is fingerprinted after extraction, so a session is never extracted twice and a later run handles only new turns;
+  - **notes import** (D15): a notes file (or a package's `source.md`) can be run through the same extractor and review.
+- **Kartotek's difference:** LearnHarness removed assessment from its graph; Kartotek keeps the graph records free of assessment too, but the view shows each node's evidence state and memory strength computed from the package evidence and the scheduler (never stored in the graph records).
 - **View:** Study mode, pan and zoom, layout with foundations at the bottom (chain depth), filter by study or exam, search, click-through to the lesson block or session turn. **Each node shows its evidence state** (package nodes: the outcome's state from `KCycle.report`; live nodes: session evidence, D1) **and its memory strength** (package nodes: retrievability of the topic's card from DSR; live nodes: none, because they have no card).
 - **Model request** (graph extractor): transcript (steps, teach texts, checks), existing nodes nearby (by text similarity, computed locally). **Reply:** `{ propositions: [{ text, turn, links: [existing ids], confidence: "clear" | "tentative" }], chains: [{ premises: [ids or new indexes], conclusion, text, turn }] }`.
 - **No model:** the seeded graph and its view work fully; growth from sessions is unavailable.
@@ -248,6 +282,7 @@ One reasoning step per turn, following the plan:
 - **Context sent:** what is on screen: the lesson block (with refs), or the current item **without its key and solution while the attempt is not committed**, or the session turn; plus the question.
 - **Reply:** `{ answer_md, uses: ["U7", "p. 9"], beyond_source: bool, uncertain: bool }`; "beyond source" answers carry a warning.
 - **Data:** `session.side[]` or `progress.side[]` `{ at, context_ref, q, answer, by }`; an attempt open at that moment gets `help: [{ kind: "side_question" }]`.
+- **From LearnHarness:** the helper never solves an open question (no eliminating options, no confirming an answer, no near-identical worked example) but may clarify wording, define terms and give a small nudge; the side exchanges are passed to the teacher or coach with its next request as append-only history, and "the helper explained it" is never taken as "the learner understood it" (`prompts\shared\side-conversations.md`).
 - **No model:** the panel offers "Copy prompt" and the Claude Code link (as the AI buttons today).
 - **Effects:** during an attempt = assisted (like the lesson pane): not DSR, at best `assisted`. Otherwise none.
 
@@ -308,7 +343,7 @@ Everything that works today keeps working. New things that need no model: thinki
 | `side-answerer.md` | fast | context, question | answer, uses, beyond_source, uncertain |
 | `researcher.md` | strong + web search | claim, context, sources | verdict, brief, sources |
 
-They are drafts: the F task that uses one finalises its text, adds `schema:` and raises `version`. They carry `status: draft` in the front matter.
+They are drafts: the F task that uses one finalises its text, adds `schema:` and raises `version`. They carry `status: draft`, the shared fragments they use (`includes:`) and their LearnHarness source (`adapted_from:`) in the front matter. Version 1 was written from the comparison notes only; version 2 adapts LearnHarness's own instructions (section 12). Shared fragments: `prompts\shared\voice.md`, `accuracy.md`, `thinking.md`, `confidence.md`, `side-conversations.md`.
 
 ## 9. Proposed changes to STUDY-RULES.md (not edited yet)
 
@@ -317,7 +352,7 @@ They are drafts: the F task that uses one finalises its text, adds `schema:` and
 3. New v2.1a "Topic mode": `cycle` or `live`; a live topic replaces Learn & digest by an attached live session limited to its units; Applying unchanged.
 4. v2.2 Ground rules: add "Generated during a session" (labelled, unverified, never the scheduler, never a package).
 5. v2.4 Package schema: optional `outcomes[].proposition` and `relations[].premises` / `conclusion` (graph); recommended for new modules, not required by the audit.
-6. v2.5 Items: help in Practice mode adds model hint levels L1–L5; every level is recorded and makes the attempt assisted.
+6. v2.5 Items: help in Practice mode adds model hint rungs R0–R5; every rung is recorded and makes the attempt assisted; a statement repair (rewording what is asked) is recorded but is not help.
 7. v2.8 DSR: confidence is a 0–100 slider; "Sure" = 80–100, "Unsure" = 40–79, "Guess" = 0–39; the table stays the same in bands; generated material never reaches DSR.
 8. v2.9 Explain: the request includes the thinking text (renamed from "working").
 9. v2.11 Audit: a warning (not a blocker) for outcomes without `proposition` only in modules written after the change; nothing for older ones.
@@ -327,13 +362,13 @@ They are drafts: the F task that uses one finalises its text, adds `schema:` and
 
 | Order | Task | Change against the plan |
 | --- | --- | --- |
-| 0 | **E2** (study-time model calls) | Not built yet (E3 came first). Build it before F2: Explain, follow-ups and typed grading share the request plumbing the hint giver and side answerer need. |
-| 1 | **F1** thinking fields, slider, calibration | Drop "editable prompts" (done in E1). Add: the `cv: 3` migration of 2.8 for attempts, the `help` log, the banded + fine calibration views, and the dictation button that points to `Win + H` (D9). |
-| 2 | **F2** hint ladder | As planned, with the L1–L5 levels of 3.4. |
+| 0 | **E2** (study-time model calls) | Not built yet (E3 came first). Build it before F2: Explain, follow-ups and typed grading share the request plumbing the hint giver and side answerer need. Add the shared prompt fragments (`includes:`, D16) here. |
+| 1 | **F1** thinking fields, slider, calibration | Drop "editable prompts" (done in E1). Add: the `cv: 3` migration of 2.8 for attempts, the `help` log, "I don't know" (D13), the banded + fine calibration views, and the dictation button that points to `Win + H` (D9). |
+| 2 | **F2** hint ladder | As planned, with the R0–R5 rungs and the free statement repair of 3.4. |
 | 3 | **F3** probe and plan map | Add: the `sessions` and `graph` containers in the store and the import report (2.4, 2.5, 2.8), and the **seeding module** of 3.10 (no UI), because the packaged plan map and the probe strands need the relations mapped to outcomes. |
 | 4 | **F4** live teaching | As planned; includes the topic mode switch (1.3). |
 | 5 | **F5** adaptive practice + own problem | As planned. |
-| 6 | **F6** graph view and growth | Seeding is already there (F3); F6 is the view, evidence colouring, memory strength, extraction and review. |
+| 6 | **F6** graph view and growth | Seeding is already there (F3); F6 is the view, evidence colouring, memory strength, extraction with identity candidates and coverage, review, and notes import (D15). |
 | 7 | **F7** side questions, researcher | As planned. |
 | 8 | **F8** dictation | Only if D9 = local model; otherwise it shrinks to the F1 button and can be dropped. |
 
@@ -348,10 +383,46 @@ Every task keeps: `npm test`, `npm run smoke` where Electron runs, a migration t
 | D3 | Confidence bands: 0–39 / 40–79 / 80–100? | **Yes.** It keeps "Sure" strict (only high confidence turns a right answer into Good), so the scheduler behaves as before. |
 | D4 | Probe length budget? | **15 questions** at most, stop earlier when every strand is located; you can always stop it. |
 | D5 | A topic skipped after a probe: does it count as complete for opening End, and stay in the final test? | **Yes and yes.** Skipping saves study time; the final test still checks it. |
-| D6 | Target success rate of adaptive practice | **About 80 % on the first try**, with the coach raising difficulty after two clean solves and lowering it after a miss with hint L3+. |
-| D7 | Confidence after a hint | Ask confidence **before** "Ask for a hint" can be pressed is too strict; **record confidence when the answer is committed, plus the highest hint level**; assisted answers stay out of the fine calibration chart. |
+| D6 | Target success rate of adaptive practice | **About 85 % per retrieval event** (per decision point, not per problem), as in LearnHarness: a several-step problem then succeeds as a whole less often, and hints rescue stalls. Changed from the first draft's "80 % per problem". |
+| D7 | Confidence after a hint | Asking confidence **before** "Ask for a hint" can be pressed is too strict; **record confidence when the answer is committed, plus the highest hint rung**; assisted answers stay out of the fine calibration chart. |
 | D8 | Researcher's search | **Only the configured provider's web search** (Anthropic) at first; no separate search key until you need it. |
 | D9 | Dictation | **Windows voice typing (`Win + H`) now**, with a button that focuses the field and shows the shortcut; a local model in F8 only if you dictate daily. |
 | D10 | Where the graph lives in the sidebar | **Study mode, next to Mind maps** in the "AI Mind Mapping Assistant" group, renamed "Maps" with two entries (Mind maps, Knowledge graph). |
 | D11 | Live session cost guard | Show an estimate before a session and **stop at the monthly budget** like other API calls (already built); a per-session cap only if you want one. |
 | D12 | Live sessions for exam topics (CEnT-S, TU Delft) | **Allowed only attached to the topic's study** (grounded in its extract); free sessions on exam topics would lose the source check. |
+| D13 | "I don't know" (from LearnHarness) | **Add it everywhere confidence is asked.** On a verified package item it counts as not correct and is DSR-eligible as Again without the misconception flag (honest evidence of not knowing); on lesson tests it keeps today's score 0; excluded from confidence calibration. |
+| D14 | End of a live session (from LearnHarness: "the goal feels obviously true") | **Ask it as a self-report at the end** (yes / not yet), shown in the session and the graph review, never used as evidence; "not yet" offers to continue or plan another session. |
+| D15 | Notes import into the graph (from LearnHarness) | **Yes, in F6:** a notes file or a package's `source.md` runs through the extractor and the same review; nothing is stored without your decision. |
+| D16 | Shared prompt fragments (from LearnHarness's prompt composition) | **Build `includes:` composition with E2**, so voice, accuracy, thinking and confidence rules are written once and every agent uses the same text; each fragment editable on its own. |
+| D17 | Things LearnHarness has that this protocol leaves out (section 12) | **Leave out for now:** miss classification and demos (your earlier decision), mid-turn steering, the plugin system, the cloud dictation default. Reconsider steering after F4 if live sessions feel slow. |
+
+## 12. LearnHarness review (2026-11-16, after the licence decision)
+
+Read: LearnHarness 0.6.0 from the owner's zip: `docs/teaching-methodology.md`, the agent prompts (`src/agent/system-prompt.md`, `src/agent/prompts/{prober,teacher,practice,side-chat,shared}/*`), the graph contracts and extraction pipeline (`src/core/contracts/graph.ts`, `src/agent/subagents/extraction.ts`), the probe contract (`src/core/contracts/probe.ts`), the practice tool (`src/agent/tools/practice.ts`), the researcher (`src/agent/subagents/researcher.ts`) and the dictation module (`src/core/dictation.ts`). What follows is the verdict on each part: taken (adapted to Kartotek), changed, or left out.
+
+| LearnHarness part | Verdict | How it lands in Kartotek |
+| --- | --- | --- |
+| Teaching theory: "held = obviously true", the goal feeling obviously true, the click, knowledge as structure | **Taken** | Teacher prompt; session end self-report (D14) |
+| Minimal tree; foundations as unconditional truths; "how could I have discovered this?" | **Taken** | Planner and teacher prompts (3.6, 3.7) |
+| Probe doctrine: goal first, strands, bracketing, enter near the top, strands inform each other | **Taken** | Prober prompt (3.5); Kartotek adds a question budget and grading in code |
+| Plan as a coarse map, rewritten when teaching reveals gaps; every question tagged with node and type | **Taken** | 3.6, 3.7; Kartotek checks the map for cycles and unknown units |
+| Predict → teach → check; checks behind "Check your understanding"; question principles | **Taken** | Teacher prompt; UI rule in F4 |
+| Thinking fields as primary data, including thinking while reading | **Taken** (was already in the first draft) | `prompts\shared\thinking.md` |
+| Confidence as probability, chance level, "I don't know" | **Taken** | 2.2, `prompts\shared\confidence.md`, D13 |
+| Practice theory: inactivity, decision points, 85 % per retrieval event, interleaving, three modes, templates, selection rules, arc with retests, commit before posing, pause after a problem | **Taken** | Practice coach prompt, 3.8, D6 |
+| Hint ladder R0–R5, first failing question, verification nudge, free statement repair, rung as difficulty readout | **Taken** | Hint giver prompt, 3.4 (replaces the first draft's L1–L5) |
+| Miss classification (cue, discrimination, execution, careless, structural) | **Left out** | The owner ruled model error classification out of scope |
+| Voice rules (no praise, no agreement bias, dry register) and accuracy rules (verify on doubt, say uncertainty out loud) | **Taken** | `prompts\shared\voice.md`, `accuracy.md`; Kartotek adds the package as the authority and "never claim mastery" |
+| Side chat: never solves an open question; exchanges forwarded to the main agent | **Taken** | Side answerer prompt, 3.11 |
+| Graph: name / statement / aliases, jointly-entailing chains, implication nodes, true ideas only, extractor + identity audit, coverage fingerprints, notes import | **Taken**, simplified | 3.10: the identity decision is folded into the extractor (Kartotek computes candidates locally) and the learner reviews everything, instead of a separate auditor model run |
+| Graph without assessment | **Changed** | Records stay assessment-free, but the view shows evidence state and memory strength from Kartotek's evidence and scheduler |
+| Researcher: facets, varied queries, authoritative sources, brief with findings and sources | **Taken** | Researcher prompt, 3.12; only with a provider that has web search (D8) |
+| Prompt composition: base + agent fragments + shared fragments, per-fragment overrides | **Taken** | `includes:` (3.3, D16) |
+| Agent loop with tools (probe, plan_init, quiz, problem, conclude) | **Changed** | Kartotek uses one structured JSON reply per call through its model layer; the same roles are fields of the reply (phase, node, type, outcome) |
+| Dictation through Deepgram (cloud, key) | **Changed** | Windows voice typing first, local model as the alternative (D9); a cloud service with a key stays option (c) |
+| Interactive demos, visual maker, SVG annotation | **Left out** | Owner decision (demos); Kartotek's packages already have `svg` and `anim` blocks |
+| Plugins (flashcards, code questions, drawing pad) | **Left out for now** | Kartotek has its own scheduler and mind maps; no plugin system planned |
+| Mid-turn steering and abort | **Left out for now** | Reconsider after F4 (D17) |
+| Context compaction for long sessions | **Noted for F4** | Long live sessions send the plan, the held nodes and the last turns, not the whole transcript; LearnHarness's compaction is a reference if that is not enough |
+
+What LearnHarness does not have and Kartotek keeps: the audited package and source ledger, verified items, strict DSR eligibility, the delayed final test and the outcome report, exam preparation, lesson tests and mock exams, mind maps from photos, and the evidence shown on graph nodes.

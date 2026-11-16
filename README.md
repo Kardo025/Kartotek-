@@ -86,7 +86,7 @@ Studies, tests, mock exams and mind-map readings are written by Claude Code from
 
 ## Licences
 
-- Code: MIT, see `LICENSE`.
+- Code: GNU Affero General Public License v3.0 only (AGPL-3.0-only), see `LICENSE`. Kartotek adapts ideas and prompt texts from LearnHarness by Amos Blomqvist (AGPL-3.0-only); every adapted file names its source. If you run a changed copy as a network service, the AGPL asks you to offer its source to its users.
 - Documentation and samples: CC BY 4.0, see `LICENSE-CONTENT.md`.
 - Third-party software and the Inter font inside the built files: see `THIRD-PARTY-NOTICES.md`.
 

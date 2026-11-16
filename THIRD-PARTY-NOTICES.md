@@ -1,6 +1,6 @@
 # Third-party notices
 
-Kartotek itself is released under the MIT licence (see LICENSE). The built files `src/ui.js`, `src/ui.css` and the page `Kartotek-DSR.html` that build.ps1 writes contain the third-party software and fonts listed here. Their licence texts follow, as their licences require. The same notice is repeated in a banner at the top of `src/ui.js` and `src/ui.css`.
+Kartotek itself is released under the GNU Affero General Public License v3.0 only (AGPL-3.0-only, see LICENSE). The built files `src/ui.js`, `src/ui.css` and the page `Kartotek-DSR.html` that build.ps1 writes contain the third-party software and fonts listed here. Their licence texts follow, as their licences require. The same notice is repeated in a banner at the top of `src/ui.js` and `src/ui.css`.
 
 Versions are the ones locked in `ui/package-lock.json` when this file was written.
 
@@ -50,6 +50,10 @@ The writing jobs (task E3) read PDF files in the desktop app's main process with
 | --- | --- | --- |
 | pdf.js (pdfjs-dist) | 6.5.438 | Apache-2.0 |
 | @napi-rs/canvas (with its Windows binary @napi-rs/canvas-win32-x64-msvc) | 1.1.1 | MIT; the binary contains Google Skia (BSD-3-Clause) and Chromium's broken-image icon (BSD-3-Clause), whose notices are in the package's LICENSE file reproduced below |
+
+## LearnHarness (adapted ideas and prompt texts)
+
+Kartotek adapts teaching method, agent instructions and design ideas from LearnHarness 0.6.0 (https://github.com/amosblomqvist/learnharness), Copyright (c) Amos Blomqvist, licensed under the GNU Affero General Public License v3.0 only. The adapted files are the agent prompts in `prompts\` and `prompts\shared\` that name LearnHarness in their front matter (`adapted_from`), and the design notes in `docs\LEARNING-PROTOCOL.md` section 12. The licence text is Kartotek's own `LICENSE` (the same AGPL v3 text). No LearnHarness program code is included.
 
 ## stageshow
 

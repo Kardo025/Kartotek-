@@ -4,8 +4,8 @@ const fs = require("fs");
 const path = require("path");
 
 const banners = {
-  "ui.js": "/*! Kartotek UI bundle. Kartotek: MIT licence. Bundled: React, React DOM, scheduler, Motion (framer-motion), Phosphor Icons (all MIT) and a trimmed copy of the stageshow kit (MIT, Benji Taylor). Licence texts and copyright lines: THIRD-PARTY-NOTICES.md in the repository. */\n",
-  "ui.css": "/*! Kartotek UI styles. Kartotek: MIT licence. Includes Tailwind CSS (MIT) output and the Inter Variable font (SIL Open Font License 1.1, Copyright The Inter Project Authors). Licence texts and copyright lines: THIRD-PARTY-NOTICES.md in the repository. */\n",
+  "ui.js": "/*! Kartotek UI bundle. Kartotek: GNU AGPL v3 (AGPL-3.0-only). Bundled: React, React DOM, scheduler, Motion (framer-motion), Phosphor Icons (all MIT) and a trimmed copy of the stageshow kit (MIT, Benji Taylor). Licence texts and copyright lines: THIRD-PARTY-NOTICES.md in the repository. */\n",
+  "ui.css": "/*! Kartotek UI styles. Kartotek: GNU AGPL v3 (AGPL-3.0-only). Includes Tailwind CSS (MIT) output and the Inter Variable font (SIL Open Font License 1.1, Copyright The Inter Project Authors). Licence texts and copyright lines: THIRD-PARTY-NOTICES.md in the repository. */\n",
 };
 
 function copy() {
