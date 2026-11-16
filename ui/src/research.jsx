@@ -17,9 +17,15 @@ export function refreshResearchStatus() {
   if (!RJ()) { statusCache = { mode: null }; return Promise.resolve(statusCache); }
   return RJ().status().then((r) => { statusCache = r && r.ok ? r.value : { mode: null }; statusWaiters.forEach((f) => f(statusCache)); return statusCache; });
 }
+// Read again on every mount and when the window gets focus, so a key saved in another window (or a slot changed) shows without a restart
+let focusHooked = false;
 export function useResearchStatus() {
   const [st, setSt] = useState(statusCache);
-  useEffect(() => { statusWaiters.push(setSt); if (!statusCache) refreshResearchStatus(); return () => { statusWaiters = statusWaiters.filter((f) => f !== setSt); }; }, []);
+  useEffect(() => {
+    statusWaiters.push(setSt); refreshResearchStatus();
+    if (!focusHooked && typeof window !== "undefined") { focusHooked = true; window.addEventListener("focus", () => { refreshResearchStatus(); }); }
+    return () => { statusWaiters = statusWaiters.filter((f) => f !== setSt); };
+  }, []);
   return st || { mode: null };
 }
 

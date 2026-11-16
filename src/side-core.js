@@ -78,6 +78,21 @@
   }
 
   // Values for prompts\side-answerer.md
+  // The first sentence of a Markdown text that states something, as the default claim of "Check this": headings, rules, code, list
+  // marks, emphasis and links are dropped (a heading such as "# What is X?" is not a claim)
+  function firstClaim(md) {
+    var lines = String(md || '').replace(/```[\s\S]*?```/g, ' ').split(/\n/), out = [];
+    for (var i = 0; i < lines.length; i++) {
+      var l = lines[i].trim();
+      if (!l || /^#{1,6}\s/.test(l) || /^([-*_]\s*){3,}$/.test(l) || /^\|/.test(l) || /^>/.test(l) && !out.length && /\?\s*$/.test(l)) { if (out.length) break; continue; }
+      l = l.replace(/^([-*+]|\d+[.)])\s+/, '').replace(/!?\[([^\]]*)\]\([^)]*\)/g, '$1').replace(/[*_`]+/g, '').replace(/^>\s*/, '');
+      out.push(l);
+      var joined = out.join(' '), m = joined.match(/^.*?[.!](?=\s|$)/);
+      if (m && m[0].length >= 20) return m[0].slice(0, 400);
+    }
+    return out.join(' ').slice(0, 400);
+  }
+
   function askInputs(ctx, question, history) {
     var h = (history || []).slice(-3).map(function (x) { return 'Q: ' + clip(x.q, 300) + '\nA: ' + clip(x.answer, 600); }).join('\n');
     return { context: ctx.text + (ctx.open ? '\n\n(This question or problem is still open: its answer and solution are hidden on purpose.)' : '') + (h ? '\n\nEarlier side questions here:\n' + h : ''), question: clip(question, 1200) };
@@ -136,7 +151,7 @@
 
   global.KSide = {
     lessonContext: lessonContext, itemContext: itemContext, liveContext: liveContext, practiceContext: practiceContext,
-    askInputs: askInputs, checkAnswer: checkAnswer, record: record,
+    askInputs: askInputs, checkAnswer: checkAnswer, record: record, firstClaim: firstClaim,
     researchOf: researchOf, newRequest: newRequest, requestsFor: requestsFor, applyJob: applyJob
   };
 })(typeof window !== 'undefined' ? window : this);

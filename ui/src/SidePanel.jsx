@@ -53,7 +53,7 @@ export default function SidePanel({ ctx, list, save, onOpen, helpNote }) {
               {e.uses.length > 0 && <div className="sp-uses">{e.uses.map((u) => <span key={u}>{u}</span>)}</div>}
               {e.beyond_source && <p className="k-small k-lvl" data-l="warn"><Warning size={12} aria-hidden="true" /> Goes beyond what is on screen.</p>}
               {e.uncertain && <p className="k-small k-lvl" data-l="warn"><Warning size={12} aria-hidden="true" /> The helper is not sure about this.</p>}
-              {(e.beyond_source || e.uncertain) && <CheckThis claim={e.answer.slice(0, 400)} context={"Side answer to: " + e.q} target={{ kind: "side", id: e.id }} editable compact />}
+              {(e.beyond_source || e.uncertain) && <CheckThis claim={window.KSide.firstClaim(e.answer)} context={"Side answer to: " + e.q} target={{ kind: "side", id: e.id }} editable compact />}
               {e.by && e.by.model && <p className="k-small k-muted">{byLine({ provider: e.by.provider, model: e.by.model })}</p>}
             </div>
           </li>

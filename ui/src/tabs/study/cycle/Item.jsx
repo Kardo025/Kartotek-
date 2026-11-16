@@ -145,7 +145,7 @@ export default function Item({ et, item, attempt, held, onNext, nextLabel, part 
           {(explanation.refs || []).length > 0 && <p className="k-small k-muted">Sources: {explanation.refs.join(" · ")}</p>}
           {(explanation.next_steps || []).length > 0 && <ul className="k-small k-muted">{explanation.next_steps.map((s, j) => <li key={j}>{s}</li>)}</ul>}
           {!explanation.from_file && explanation.by && <p className="k-small k-muted mc-by">Written by {byLine(explanation.by)}. Reading it does not count as recall.</p>}
-          <CheckThis claim={String(explanation.md || "").split(/(?<=[.!?])\s/)[0].slice(0, 400)} context={explanation.md} sources={(explanation.refs || []).join(", ")} target={{ kind: "explanation", etut_id: et.etut_id, attempt: attempt.id, n: explanation.n == null ? i : explanation.n }} editable />
+          <CheckThis claim={window.KSide.firstClaim(explanation.md)} context={explanation.md} sources={(explanation.refs || []).join(", ")} target={{ kind: "explanation", etut_id: et.etut_id, attempt: attempt.id, n: explanation.n == null ? i : explanation.n }} editable />
         </section>
       ))}
 

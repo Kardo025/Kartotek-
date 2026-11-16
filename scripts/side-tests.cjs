@@ -111,6 +111,11 @@ async function sideTests() {
       assert.strictEqual(calls[0].schema.required.indexOf('answer_md') >= 0, true);
       assert.ok(KS.checkAnswer(ctx, { answer_md: 'word '.repeat(300) }).length === 1, 'a long answer is refused');
     });
+    await t(ok, 'the default claim of "Check this" is the first sentence that states something, never a heading', () => {
+      assert.strictEqual(KS.firstClaim('# What are VIH and VIL?\n\n- **VIH** is the *minimum* input voltage read as a logical **1**.  \n- VIL is the max.'), 'VIH is the minimum input voltage read as a logical 1.');
+      assert.strictEqual(KS.firstClaim('A NAND gate is universal. Any function can be built.'), 'A NAND gate is universal.');
+      assert.strictEqual(KS.firstClaim('## Only a heading?'), '');
+    });
     await t(ok, 'live and practice contexts hide an unanswered check and an open problem\'s solution', () => {
       const s = { id: 'ls-x', title: 'T', steps: [] };
       const st = { n: 1, predict: { stem: 'P?' }, teach: [{ md: 'Teach.', refs: [] }], check: [{ stem: 'C?', options: [{ id: 'a', text: 'x' }], key: 'a', read_at: NOW, answer: null }] };
@@ -216,6 +221,16 @@ async function researchTests() {
       eq(await checkLink('https://nohead.example/', { fetch: f }), { ok: true, status: 200 });
       assert.strictEqual((await checkLink('https://dead.example/', { fetch: f })).ok, false);
       assert.strictEqual((await checkLink('javascript:alert(1)', { fetch: f })).ok, false);
+    });
+    await t(ok, 'a refused search key says why: Brave\'s 422 SUBSCRIPTION_TOKEN_INVALID is a key problem, its detail shown, the key never in the message', async () => {
+      const d = mk(), { S } = await service(d, () => ({}));
+      await S.setSearchKey('brave-wrong-key-123');
+      const f422 = async () => ({ ok: false, status: 422, json: async () => ({ error: { code: 'SUBSCRIPTION_TOKEN_INVALID', detail: 'The provided subscription token is invalid.' } }) });
+      let err = null; try { await S.search('noise margin', { fetch: f422 }); } catch (e) { err = e; }
+      assert.ok(err && err.code === 'auth' && /422 SUBSCRIPTION_TOKEN_INVALID/.test(err.message) && /token is invalid/.test(err.message) && !err.message.includes('brave-wrong-key-123'), err && err.message);
+      const f500 = async () => ({ ok: false, status: 500, json: async () => { throw new Error('no body'); } });
+      err = null; try { await S.search('noise margin', { fetch: f500 }); } catch (e) { err = e; }
+      assert.ok(err && err.code === 'provider' && /answered 500/.test(err.message), err && err.message);
     });
   } finally { w.close(); dirs.forEach(rm); }
   return ok;

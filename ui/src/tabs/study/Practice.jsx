@@ -185,7 +185,7 @@ function Ended({ s, p, ph, save }) {
           <summary className="k-small">The coach's solution (generated, not verified)</summary>
           <Md src={p.model_solution} className="st-md" />
           {p.answer && <p className="k-small"><b>Answer:</b> {p.answer}</p>}
-          <CheckThis claim={String(p.model_solution || "").split(/(?<=[.!?])\s/)[0].slice(0, 400)} context={p.statement + "\n" + p.model_solution} target={{ kind: "practice", session: s.id, problem: p.id }} editable />
+          <CheckThis claim={window.KSide.firstClaim(p.model_solution)} context={p.statement + "\n" + p.model_solution} target={{ kind: "practice", session: s.id, problem: p.id }} editable />
         </details>
       )}
       {p.by && p.by.model && <p className="k-small k-muted">Written by {byLine({ provider: p.by.provider, model: p.by.model, cost_kind: p.by.cost_kind })}{p.check && p.check.changed ? "; its own check corrected the first solution" : ""}.</p>}

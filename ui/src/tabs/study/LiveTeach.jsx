@@ -108,7 +108,7 @@ function CurrentStep({ s, st, ph, pkg, save }) {
           <Html className="st-md lt-md" html={renderMd(t.md)} />
           <Refs refs={t.refs} pkg={pkg} />
           <Unsure s={s} st={st} t={t} idx={st.teach.length - 1} save={save} />
-          <CheckThis claim={String(t.md || "").split(/(?<=[.!?])\s/)[0].slice(0, 400)} context={t.md} sources={(t.refs || []).join(", ")} target={{ kind: "live", session: s.id, step: st.n, teach: st.teach.length - 1 }} editable />
+          <CheckThis claim={window.KSide.firstClaim(t.md)} context={t.md} sources={(t.refs || []).join(", ")} target={{ kind: "live", session: s.id, step: st.n, teach: st.teach.length - 1 }} editable />
           {ph === "read" && <div className="cy-actions"><Btn kind="primary" onClick={() => { KL().markRead(s, Date.now()); save(); }}>I've read it: check my understanding<ArrowRight size={16} weight="bold" aria-hidden="true" /></Btn></div>}
         </div>
       )}

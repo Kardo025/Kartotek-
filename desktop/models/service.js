@@ -457,9 +457,14 @@ function createModelService(opts) {
     try {
       res = await doFetch('https://api.search.brave.com/res/v1/web/search?count=6&q=' + encodeURIComponent(q), { headers: { Accept: 'application/json', 'X-Subscription-Token': key } });
     } catch (e) { throw new ModelError('network', 'Kartotek could not reach the search service.'); }
-    if (res.status === 401 || res.status === 403) throw new ModelError('auth', 'The search service refused the key (' + res.status + ').');
-    if (res.status === 429) throw new ModelError('rate-limit', 'The search service limit was reached. Try again later.');
-    if (!res.ok) throw new ModelError('provider', 'The search service answered ' + res.status + '.');
+    if (!res.ok) {
+      // Brave sends {error: {code, detail}}; an invalid or inactive key comes back as 422 SUBSCRIPTION_TOKEN_INVALID
+      let code = '', detail = '';
+      try { const e = ((await res.json()) || {}).error || {}; code = String(e.code || ''); detail = String(e.detail || '').slice(0, 200); } catch (e) { /* no body */ }
+      if (res.status === 401 || res.status === 403 || /TOKEN|SUBSCRIPTION|PLAN/i.test(code)) throw new ModelError('auth', 'The search service refused the key (' + res.status + (code ? ' ' + code : '') + ')' + (detail ? ': ' + detail : '.'));
+      if (res.status === 429) throw new ModelError('rate-limit', 'The search service limit was reached. Try again later.');
+      throw new ModelError('provider', 'The search service answered ' + res.status + (code ? ' ' + code : '') + (detail ? ': ' + detail : '.'));
+    }
     const j = await res.json();
     return (((j || {}).web || {}).results || []).slice(0, 6).map((r) => ({ title: String(r.title || '').slice(0, 200), url: String(r.url || ''), snippet: String(r.description || '').replace(/<[^>]+>/g, '').slice(0, 400) }))
       .filter((r) => /^https?:\/\//.test(r.url));
