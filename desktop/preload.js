@@ -70,6 +70,12 @@ contextBridge.exposeInMainWorld('kartotek', Object.freeze({
     test: (callId, id, model, onEvent) => withEvents(callId, onEvent, () => ipcRenderer.invoke('models:test', callId, id, model)),
     cancel: (callId) => ipcRenderer.invoke('models:cancel', callId),
   }),
+  // The researcher's web search (task F7): status and the search key (the key goes in, never comes back)
+  research: Object.freeze({
+    status: () => ipcRenderer.invoke('research:status'),
+    setKey: (key) => ipcRenderer.invoke('research:setKey', key),
+    clearKey: () => ipcRenderer.invoke('research:clearKey'),
+  }),
   // Live sessions on the learner's own files (task F4): read picked files (tokens) for a session; get the cached text back
   live: Object.freeze({
     readFiles: (sessionId, tokens) => ipcRenderer.invoke('live:readFiles', sessionId, tokens),

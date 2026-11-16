@@ -7,6 +7,8 @@ import { Md, Html, Chip, Scale, Blocks } from "../common.jsx";
 import { AskPair } from "../../Cents.jsx";
 import ModelHint from "../../ModelHint.jsx";
 import { useModelReady, useModelCall, CallStatus, CopyPromptBtn, RequestPreview, byLine } from "../../../model-call.jsx";
+import SidePanel from "../../../SidePanel.jsx";
+import { CheckThis } from "../../../research.jsx";
 import ConfidenceSlider from "../ConfidenceSlider.jsx";
 import Thinking from "../Thinking.jsx";
 import { A, KC, KE, EU, extrasOf, save, sendAttempt, refsText, criterionText, LETTERS, RATINGS } from "./lib.js";
@@ -70,6 +72,8 @@ export default function Item({ et, item, attempt, held, onNext, nextLabel, part 
 
   return (
     <article className="k-panel cy-item" data-held={held ? "1" : undefined}>
+      {practice && !held && <SidePanel ctx={window.KSide.itemContext(pkg, item, attempt)} list={et.progress.side || (et.progress.side = [])} save={() => save(et)} onOpen={() => help("side")}
+        helpNote={committed ? "" : "Opening this counts as help for this question, like opening the lesson."} />}
       <ItemHead item={item} attempt={attempt} pkg={pkg} />
       <Md src={item.stem} className="cy-stem" />
       <Figure fig={item.figure} />
@@ -141,6 +145,7 @@ export default function Item({ et, item, attempt, held, onNext, nextLabel, part 
           {(explanation.refs || []).length > 0 && <p className="k-small k-muted">Sources: {explanation.refs.join(" · ")}</p>}
           {(explanation.next_steps || []).length > 0 && <ul className="k-small k-muted">{explanation.next_steps.map((s, j) => <li key={j}>{s}</li>)}</ul>}
           {!explanation.from_file && explanation.by && <p className="k-small k-muted mc-by">Written by {byLine(explanation.by)}. Reading it does not count as recall.</p>}
+          <CheckThis claim={window.KSide.firstClaim(explanation.md)} context={explanation.md} sources={(explanation.refs || []).join(", ")} target={{ kind: "explanation", etut_id: et.etut_id, attempt: attempt.id, n: explanation.n == null ? i : explanation.n }} editable />
         </section>
       ))}
 

@@ -431,6 +431,13 @@ What LearnHarness does not have and Kartotek keeps: the audited package and sour
 
 ## 13. As built
 
+### F7: side questions and the researcher (2026-11-20)
+
+Built as 3.11 and 3.12 say, with these choices inside them (code: `src\side-core.js`, `desktop\jobs\research.js`; details in `docs\ARCHITECTURE.md` 10.0n):
+- **Side questions** on Learn & digest, Applying (Practice mode), live and practice screens; never in "Check without help" or the final test. The context is what is on screen; an open item, check or problem goes without its key or solution. Opening the panel during an open attempt is help exactly like the lesson pane (assisted, not DSR-eligible). Answers are brief, cite only what was on screen, and never change the main flow.
+- **Researcher:** owner decision with this task (2026-11-20): besides the configured provider's web search (D8), a search key set in Settings may be used (Brave Search API). Without either, every "Check this" is hidden. Every brief shows its sources, each opened from the PC and marked as answering or not; a brief without sources is not a verdict.
+- **Hooks:** the live teacher's and the practice coach's unsure claims, content writing ("Check a fact in this draft"), and a manual "Check this" on explanations (Explain, live teaching, practice solutions, side answers). Briefs never change a package, the scheduler or an evidence state.
+
 ### F6: knowledge graph (2026-11-19)
 
 Built as 3.10 says, with these choices inside it (code: `src\graph-core.js`; details in `docs\ARCHITECTURE.md` 10.0m):

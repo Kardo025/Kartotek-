@@ -102,6 +102,7 @@ function runDesktopTests() {
   try { (await require('./live-tests.cjs').run()).forEach((l) => console.log(l)); } catch (err) { console.log('FAIL  live teaching tests: ' + (err && err.stack || err)); code = 1; }
   try { (await require('./practice-tests.cjs').run()).forEach((l) => console.log(l)); } catch (err) { console.log('FAIL  practice tests: ' + (err && err.stack || err)); code = 1; }
   try { (await require('./graph-tests.cjs').run()).forEach((l) => console.log(l)); } catch (err) { console.log('FAIL  knowledge graph tests: ' + (err && err.stack || err)); code = 1; }
+  try { (await require('./side-tests.cjs').run()).forEach((l) => console.log(l)); } catch (err) { console.log('FAIL  side question and researcher tests: ' + (err && err.stack || err)); code = 1; }
   try { const k = await require('./euro-tests.cjs').run(); console.log('Euro apply connection and Planning timeline tests: ' + k + '/' + k + ' passed'); } catch (err) { console.log('FAIL  euro apply tests: ' + (err && err.stack || err)); code = 1; }
   try { if (!(await require('./job-tests.cjs').main())) code = 1; } catch (err) { console.log('FAIL  writing job tests: ' + (err && err.stack || err)); code = 1; }
   process.exit(code);

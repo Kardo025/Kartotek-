@@ -83,7 +83,8 @@ const models = createModelService({
 const jobEvents = []; let eventSeq = 0;
 const jobs = createJobService({
   dir: profile, models, prompts, checks: createChecks(SRC), extract: require('../desktop/jobs/extract'),
-  pipelines: { study: require('../desktop/jobs/study'), lesson: require('../desktop/jobs/lesson'), mock: require('../desktop/jobs/mock'), 'mind-read': require('../desktop/jobs/mind').read, 'mind-coach': require('../desktop/jobs/mind').coach },
+  pipelines: { study: require('../desktop/jobs/study'), lesson: require('../desktop/jobs/lesson'), mock: require('../desktop/jobs/mock'), 'mind-read': require('../desktop/jobs/mind').read, 'mind-coach': require('../desktop/jobs/mind').coach, research: require('../desktop/jobs/research') },
+  research: { status: () => models.searchStatus(), search: (q) => models.search(q), checkLink: (u) => require('../desktop/links').checkLink(u) },
   content: { dir: () => content.resolveContentDir({ settings: {}, env: process.env, dev: true, repoRoot: root }).dir },
   files: { rules: (n) => fs.readFileSync(path.join(root, path.basename(n)), 'utf8') },
   emit: (ev) => { jobEvents.push({ seq: ++eventSeq, ev }); if (jobEvents.length > 500) jobEvents.splice(0, jobEvents.length - 500); },
@@ -130,15 +131,25 @@ RPC['jobs.remove'] = wrap((id) => jobs.remove(String(id)));
 const liveFiles = require('../desktop/live').createLiveFiles({ dir: profile, extract: require('../desktop/jobs/extract') });
 RPC['live.readFiles'] = wrap((sid, tokens) => liveFiles.read(String(sid), (tokens || []).map((t) => { const p = picked.get(String(t)); if (!p) throw new Error('Choose the file again.'); return p; })));
 RPC['live.material'] = wrap((sid) => liveFiles.get(String(sid)));
+RPC['research.status'] = wrap(() => models.searchStatus());
+RPC['research.setKey'] = wrap(async (k) => { try { const st = await models.setSearchKey(String(k || '')); console.log('research: search key saved (' + new Date().toLocaleTimeString() + ')'); return st; } catch (e) { console.log('research: saving the search key failed: ' + (e && e.message)); throw e; } });
+RPC['research.clearKey'] = wrap(() => models.clearSearchKey());
 RPC['jobs.openFolder'] = wrap(async () => { throw new Error('Not available in the preview. Profile: ' + profile); });
 RPC['jobs.events'] = async (since) => ({ ok: true, value: { next: eventSeq, events: jobEvents.filter((x) => x.seq > (Number(since) || 0)).map((x) => x.ev) } });
 // Only this page may call the bridge: every call carries a token that the page gets with the shim
-const RPC_TOKEN = crypto.randomBytes(16).toString('hex');
+// Kept in the preview profile, so a page that stays open across a restart of the preview keeps working
+const RPC_TOKEN = (() => {
+  const f = path.join(profile, 'preview-token');
+  try { const t = fs.readFileSync(f, 'utf8').trim(); if (/^[0-9a-f]{32}$/.test(t)) return t; } catch (e) { /* first start */ }
+  const t = crypto.randomBytes(16).toString('hex');
+  try { fs.writeFileSync(f, t); } catch (e) { /* the token then lasts for this run only */ }
+  return t;
+})();
 
 const SHIM = `/* bridge-preview: stand-in for desktop/preload.js */
 (function () {
   function call(fn) { return function () { var args = Array.prototype.slice.call(arguments);
-    return fetch('/__rpc', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Kartotek-Token': '${RPC_TOKEN}' }, body: JSON.stringify({ fn: fn, args: args }) }).then(function (r) { return r.json(); }); }; }
+    return fetch('/__rpc', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Kartotek-Token': '${RPC_TOKEN}' }, body: JSON.stringify({ fn: fn, args: args }) }).then(function (r) { if (r.status === 403) return { ok: false, error: 'The preview refused this page (it was opened before the preview restarted). Reload the page.' }; return r.json(); }, function () { return { ok: false, error: 'The preview is not running.' }; }); }; }
   var api = { app: { info: call('app.info') },
     content: { load: call('content.load'), chooseFolder: call('content.chooseFolder'), openFolder: call('content.openFolder'), onChanged: function () { return function () {}; } },
     data: { onFlushRequest: function () { return function () {}; } } };
@@ -151,6 +162,7 @@ const SHIM = `/* bridge-preview: stand-in for desktop/preload.js */
   api.prompts = {}; ['list', 'get', 'saveOverride', 'resetOverride', 'render'].forEach(function (n) { api.prompts[n] = call('prompts.' + n); });
   api.jobs = {}; ['pickFiles', 'list', 'get', 'create', 'start', 'pause', 'skipFixes', 'remove', 'openFolder'].forEach(function (n) { api.jobs[n] = call('jobs.' + n); });
   api.live = { readFiles: call('live.readFiles'), material: call('live.material') };
+  api.research = { status: call('research.status'), setKey: call('research.setKey'), clearKey: call('research.clearKey') };
   var ev = call('jobs.events'), cursor = 0, listeners = [];
   setInterval(function () {
     if (!listeners.length) return;
@@ -166,7 +178,7 @@ http.createServer(async (req, res) => {
     if (req.method === 'POST' && url.pathname === '/__rpc') {
       let body = '';
       for await (const chunk of req) body += chunk;
-      if (req.headers['x-kartotek-token'] !== RPC_TOKEN) { res.writeHead(403); res.end('forbidden'); return; }
+      if (req.headers['x-kartotek-token'] !== RPC_TOKEN) { console.log('refused a call from a page opened before this preview started (reload that page)'); res.writeHead(403); res.end('forbidden'); return; }
       const { fn, args } = JSON.parse(body);
       const out = RPC[fn] ? await RPC[fn](...(args || [])) : { ok: false, error: 'unknown call ' + fn };
       res.writeHead(200, { 'Content-Type': 'application/json' });

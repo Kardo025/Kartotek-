@@ -12,6 +12,8 @@ import ConfidenceSlider from "./ConfidenceSlider.jsx";
 import { useModelReady, useModelCall, CallStatus, NoModelNote, byLine } from "../../model-call.jsx";
 import { EASE, DUR } from "../../motion.jsx";
 import "./probe.css";
+import SidePanel from "../../SidePanel.jsx";
+import { CheckThis } from "../../research.jsx";
 
 const KPr = () => window.KPractice;
 const KC = () => window.KCycle;
@@ -73,6 +75,7 @@ export function PracticeRun({ s, pkg, commit, onComplete, completeLabel }) {
       {ph === "complete" && <Complete s={s} onComplete={onComplete} label={completeLabel} />}
       {ph === "done" && <p className="k-small">This practice run is finished: {summaryLine(sum)}</p>}
       {(ph === "between" || ph === "write" || ph === "complete") && s.status === "practice" && <OwnProblem s={s} save={save} />}
+      <SidePanel ctx={window.KSide.practiceContext(s, p)} list={s.side || (s.side = [])} save={save} />
     </section>
   );
 }
@@ -101,6 +104,10 @@ function ProblemView({ s, p, ph, save }) {
       <div className="lt-block">
         <Md src={p.statement} className="st-md lt-stem" />
         {p.origin === "learner" && !p.solvable && <p className="k-lvl" data-l="warn">The coach says this problem cannot be solved as given: {p.issue}</p>}
+        {(p.uncertain || []).length > 0 && (
+          <div className="lt-unsure k-small"><p><Warning size={14} aria-hidden="true" /><b>The coach is not sure about:</b></p>
+            <ul>{p.uncertain.map((c, i) => <li key={i}>{c} <CheckThis claim={c} context={p.statement} target={{ kind: "practice", session: s.id, problem: p.id, claim: c }} compact /></li>)}</ul></div>
+        )}
       </div>
       {hints.length > 0 && (
         <ol className="cy-hints">
@@ -178,6 +185,7 @@ function Ended({ s, p, ph, save }) {
           <summary className="k-small">The coach's solution (generated, not verified)</summary>
           <Md src={p.model_solution} className="st-md" />
           {p.answer && <p className="k-small"><b>Answer:</b> {p.answer}</p>}
+          <CheckThis claim={window.KSide.firstClaim(p.model_solution)} context={p.statement + "\n" + p.model_solution} target={{ kind: "practice", session: s.id, problem: p.id }} editable />
         </details>
       )}
       {p.by && p.by.model && <p className="k-small k-muted">Written by {byLine({ provider: p.by.provider, model: p.by.model, cost_kind: p.by.cost_kind })}{p.check && p.check.changed ? "; its own check corrected the first solution" : ""}.</p>}

@@ -317,7 +317,9 @@
       // task F1 (cv 3, LEARNING-PROTOCOL 2.6): thinking while reading per topic; the other three are filled by the later F tasks
       reading_thinking: {}, topic_mode: {}, live: {}, skipped: {},
       // task F3 (LEARNING-PROTOCOL 3.5): Find my level probes, append-only (generated questions, never the scheduler)
-      probes: [] };
+      probes: [],
+      // task F7: side questions asked beside the lesson or an item (generated answers; never evidence)
+      side: [] };
   }
   // migrate(progress[, pkg]): fills missing fields; with the package it also turns part-level cycle progress into topic progress
   function migrate(p, pkg) {
@@ -467,13 +469,15 @@
   function attemptById(et, id) { return (et.progress.attempts || []).filter(function (a) { return a.id === id; })[0] || null; }
   // Help is recorded on the attempt; in a check or the final test no help is offered at all
   function useHelp(attempt, kind) {
-    if (!attempt || attempt.committed_at && kind !== 'pane') return false;
+    if (!attempt || attempt.committed_at && kind !== 'pane' && kind !== 'side') return false;
     if (attempt.mode !== 'practice') return false;
-    var logKind = { hint: 'pkg_hint', step: 'pkg_step', solution: 'solution', pane: 'lesson_pane' }[kind];
+    // 'side' (task F7): opening the side-question panel during an attempt counts exactly like opening the lesson pane
+    var logKind = { hint: 'pkg_hint', step: 'pkg_step', solution: 'solution', pane: 'lesson_pane', side: 'side_panel' }[kind];
     if (kind === 'hint') attempt.hints += 1;
     else if (kind === 'step') attempt.steps += 1;
     else if (kind === 'solution') attempt.solution_shown = true;
     else if (kind === 'pane') { if (!attempt.committed_at) attempt.pane_open = true; }
+    else if (kind === 'side') { if (attempt.committed_at) return false; attempt.side_open = true; }
     else return false;
     // The log of help (LEARNING-PROTOCOL 2.1); the counters above are still written so older readers see the same
     (attempt.help = Array.isArray(attempt.help) ? attempt.help : []).push({ kind: logKind, at: Date.now() });
@@ -550,7 +554,7 @@
     attempt.disputed = true; attempt.dispute_note = cap(note || '');
     return true;
   }
-  function assisted(a) { return a.hints > 0 || a.steps > 0 || a.solution_shown || a.pane_open || (Array.isArray(a.help) && a.help.some(function (h) { return h.kind !== 'statement_repair'; })) || a.model_hints > 0; }
+  function assisted(a) { return a.hints > 0 || a.steps > 0 || a.solution_shown || a.pane_open || a.side_open || (Array.isArray(a.help) && a.help.some(function (h) { return h.kind !== 'statement_repair'; })) || a.model_hints > 0; }
 
   // The DSR adapter rule (03-design §7). Returns {eligible, reason, signal, rating?}
   function eligibility(attempt, item) {
@@ -560,7 +564,7 @@
     if (attempt.followup_of || item.followup_of) return { eligible: false, reason: 'A follow-up after an explanation (assisted context)' };
     if ((item.validation || 'unverified') !== 'verified') return { eligible: false, reason: 'The question is not verified' };
     if (attempt.disputed) return { eligible: false, reason: 'You reported a problem with this question' };
-    if (assisted(attempt)) return { eligible: false, reason: 'Assisted (' + [attempt.hints ? attempt.hints + ' hint' + (attempt.hints > 1 ? 's' : '') : '', attempt.steps ? 'steps' : '', attempt.solution_shown ? 'solution shown' : '', attempt.pane_open ? (attempt.left_final ? 'a lesson was opened during the final test' : 'lesson open') : '', modelHints(attempt).length ? 'model hint ' + modelHintLevel(attempt) : ''].filter(Boolean).join(', ') + ')' };
+    if (assisted(attempt)) return { eligible: false, reason: 'Assisted (' + [attempt.hints ? attempt.hints + ' hint' + (attempt.hints > 1 ? 's' : '') : '', attempt.steps ? 'steps' : '', attempt.solution_shown ? 'solution shown' : '', attempt.pane_open ? (attempt.left_final ? 'a lesson was opened during the final test' : 'lesson open') : '', attempt.side_open ? 'side questions open' : '', modelHints(attempt).length ? 'model hint ' + modelHintLevel(attempt) : ''].filter(Boolean).join(', ') + ')' };
     if (item.format === 'recall') {
       // A recall retried in the same visit, after its model answer was shown, is remediation, not a new retrieval
       if (attempt.prior_item_exposure && attempt.last_same_item_part_visit === attempt.visit) return { eligible: false, reason: 'Retried right after its answer was shown' };

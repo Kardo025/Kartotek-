@@ -13,6 +13,8 @@ import ConfidenceSlider from "./ConfidenceSlider.jsx";
 import Thinking from "./Thinking.jsx";
 import { useModelCall, CallStatus, byLine } from "../../model-call.jsx";
 import { EASE, DUR } from "../../motion.jsx";
+import SidePanel from "../../SidePanel.jsx";
+import { CheckThis, useResearchStatus } from "../../research.jsx";
 
 const KL = () => window.KLive;
 const PL = () => window.KPlan;
@@ -83,6 +85,7 @@ export default function LiveTeach({ s, pkg, material, blocked, commit }) {
         </section>
       )}
       <Transcript s={s} pkg={pkg} nodeLabel={nodeLabel} />
+      <SidePanel ctx={window.KSide.liveContext(s, st, pkg)} list={s.side || (s.side = [])} save={save} />
     </>
   );
 }
@@ -105,6 +108,7 @@ function CurrentStep({ s, st, ph, pkg, save }) {
           <Html className="st-md lt-md" html={renderMd(t.md)} />
           <Refs refs={t.refs} pkg={pkg} />
           <Unsure s={s} st={st} t={t} idx={st.teach.length - 1} save={save} />
+          <CheckThis claim={window.KSide.firstClaim(t.md)} context={t.md} sources={(t.refs || []).join(", ")} target={{ kind: "live", session: s.id, step: st.n, teach: st.teach.length - 1 }} editable />
           {ph === "read" && <div className="cy-actions"><Btn kind="primary" onClick={() => { KL().markRead(s, Date.now()); save(); }}>I've read it: check my understanding<ArrowRight size={16} weight="bold" aria-hidden="true" /></Btn></div>}
         </div>
       )}
@@ -197,8 +201,8 @@ function Unsure({ s, st, t, idx, save }) {
       <p><Warning size={14} aria-hidden="true" /><b>The teacher is not sure about:</b></p>
       <ul>
         {t.uncertain.map((c, i) => (
-          <li key={i}>{c} {queued(c) ? <span className="k-muted">· saved for checking</span>
-            : <button type="button" className="k-btn sm" onClick={() => { KL().queueResearch(s, st.n, idx, c, Date.now()); save(); }} title="Keeps the claim with its context so the researcher (a later update) can check it against sources."><MagnifyingGlass size={13} aria-hidden="true" />Check this later</button>}</li>
+          <li key={i}>{c} <CheckThis claim={c} context={t.md} sources={(t.refs || []).join(", ")} target={{ kind: "live", session: s.id, step: st.n, claim: c }} compact />
+            {queued(c) ? <span className="k-muted"> · saved for checking</span> : <ResearchOrQueue s={s} st={st} idx={idx} c={c} save={save} />}</li>
         ))}
       </ul>
     </div>
@@ -257,4 +261,11 @@ function Transcript({ s, pkg, nodeLabel }) {
       </ol>
     </details>
   );
+}
+
+// Without research (no web search and no search key) the unsure claim can still be kept for later (session.research, "queued")
+function ResearchOrQueue({ s, st, idx, c, save }) {
+  const rs = useResearchStatus();
+  if (rs.mode) return null;
+  return <button type="button" className="k-btn sm" onClick={() => { KL().queueResearch(s, st.n, idx, c, Date.now()); save(); }} title="Keeps the claim with its context; with web search or a search key set up (Settings, Models) it can be checked."><MagnifyingGlass size={13} aria-hidden="true" />Keep to check later</button>;
 }

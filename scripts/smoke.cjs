@@ -516,7 +516,7 @@ async function main() {
           const App = window.App, et = App.S.etuts[id], KP = window.KPractice, kid = et.package.parts[0].kazanimlar[0].kazanim_id;
           const s = KP.newSession(App.S, { purpose: 'evaluating', title: 'Smoke practice', etut_id: id, kids: [kid], targets: KP.targetsFor(et.package, kid), now: Date.now() });
           KP.linkEvaluating(et, kid, s);
-          const E = { problem: { statement: '', setting: '', template: '', targets: [], solution: '', answer: '' }, check: { sound: true, issue: '', solution: '', answer: '' }, verdict: { result: 'not_yet', moves: '', first_break: '', feedback: '' }, own: { solvable: true, issue: '', solution: '', answer: '', targets: [] } };
+          const E = { problem: { statement: '', setting: '', template: '', targets: [], solution: '', answer: '', uncertain: [] }, check: { sound: true, issue: '', solution: '', answer: '' }, verdict: { result: 'not_yet', moves: '', first_break: '', feedback: '' }, own: { solvable: true, issue: '', solution: '', answer: '', targets: [] } };
           const sp = KP.nextSpec(s);
           KP.applyReply(s, 'write', Object.assign(JSON.parse(JSON.stringify(E)), { task: 'problem', problem: { statement: 'Smoke problem: which setting opens the gate?', setting: 'gate', template: '', targets: sp.targets, solution: 'Both switches on.', answer: 'both on' } }), { now: Date.now() });
           KP.applyReply(s, 'check', Object.assign(JSON.parse(JSON.stringify(E)), { task: 'check', check: { sound: true, issue: '', solution: 'Both switches on.', answer: 'both on' } }), { now: Date.now() });
@@ -564,6 +564,28 @@ async function main() {
         if (landed.tab !== 'etut' || !landed.open || landed.stage !== 'work') problems.push('F6: "Open the lesson" did not land on Learn & digest: ' + JSON.stringify(landed));
         console.log('Knowledge graph: ' + counts.nodes + ' ideas and ' + counts.chains + ' chains from ' + counts.studies + ' studies drawn; a node showed its origin, evidence and memory; "Open the lesson" opened Learn & digest' + (first ? ' (' + first.study + ')' : ''));
       } catch (e) { problems.push('F6: the knowledge graph failed: ' + e.message); }
+    }
+
+    // Side questions and research (F7): without a model the side panel is not offered; Settings shows the research panel as "not
+    // available" (no web search, no key); opening the side panel during an open attempt is recorded as help in the real window's engine
+    {
+      try {
+        const r = await page.evaluate(() => {
+          const App = window.App, et = App.S.etuts['c2-first'], K = window.KCycle, idx = K.itemIndex(et.package, null);
+          const item = Object.values(idx).find((it) => it.use !== 'final' && it.format === 'mcq_single');
+          const a = K.startAttempt(et, item, 'practice', Date.now());
+          const opened = K.useHelp(a, 'side');
+          const fin = K.startAttempt(et, item, 'final', Date.now());
+          return { opened, assisted: K.assisted(a), final: K.useHelp(fin, 'side'), ctxHidesKey: !/Key:/.test(window.KSide.itemContext(et.package, item, a).text) };
+        });
+        await page.evaluate(() => { window.App.liveOpen = null; window.App.practiceOpen = null; window.App.switchTab('settings'); });
+        await page.waitForSelector('.rs-panel', { timeout: 8000 });
+        const panel = await page.$eval('.rs-panel', (p) => p.innerText);
+        const status = await page.evaluate(async () => { const x = await window.kartotek.research.status(); return x.ok ? x.value : null; });
+        if (!r.opened || !r.assisted || r.final || !r.ctxHidesKey) problems.push('F7: side panel help was not recorded as expected: ' + JSON.stringify(r));
+        if (!/Not available/.test(panel) || !status || status.mode !== null) problems.push('F7: the research panel did not say "not available": ' + panel.slice(0, 160));
+        console.log('Side questions and research: opening the panel during an attempt is help, never in the final test; an open item goes without its key; Settings shows research as not available (no web search, no key)');
+      } catch (e) { problems.push('F7: side questions or the research panel failed: ' + e.message); }
     }
 
     // Planning home and Euro apply without a folder (D2): Kartotek's own rows, what is missing, and a setup row instead of the app

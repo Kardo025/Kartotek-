@@ -16,6 +16,7 @@ import { FinalPlan, FinalRun, Report } from "./cycle/Final.jsx";
 import { FindMyLevel, PlanMapPanel } from "./PlanMap.jsx";
 import { createSession, openSession } from "./Live.jsx";
 import { PracticeRun, summaryLine } from "./Practice.jsx";
+import SidePanel from "../../SidePanel.jsx";
 import { A, KC, KE, EU, extrasOf, itemsOf, partOf, save, refsText, criterionText, when } from "./cycle/lib.js";
 import "./cycle/cycle.css";
 
@@ -317,6 +318,7 @@ function Workspace({ et }) {
         {tab === "questions" && <section className="k-panel k-sec"><QuestionsList et={et} pi={pr.part} /></section>}
         <div className="cy-actions"><Btn kind="primary" onClick={() => go(et)}>Go to Applying<ArrowRight size={17} weight="bold" aria-hidden="true" /></Btn></div>
       </aside>
+      <SidePanel ctx={window.KSide.lessonContext(pkg, k.kazanim_id)} list={pr.side || (pr.side = [])} save={() => save(et)} />
     </div>
   );
 }
