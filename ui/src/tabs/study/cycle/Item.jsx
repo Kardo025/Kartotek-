@@ -118,7 +118,7 @@ export default function Item({ et, item, attempt, held, onNext, nextLabel, part 
             </div>
           )}
           {practice && (
-            <HelpRow item={item} attempt={attempt} help={help} part={part} />
+            <HelpRow et={et} item={item} attempt={attempt} help={help} part={part} draft={{ choice: f.dk ? [] : f.choice, text: f.text || f.produced, number: f.number, thinking: f.thinking }} />
           )}
           <div className="cy-actions">
             <Btn kind="primary" disabled={!ready} onClick={commit}>{attempt.mode === "final" ? "Submit" : "Check"}</Btn>
@@ -159,12 +159,13 @@ export default function Item({ et, item, attempt, held, onNext, nextLabel, part 
   );
 }
 
-function HelpRow({ item, attempt, help, part }) {
+function HelpRow({ et, item, attempt, help, part, draft }) {
   const hints = item.hints || [], steps = item.steps || [];
   const [lesson, setLesson] = useState(false);
   return (
     <div className="cy-help">
       <p className="k-small k-muted">Help is fine in practice. An answer after help is kept as practice with help, not as independent recall.</p>
+      <ModelHints et={et} item={item} attempt={attempt} draft={draft} />
       <div className="cy-help-btns">
         {attempt.hints < hints.length && <Btn size="sm" onClick={() => help("hint")}><Lightbulb size={15} aria-hidden="true" />Hint {attempt.hints + 1}/{hints.length}</Btn>}
         {attempt.steps < steps.length && <Btn size="sm" onClick={() => help("step")}><ListNumbers size={15} aria-hidden="true" />Show a step</Btn>}
@@ -175,6 +176,53 @@ function HelpRow({ item, attempt, help, part }) {
       {attempt.steps > 0 && <ol className="cy-hints">{steps.slice(0, attempt.steps).map((s, i) => <li key={i}><b>{s.do}</b>{s.why ? <span className="k-muted"> — {s.why}</span> : null}</li>)}</ol>}
       {attempt.solution_shown && <div className="cy-solution"><Md src={item.solution || (item.rubric && item.rubric.model) || item.model} /></div>}
       {lesson && part && <div className="cy-lesson-peek">{part.kazanimlar.map((k) => <div key={k.kazanim_id}><h3 className="st-h3">{k.title}</h3><Blocks blocks={k.blocks} /></div>)}</div>}
+    </div>
+  );
+}
+
+// "Ask for a hint" (task F2, LEARNING-PROTOCOL 3.4): with a model set up, one rung of help per press, from the least revealing up. It reads the
+// item, its solution and criteria and what has been entered so far; each rung is recorded on the attempt as assistance and its level is
+// shown. The package's own hints, steps and solution below are the only help without a model.
+function ModelHints({ et, item, attempt, draft }) {
+  const K = KC(), mr = useModelReady("fast"), call = useModelCall();
+  const given = (attempt.help || []).filter((h) => h.kind === "model_hint" || h.kind === "statement_repair");
+  const next = K.nextRung(attempt);
+  const ask = async (requested) => {
+    let probs = [], last = "The hint could not be used.";
+    // one automatic second try that tells the model what was wrong with the first
+    for (let n = 0; n < 2; n++) {
+      const r = await call.run("hint-giver", K.hintInputs(et, attempt, item, draft, requested, probs), { feature: "hint-giver", maxOutputTokens: 1000 });
+      if (!r.ok) return;
+      const s = K.recordModelHint(attempt, item, r.json, { requested, now: Date.now(), meta: r.meta, prompt: r.prompt });
+      if (s.ok) { save(et); return; }
+      probs = s.problems; last = s.error;
+    }
+    call.fail(last);
+  };
+  if (!mr.ready && !given.length) return null;
+  return (
+    <div className="cy-mhints">
+      {mr.ready && (
+        <div className="cy-help-btns">
+          <Btn size="sm" disabled={call.busy || !next} onClick={() => ask(next)} title="One step of help, the least revealing first. It reads your question, your answer and your thinking so far.">
+            <Robot size={15} aria-hidden="true" />{given.some((h) => h.kind === "model_hint") ? "Ask for the next step" : "Ask for a hint"}
+          </Btn>
+          <Btn size="sm" disabled={call.busy} onClick={() => ask("statement_repair")} title="Explains what the question asks, nothing about the solution. It does not count as help."><Question size={15} aria-hidden="true" />I don't understand what is asked</Btn>
+          {!next && <span className="k-small k-muted">No further hint level. The solution below is the last step.</span>}
+        </div>
+      )}
+      <CallStatus call={call} />
+      {given.length > 0 && (
+        <ol className="cy-hints">
+          {given.map((h, i) => (
+            <li key={i}>
+              <b>{h.kind === "statement_repair" ? "What is asked" : "Level " + h.level + " · " + K.RUNG_LABEL[h.level]}</b>
+              <span className="k-small k-muted"> ({K.RUNG_GIVES[h.level]}{h.kind === "statement_repair" ? "; free, not counted as help" : ""})</span>
+              <p>{h.text}</p>
+            </li>
+          ))}
+        </ol>
+      )}
     </div>
   );
 }

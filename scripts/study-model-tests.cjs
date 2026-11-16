@@ -22,7 +22,7 @@ const src = path.join(root, 'src');
 const tmp = (p) => fs.mkdtempSync(path.join(os.tmpdir(), p));
 const rm = (d) => fs.rmSync(d, { recursive: true, force: true });
 const NOW = Date.UTC(2026, 10, 15, 9);
-const IDS = { explain: 'fast', 'followup-items': 'fast', 'ask-card': 'fast', 'typed-grading': 'strong', 'feynman-feedback': 'strong' };
+const IDS = { explain: 'fast', 'followup-items': 'fast', 'ask-card': 'fast', 'typed-grading': 'strong', 'feynman-feedback': 'strong', 'hint-giver': 'fast' };
 
 const fakeEncrypt = async (s) => Buffer.from('ENC1' + Buffer.from(s, 'utf8').toString('base64').split('').reverse().join(''));
 const fakeDecrypt = async (b) => Buffer.from(b.toString().slice(4).split('').reverse().join(''), 'base64').toString('utf8');
@@ -74,6 +74,11 @@ async function t(list, name, fn) { try { await fn(); list.push(name); } catch (e
 // What a request of the explain / follow-up / grading / feedback / card prompt gets back (valid for each schema)
 function scriptedAnswer(req) {
   const props = Object.keys((req.schema && req.schema.properties) || {});
+  if (props.includes('stuck_at')) {
+    // the rung asked for is the line after "The rung requested now" in the fenced block
+const txt = req.messages.map((m) => (typeof m.content === 'string' ? m.content : '')).join('');    const at = txt.indexOf('The rung requested now');    const m = /(R[0-5]|statement_repair)/.exec(txt.slice(txt.indexOf('```text', at)));    const rung = m ? m[1] : 'R0';
+    return { rung, stuck_at: 'Which settings keep the gate closed', hint: 'Hint at level ' + rung + ': think about what makes the gate open.', reveals: rung === 'R0' ? '' : 'a pattern' };
+  }
   if (props.includes('explanation_md')) return { explanation_md: 'The gate opens only when **both** switches are on.', item_status: 'consistent', item_note: '', refs: ['S1 ¶1'], next_steps: ['Reread the rule'] };
   if (props.includes('items')) return { items: [{ format: 'mcq_single', stem: 'A is on and B is on. What is the gate state?', options: [{ id: 'a', md: 'Open', note: 'Correct.' }, { id: 'b', md: 'Closed', note: 'Both are on.' }, { id: 'c', md: 'Unknown', note: 'The rule decides.' }], key: ['a'], numeric_value: 0, numeric_tol: 0, numeric_unit: '', rubric_criteria: [], model_answer: '', accept: [], contradictions: [], solution: 'Both on: open (S1 ¶1).', hints: [], units: ['U1'], difference: 'Both switches on.' }] };
   if (props.includes('mark') || (props.includes('criteria') && !props.includes('misstatements'))) return { criteria: [{ id: 'C-2', mark: 'met', quote: 'closed', reason: 'It says closed.' }, { id: 'C-3', mark: 'unsure', quote: '', reason: 'The reason is missing.' }], summary: 'Half of it.' };
@@ -176,6 +181,7 @@ async function featureTests() {
         'typed-grading': K.gradingInputs(idx.i1, typed),
         'feynman-feedback': K.feynmanInputs(et, k, { n: 1, text: 'Both switches must be on.' }),
         'ask-card': w.KPrep.cardAskInputs(sampleStudy(w).st, card, ''),
+        'hint-giver': K.hintInputs(et, a, idx.i2, { choice: ['a'], thinking: 'unsure' }, 'R0'),
       };
       Object.keys(sets).forEach((id) => assert.deepStrictEqual(plain(Object.keys(vars(sets[id])).sort()), place(id).slice().sort(), id));
       void st;
@@ -256,6 +262,32 @@ async function featureTests() {
       assert.ok(/Front: /.test(a.p.text) && /Why\?/.test(a.p.text) && /Lesson text of this topic/.test(a.p.text));
       assert.strictEqual(a.res.json.answer_md.indexOf('The card says'), 0);
       assert.strictEqual(JSON.stringify([st.cards[card.card_id], st.mem[card.card_id]]), cardBefore, 'asking about a card changes nothing');
+    });
+
+    await t(ok, 'Ask for a hint: three requests give R0, R1, R2 in order through the model service, each is recorded as assistance with its level, and the attempt is no longer DSR-eligible', async () => {
+      const { st, et, K, idx } = sampleStudy(w);
+      const item = idx.i2, a = K.startAttempt(et, item, 'practice', NOW);
+      const eligibleAlone = (() => { const b = K.startAttempt(et, idx.i1, 'practice', NOW); K.commit(et, b, { text: 'closed', confidence_pct: 90 }, idx.i1, NOW + 1); return b.committed_at > 0; })();
+      assert.ok(eligibleAlone);
+      const seen = [];
+      for (let i = 0; i < 3; i++) {
+        const req = K.nextRung(a);
+        const draft = { choice: ['a'], thinking: 'I think it is open' + (i ? ' still' : '') };
+        const r = await ask('hint-giver', vars(K.hintInputs(et, a, item, draft, req)), 'hint-giver');
+        assert.ok(/I think it is open/.test(r.p.text) && new RegExp('The rung requested now[^\n]*\n\n`+text\n' + req).test(r.p.text), 'the request carries the thinking and the rung asked for');
+        if (i) assert.ok(r.p.text.includes('R' + (i - 1) + ': Hint at level R' + (i - 1)), 'the earlier rung is listed');
+        const rec = K.recordModelHint(a, item, r.res.json, { requested: req, now: NOW + i, meta: r.meta, prompt: r.prompt });
+        assert.ok(rec.ok, JSON.stringify(rec));
+        seen.push(rec.entry.level);
+      }
+      assert.deepStrictEqual(seen, ['R0', 'R1', 'R2']);
+      assert.strictEqual(a.help[2].by.provider, 'Fake provider'); assert.strictEqual(a.help[2].by.prompt.id, 'hint-giver');
+      K.commit(et, a, { choice: ['b'], confidence_pct: 95 }, item, NOW + 100);
+      const el = K.eligibility(a, item);
+      assert.ok(!el.eligible && /model hint R2/.test(el.reason));
+      assert.strictEqual(st.reviews.length, 0);
+      const log = fs.readFileSync(path.join(dir, 'models', 'usage', '2026-11.jsonl'), 'utf8');
+      assert.ok(log.includes('"feature":"hint-giver"') && !log.includes('I think it is open'));
     });
 
     await t(ok, 'a wrong answer from the model is refused (one repair, then a "schema" error) and the engine stores nothing', async () => {

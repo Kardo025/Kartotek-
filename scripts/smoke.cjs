@@ -261,6 +261,7 @@ async function main() {
     // it belongs; the scheduler's inputs do not change; the usage log has the features and no learner text.
     {
       const answers = (body) => {
+        if (body.includes('stuck_at')) { const m = /The rung requested now[\s\S]*?text\\n(R[0-5]|statement_repair)/.exec(body); const rung = m ? m[1] : 'R0'; return { rung, stuck_at: 'Which settings keep the gate closed', hint: 'Look again at what makes the gate open (' + rung + ').', reveals: '' }; }
         if (body.includes('explanation_md')) return { explanation_md: 'The gate opens only when **both** switches are on.', item_status: 'consistent', item_note: '', refs: ['S1 ¶1'], next_steps: ['Reread the rule'] };
         if (body.includes('numeric_value')) return { items: [{ format: 'mcq_single', stem: 'A is on and B is on. What is the gate state?', options: [{ id: 'a', md: 'Open', note: 'Correct.' }, { id: 'b', md: 'Closed', note: 'Both are on.' }, { id: 'c', md: 'Unknown', note: 'The rule decides.' }], key: ['a'], numeric_value: 0, numeric_tol: 0, numeric_unit: '', rubric_criteria: [], model_answer: '', accept: [], contradictions: [], solution: 'Both on: open.', hints: [], units: ['U1'], difference: 'Both switches on.' }] };
         if (body.includes('not_met')) return { criteria: [{ id: 'C-2', mark: 'met', quote: 'closed', reason: 'It says closed.' }, { id: 'C-3', mark: 'met', quote: 'B is off', reason: 'Gives the reason.' }], summary: 'Both there.' };
@@ -330,6 +331,24 @@ async function main() {
         if (fu.length !== 1 || fu[0].v !== 'unverified' || !fu[0].of) problems.push('E2: the follow-up item is not stored as expected: ' + JSON.stringify(fu));
         const afterFollow = await snap();
         if (afterFollow.reviews !== afterExplain.reviews) problems.push('E2: a follow-up question reached the review log');
+        // Ask for a hint (F2): one rung per press, recorded as assistance, never sent to the reviews
+        await page.evaluate((id) => {
+          const App = window.App, et = App.S.etuts[id], K = window.KCycle;
+          K.goto(et, 0, 0, 'apply', Date.now());
+          const idx = K.itemIndex(et.package, App.studyExtras && App.studyExtras[et.etut_id]);
+          et.progress.current = null;
+          K.startAttempt(et, idx.i2, 'practice', Date.now());
+          App.EtutUI.commit(et); App.switchTab('etut'); App.goStudy(id); App.render();
+        }, SID);
+        await page.waitForSelector('.cy-answer', { timeout: 8000 });
+        await page.click('.cy-mhints button:has-text("Ask for a hint")');
+        await page.waitForSelector('.cy-mhints li', { timeout: 20000 }).catch(() => problems.push('F2: no hint was shown'));
+        await page.click('.cy-mhints button:has-text("Ask for the next step")');
+        await page.waitForFunction(() => document.querySelectorAll('.cy-mhints li').length === 2, null, { timeout: 20000 }).catch(() => problems.push('F2: the second request gave no second step'));
+        const hintTxt = await page.$$eval('.cy-mhints li b', (e) => e.map((x) => x.innerText)).catch(() => []);
+        if (hintTxt.join('|') !== 'Level R0 · Look again|Level R1 · The pattern') problems.push('F2: the levels shown are wrong: ' + JSON.stringify(hintTxt));
+        const hs = await page.evaluate((id) => { const S = window.App.S, a = S.etuts[id].progress.attempts.slice(-1)[0]; return { levels: (a.help || []).map((h) => h.level).join(), assisted: window.KCycle.assisted(a), reviews: S.reviews.length }; }, SID);
+        if (hs.levels !== 'R0,R1' || !hs.assisted) problems.push('F2: the rungs were not recorded as assistance: ' + JSON.stringify(hs));
         // Feynman feedback
         await page.evaluate((id) => { const App = window.App, et = App.S.etuts[id]; window.KCycle.goto(et, 0, 0, 'work', Date.now()); App.EtutUI.commit(et); App.render(); }, SID);
         await page.waitForSelector('.cy-feynman textarea', { timeout: 8000 });
@@ -353,9 +372,9 @@ async function main() {
         await page.waitForSelector('.mc-answer', { timeout: 20000 }).catch(() => problems.push('E2: no answer about the card was shown'));
         // the calls were logged by feature, without any text
         const usageText = fs.readdirSync(path.join(profile, 'models', 'usage')).map((f) => fs.readFileSync(path.join(profile, 'models', 'usage', f), 'utf8')).join('');
-        for (const f of ['typed-grading', 'explain', 'followup-items', 'feynman-feedback', 'ask-card']) if (!usageText.includes('"feature":"' + f + '"')) problems.push('E2: the usage log has no ' + f + ' call');
+        for (const f of ['typed-grading', 'explain', 'followup-items', 'feynman-feedback', 'ask-card', 'hint-giver']) if (!usageText.includes('"feature":"' + f + '"')) problems.push('E2: the usage log has no ' + f + ' call');
         if (/gate is closed|both switches|Why is it closed/i.test(usageText)) problems.push('E2: the usage log holds learner text');
-        if (nCalls !== 5) problems.push('E2: expected 5 model calls, the stand-in saw ' + nCalls);
+        if (nCalls !== 7) problems.push('E2/F2: expected 7 model calls, the stand-in saw ' + nCalls);
         void before;
         console.log('Model calls while studying: grading proposal (recorded as "model"), Explain, follow-up item, Feynman feedback and a card question each answered by the stand-in; ' + nCalls + ' calls, none changed what the scheduler reads');
       } finally {
@@ -382,7 +401,9 @@ async function main() {
       try {
         await startOn('i2');
         const nothing = await page.$eval('.cy-answer .k-btn.primary', (b) => b.disabled).catch(() => null);
-        await page.click('.cy-opt >> nth=0');
+        // the right option, wherever the shuffle put it (a wrong answer given as Sure would rightly flag a misconception)
+        const rightAt = await page.evaluate((id) => { const et = window.App.S.etuts[id], a = et.progress.attempts.slice(-1)[0], it = window.KCycle.itemIndex(et.package)[a.q_id]; return a.order.indexOf(it.key[0]); }, SID);
+        await page.click('.cy-opt >> nth=' + rightAt);
         await page.fill('.th textarea', 'I looked for the rule about both switches.');
         const still = await page.$eval('.cy-answer .k-btn.primary', (b) => b.disabled);
         await page.focus('.cf-range');
