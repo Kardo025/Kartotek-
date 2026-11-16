@@ -129,6 +129,7 @@ function JobCard({ job }) {
       <div className="k-row-btns jb-actions">
         {(job.status === "ready" || job.status === "paused" || job.status === "failed") && <Btn kind="primary" size="sm" disabled={busy} onClick={() => act(() => J().start(job.id))}><Play size={14} weight="fill" aria-hidden="true" />{job.status === "ready" ? "Start" : "Resume"}</Btn>}
         {(job.status === "running" || job.status === "queued") && <Btn size="sm" disabled={busy} onClick={() => act(() => J().pause(job.id))}><Pause size={14} weight="fill" aria-hidden="true" />Pause</Btn>}
+        {job.fixRounds > 0 && job.status !== "done" && (job.steps.find((s) => s.id === "verify") || {}).status !== "done" && job.steps.some((s) => s.id === "verify") && <Btn size="sm" disabled={busy} onClick={() => act(() => J().skipFixes(job.id))} title="Disputed items keep their mark (shown, never sent to your reviews) and the job goes on to save">Skip the remaining fixes</Btn>}
         <Btn size="sm" onClick={() => J().openFolder(job.id)} title="The job's working files: extracted pages, the draft, job.json"><FolderOpen size={14} aria-hidden="true" />Job folder</Btn>
         {job.status !== "running" && job.status !== "queued" && <Btn size="sm" disabled={busy} onClick={() => act(() => J().remove(job.id))} title="Removes the job and its working files. A saved draft in the content folder stays."><Trash size={14} aria-hidden="true" />Remove job</Btn>}
       </div>

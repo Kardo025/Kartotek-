@@ -468,6 +468,7 @@ handleModel('jobs:get', (e, id) => jobs().get(String(id)));
 handleModel('jobs:create', (e, kind, req, choice) => jobs().create(String(kind), resolveJobRequest(String(kind), req), { target: checkTarget(choice && choice.target), visionTarget: checkTarget(choice && choice.visionTarget) }));
 handleModel('jobs:start', (e, id, choice) => jobs().start(String(id), choice ? { target: checkTarget(choice.target), visionTarget: checkTarget(choice.visionTarget) } : undefined));
 handleModel('jobs:pause', (e, id) => jobs().pause(String(id)));
+handleModel('jobs:skipFixes', (e, id) => jobs().skipFixes(String(id)));
 handleModel('jobs:remove', (e, id) => jobs().remove(String(id)));
 handleModel('jobs:openFolder', async (e, id) => { const err = await shell.openPath(path.join(app.getPath('userData'), 'jobs', path.basename(String(id)))); if (err) throw new Error(err); return null; });
 

@@ -78,6 +78,7 @@ contextBridge.exposeInMainWorld('kartotek', Object.freeze({
     create: (kind, request, choice) => ipcRenderer.invoke('jobs:create', kind, request, choice),
     start: (id, choice) => ipcRenderer.invoke('jobs:start', id, choice),
     pause: (id) => ipcRenderer.invoke('jobs:pause', id),
+    skipFixes: (id) => ipcRenderer.invoke('jobs:skipFixes', id),
     remove: (id) => ipcRenderer.invoke('jobs:remove', id),
     openFolder: (id) => ipcRenderer.invoke('jobs:openFolder', id),
     // { type: 'job', job } | { type: 'removed', id }. Returns a function that stops listening.

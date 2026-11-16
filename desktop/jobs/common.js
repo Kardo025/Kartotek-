@@ -95,8 +95,21 @@ function safeCheck(fn, json) {
   try { return fn(json) || []; } catch (e) { return ['The answer could not be checked: ' + e.message]; }
 }
 
+// Unit ids are bookkeeping for refs; a model sometimes writes them into the text ("… to the value (U9)"). The learner never sees them.
+function stripIds(s) {
+  if (typeof s !== 'string') return s;
+  return s.replace(/\s*\((?:units?\s*)?U\d+(?:\s*(?:,|and|&|–|-)\s*U\d+)*\)/gi, '').replace(/\s*\[(?:U\d+(?:,\s*)?)+\]/g, '').replace(/[ \t]+([.,;:])/g, '$1');
+}
+function stripDeep(x) {
+  if (typeof x === 'string') return stripIds(x);
+  if (Array.isArray(x)) return x.map(stripDeep);
+  if (x && typeof x === 'object') { const o = {}; Object.keys(x).forEach((k) => { o[k] = k === 'refs' || k === 'units' || k === 'criteria' || k === 'id' ? x[k] : stripDeep(x[k]); }); return o; }
+  return x;
+}
+
 // ---- Study v2 items (STUDY-RULES.md v2.5): the flat model shape -> the package shape
 function cleanItem(raw, fixed) {
+  raw = stripDeep(raw);
   const it = { q_id: fixed.q_id, version: fixed.version || 1, origin: raw.origin, source_ref: raw.source_ref || null, units: uniq(raw.units || []),
     format: raw.format, kazanim_id: fixed.kazanim_id, outcomes: fixed.outcomes, criteria: uniq(raw.criteria || []), performance: raw.performance,
     difficulty: raw.difficulty, stem: raw.stem };
@@ -147,6 +160,8 @@ function itemProblems(raw, at, known) {
   } else if (raw.format === 'numeric') {
     if (!raw.numeric || !isFinite(Number(raw.numeric.value))) p.push(label + ': numeric.value must be a number.');
     if (!raw.numeric || !(Number(raw.numeric.tol) >= 0)) p.push(label + ': numeric.tol must be zero or more.');
+    // a numeric item whose worked solution never reaches its key is usually a written question put in the wrong format
+    else if (isFinite(Number(raw.numeric.value)) && !solutionReaches(raw.solution, Number(raw.numeric.value), Number(raw.numeric.tol))) p.push(label + ': the solution never arrives at the key ' + raw.numeric.value + '. Check the key, or use "typed" if the answer is not a number.');
   } else if (raw.format === 'typed') {
     const rc = (raw.rubric && raw.rubric.criteria) || [];
     if (!rc.length || !rc.some((c) => c.required !== false)) p.push(label + ': a written item needs rubric.criteria with at least one required criterion.');
@@ -154,6 +169,13 @@ function itemProblems(raw, at, known) {
   }
   if (!String(raw.solution || '').trim() && raw.format !== 'typed') p.push(label + ': write a solution.');
   return p;
+}
+
+// Does a solution text state the key (any number in it within the tolerance)?
+function solutionReaches(text, v, tol) {
+  const nums = String(text || '').replace(/(\d)[\s,](?=\d{3}\b)/g, '$1').match(/[-+]?\d+(?:\.\d+)?(?:e[-+]?\d+)?/gi) || [];
+  const t = Math.max(tol || 0, Math.abs(v) * 1e-6, 1e-9);
+  return nums.some((n) => Math.abs(Number(n) - v) <= t);
 }
 
 // ---- verification: solve without the key, compare
@@ -178,7 +200,9 @@ function compare(it, ans) {
     return { match: a.length === k.length && a.every((x, i) => x === k[i]), detail: 'independent answer ' + (a.join(', ') || 'none') + ', key ' + k.join(', ') };
   }
   if (it.format === 'numeric') {
-    const x = firstNumber(ans.number || ans.answer);
+    // the number field first; if it holds no number (".", "see above"), the number in the written answer
+    let x = firstNumber(ans.number);
+    if (!isFinite(x)) x = firstNumber(ans.answer);
     const v = it.numeric.value, tol = Math.max(it.numeric.tol, Math.abs(v) * 1e-9);
     return { match: isFinite(x) && Math.abs(x - v) <= tol, detail: 'independent answer ' + (isFinite(x) ? x : '"' + String(ans.number || ans.answer).slice(0, 40) + '"') + ', key ' + v + ' ± ' + it.numeric.tol };
   }
@@ -199,5 +223,5 @@ function balanceCorrect(items, nOptions) {
   });
 }
 
-module.exports = { words, sentences, uniq, slug, pagesOfLoc, sourceText, manifest, pagesForUnits, chunkPages, pageText, unitWord,
+module.exports = { stripIds, stripDeep, words, sentences, uniq, slug, pagesOfLoc, sourceText, manifest, pagesForUnits, chunkPages, pageText, unitWord,
   askChecked, cleanItem, itemProblems, stripKey, compare, firstNumber, balanceCorrect };

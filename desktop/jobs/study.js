@@ -257,10 +257,11 @@ async function unitsAndRest(ctx, d, r, L) {
         (j) => partProblems(j, crit, known, p.topics.length), L.repairs);
         return out.json;
       });
-      p.orientation = res.orientation;
-      p.summary = { md: res.summary.md, keywords: res.summary.keywords };
-      p.feynman = { prompt: res.feynman.prompt, criteria: res.feynman.criteria.filter((c) => d.outcomes.some((o) => o.part_id === p.part_id && o.criteria.some((x) => x.id === c))) };
-      if (p.topics.length > 1 && res.connect_blocks.length) p.connect = { blocks: res.connect_blocks.map((b) => cleanBlock(b, d)).filter(Boolean) };
+      const resC = C.stripDeep(res);
+      p.orientation = resC.orientation;
+      p.summary = { md: resC.summary.md, keywords: resC.summary.keywords };
+      p.feynman = { prompt: resC.feynman.prompt, criteria: res.feynman.criteria.filter((c) => d.outcomes.some((o) => o.part_id === p.part_id && o.criteria.some((x) => x.id === c))) };
+      if (p.topics.length > 1 && resC.connect_blocks.length) p.connect = { blocks: resC.connect_blocks.map((b) => cleanBlock(b, d)).filter(Boolean) };
       else delete p.connect;
     }
   });
@@ -444,6 +445,7 @@ function cleanBlock(b, d) {
   }
 }
 function cleanLesson(j, d, t) {
+  j = C.stripDeep(j);
   const blocks = (j.blocks || []).map((b) => cleanBlock(b, d)).filter(Boolean);
   const pr = j.priming || {};
   const priming = { summary_md: pr.summary_md, keywords: (pr.keywords || []).filter((w) => w.term && w.definition).slice(0, 4), purpose: pr.purpose };
@@ -520,6 +522,7 @@ function itemsProblems(j, crit, d, connecting, part, earlier, isFinal) {
   const knownU = {}; d.units.forEach((u) => { knownU[u.id] = true; });
   if (!Array.isArray(j.items)) return ['"items" must be a list.'];
   if (!connecting && !j.items.length) p.push('Write the items.');
+  if (connecting && j.items.length > 3) p.push('Write at most 3 connecting items (you wrote ' + j.items.length + '); keep only the ones where the source really links the topics.');
   j.items.forEach((it, i) => {
     p.push(...C.itemProblems(it, (isFinal ? 'Final item ' : 'Item ') + (i + 1), { criteria: crit, units: knownU }));
     if (connecting) {
@@ -734,6 +737,8 @@ function replaceItem(d, qid, item) {
 // ---------------------------------------------------------------- save the draft into the content folder
 function saveStudy(ctx, d) {
   const pkg = assemble(d);
+  // no unit ids in anything the learner reads (lessons, overviews, items), whichever step wrote them
+  pkg.parts = C.stripDeep(pkg.parts); pkg.final_test = C.stripDeep(pkg.final_test);
   const a = ctx.checks.studyAudit(pkg);
   const v = ctx.checks.studyValidate(pkg);
   const all = allItems(d);

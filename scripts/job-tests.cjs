@@ -189,6 +189,23 @@ async function main() {
     });
   });
 
+  await t('unit ids written into learner text are removed, id fields are kept', async () => {
+    const C = require('../desktop/jobs/common');
+    assert.strictEqual(C.stripIds('Each bit adds bit × 2^i (U11). See (U9, U10) and [U3, U4] here (units U2 and U5).'), 'Each bit adds bit × 2^i. See and here.');
+    const x = C.stripDeep({ md: 'Value (U9).', refs: ['U9'], items: ['A (U1)'], units: ['U1'] });
+    assert.deepStrictEqual(x, { md: 'Value.', refs: ['U9'], items: ['A'], units: ['U1'] });
+  });
+
+  await t('found in the real run: a number in the written answer counts when the number field is empty; a numeric key the solution never reaches is a problem', async () => {
+    const C = require('../desktop/jobs/common');
+    assert.strictEqual(C.compare({ format: 'numeric', numeric: { value: 185, tol: 0 } }, { number: '.', answer: 'The weighted sum is 185.', confidence: 'sure' }).match, true);
+    const known = { criteria: { 'C-1': 1 }, units: {} };
+    const raw = { format: 'numeric', stem: 'How are the two steps related?', criteria: ['C-1'], units: [], numeric: { value: 0, tol: 0, unit: '' }, solution: 'The specification decides the table.' };
+    assert.ok(C.itemProblems(raw, 'Item 1', known).some((p) => /never arrives at the key 0/.test(p)));
+    raw.numeric.value = 65536; raw.solution = '2^(2^4) = 2^16 = 65,536 functions (p. 26).';
+    assert.deepStrictEqual(C.itemProblems(raw, 'Item 1', known), []);
+  });
+
   await t('extract: text files, .docx and .pptx (zip) and the text-layer quality check', async () => {
     const dir = tmp('x');
     const f = textSource(dir, ['Line one.', 'Line two.']);
