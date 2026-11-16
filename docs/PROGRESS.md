@@ -365,3 +365,70 @@ The C3 "done when" is met on your data. Still unverified: the Electron window it
 
 ### Open points
 - None new. The E1 "done when" is met for the command-line client and the local endpoint; the API-key path is proven against the stand-in only, until you add a key.
+
+## 2026-11-16 · Task E3: writing content inside the app (branch `task/e3-content-jobs`)
+
+### What changed
+- Before starting: merged `task/e1-model-layer` into `main` (your prompt is the OK); no `CLAUDE.md` change was pending; branched from `main`. **E2 is not built** (you sent E3 next); the study-time hand-offs (Explain, follow-ups, Ask, Feynman feedback, typed grading) still go to Claude Code.
+- **Writing jobs** (`desktop\jobs\`, details in ARCHITECTURE.md 10.0h): background jobs with visible steps that resume after a pause, an error or a restart (`%APPDATA%\Kartotek\jobs\<id>\job.json`). Each step is a separate structured call; ids are assigned by the code. After every task the task's own checks and the matching `KCycle.validate`/`KCycle.audit` messages go back to the model for a repair (2 attempts by default); the audit step sends remaining blockers back to the task that owns them (2 rounds).
+- **New study from my files** (Study library): **Write in the app** with any configured provider and model (chosen per job, page images through the vision slot or a chosen vision model), or **With Claude Code** as before. Files are read locally: PDF with pdf.js (pages without a usable text layer are rendered and read by the vision model), .pptx, .docx, text. **Before anything is sent** the job shows calls, tokens and cost per step; while it runs, the running total.
+- **Steps** (STUDY-RULES.md v2.3): read → page images → units → relations → parts, topics, outcomes and criteria → lesson per topic → part overviews → practice and connecting items → final test and blueprint → audit and repair → verification → save.
+- **Verification:** every model item starts `unverified`; a second call solves it without the key; multiple choice and numbers are compared by the code, written answers by a rubric check. Match → `verified`; no match → `disputed`, one fix round, one more independent solve. **Skip the remaining fixes** ends the fix round early (disputed items stay disputed).
+- **The draft** is saved to `studies\<id>\etut.json` + `source.md` in the content folder (copies of the sources in `sources\<id>\`; an existing `etut.json` is kept as `etut.before-<job>.json`), with `generated_by` (every writer and its calls, writers per step, verification counts, certified). The library shows "draft · not certified" while the audit has blockers and a "written by …" chip.
+- **Same job type:** end-of-lesson tests, mock exams (new or from a past paper), the exam Overview's **Write next N in the app**, and mind maps (**Use the vision model** on a waiting reading or coaching request; `KMind` validators before writing). Settings lists every job.
+- **Ollama** now uses its native `/api/chat`: a context window sized to the prompt (8k–64k by default), schema-constrained output, thinking by effort. Without this, Ollama silently cut long prompts.
+- New dependencies: `pdfjs-dist` 6.5.438 (Apache-2.0) with `@napi-rs/canvas` 1.1.1 (MIT, contains Skia, BSD-3-Clause); `THIRD-PARTY-NOTICES.md` updated; the installer unpacks the native canvas module and packs `MINDMAP-RULES.md`.
+
+### The "done when" run (a real lecture file, a provider other than Claude Code)
+- **Source:** `DSD_Lecture1.pdf` (33 pages; page 33 has no text layer). **Writer:** `gpt-oss:20b` on Ollama (local, free). **Page images:** `qwen3.6:35b-a3b`. Both models were compared first on the units step: qwen3.6 was a little faster (23.5 against 20.5 tokens/s) but merged ideas into 14 units; gpt-oss wrote 40 units, closer to Claude Code's 27 for this lecture.
+- **Result:** `studies\dsd-lecture1-local\etut.json`, **0 blockers, certified** (app audit and `tools\audit-study.py` agree), 25 warnings. 41 units, 14 relations, 3 parts, 8 topics, 8 outcomes, 28 criteria, 58 lesson blocks, 46 practice items (17 of them connecting), 30 final items. **Verification: 53 verified, 23 disputed** (I skipped the last fix rounds at your request, so the remaining disputed items keep the mark).
+- **Every stage:** with Kartotek's own engine (import, then for each of the 8 topics Priming → Learn & digest → Applying → Evaluating (deferred), End opened, final test of 30 items, report): every topic's cycle completed, 34 Applying answers and 27 final answers reached DSR, and the 23 disputed items never did ("The question is not verified"); the report assessed 8 of 8 outcomes. This walk ran headless because Smart App Control started blocking `electron.exe` this afternoon; the job itself ran in the real window up to the final test, then in the same main-process modules without the window.
+- **Cost and time:** 123 model calls, 276k tokens in, 311k out (much of it thinking), $0; about 2 h 16 min of model time on this PC (RTX 5070, 12 GB). The estimate before Start said about 52 calls and 113k–340k tokens in; the repairs and the fix round doubled the calls.
+- Ollama on this PC first used the AMD Radeon 880M instead of the RTX 5070 (8 tokens/s). For this session I restarted it with only the NVIDIA GPU visible (`HIP_VISIBLE_DEVICES=-1`, not a permanent setting); the tray app will use the AMD one again after a restart.
+
+### Quality compared with the Claude Code study (honestly)
+Compared with the Lecture 1 part of `dsd-1` (Claude Code, written from Lectures 1–3 and the exercise sheet).
+
+| | local (gpt-oss:20b) | Claude Code (dsd-1, Lecture 1 part) |
+| --- | --- | --- |
+| units / included | 41 / 41 | 27 / 21 (6 left out as administration or out of scope) |
+| topics, criteria | 8, 28 | 7, 15 |
+| lesson words per topic | about 320 | about 310 |
+| practice + final items | 46 + 30 | 40 + 15 (from this lecture) |
+| item formats | 32 typed, 23 numeric, 21 multiple choice | 40 multiple choice, 15 numeric |
+| items from the source's exercises | 9 imported | 26 imported (mostly from the exercise sheet) |
+| verified | 53 of 76 (23 disputed) | 55 of 55 |
+
+What the local study does well: the structure is complete and checks out (0 blockers without a human edit); the lessons are mostly correct and use the right blocks (worked noise-margin example with NMH = 0.69 V and NML = 1.02 V, a compare table of VOH/VOL/VIH/VIL, the division-by-2 procedure as steps, `n = ⌈log₂ N⌉` with the 7-days and 12-months examples); many items have hints and steps.
+
+Where it is clearly weaker, with examples:
+1. **It does not leave out administration.** Unit U1 and a whole topic "Exam Overview" ("Without notes, state the exam format for this lecture") come from the course-info slide. Claude Code left such slides out.
+2. **Criteria test remembering the slides, not the skill.** The noise-margin outcome's criterion is "Provides the example margins for 5 V CMOS: VOH = 3.84 V …", and its items ask "In the 5 V CMOS example, what is the value of VIL?" (practice) and "What is the value of VIL in the 5 V CMOS example?" (final). Claude Code asks the skill with new numbers: "A logic family has VOH = 2.4 V, VOL = 0.4 V, VIH = 2.0 V and VIL = 0.8 V. What is the high noise margin NMH?" and, in the final test, a second family where the learner must find the smaller margin.
+3. **Topic boundaries are loose.** The "Digital System Components" lesson also teaches Boolean variables, the majority function and combinational circuits, which belong to other topics; its priming mentions "the symbol xy for AND".
+4. **Connecting items were mostly broken.** 17 instead of 1–3 per part, and most were written as "numeric" with key 0 for questions such as "Explain how the exam covers both digital system components and the way signals are represented". The verification caught all of them (disputed), so none would reach your reviews, but they are noise in Applying.
+5. **Small errors in lesson text.** A worked example says "The remainders (bottom to top) are 1,0,1,1 → binary 1100" (the remainders of 12 are 0, 0, 1, 1; the result 1100 is right). Unit ids leaked into text ("… (U9)") and source ids into solutions ("See S1 p.12"); the first is now removed at save.
+6. **Fewer source exercises** (9 imported against 26), partly because Claude Code also had the exercise sheet.
+
+Verdict: the local model produces a usable, structurally sound **draft** that needs your review; it is not at Claude Code's level for what is asked (skills against recall of the slide) and for judgement about what to leave out. The verification pass does what it is for: it caught every broken connecting item and several weak written items. For studies you rely on, I would use a stronger writer (an API model, or Claude Code through the command-line provider) and keep local models for drafts and lesson tests.
+
+Fixed after the run (tested): unit ids removed from learner text at save; "number" fields without a number now fall back to the number in the written answer (one correct answer, 185, had been marked disputed); numeric items whose solution never reaches the key and more than 3 connecting items per part go back to the model as problems; "Skip the remaining fixes".
+
+### How you can test it
+1. `npm start` (if Smart App Control allows Electron), Settings, Models: Ollama with `gpt-oss:20b` as the strong slot (or any provider).
+2. Study, **New study from my files**, Write in the app: choose a lecture PDF, Prepare, read the estimate, Start. Pause, close the app, reopen: the job resumes. Studies being written shows the steps, repairs and running total.
+3. Open `dsd-lecture1-local` in the library (Reload content): chips "written by Ollama (local) · gpt-oss:20b"; disputed items show their note and never reach your reviews.
+4. End-of-lesson test: **New test from my files**; Mock exam: **Write mock N in the app**; CEnT-S Overview: **Write next N in the app**; Mind maps: **Use the vision model** on a waiting request.
+5. `npm test`: all suites, including 15 writing-job tests (fake model) and the Ollama native-path test.
+
+### Open questions
+- **`studies\dsd-lecture1-local` stays** in the content folder as the evidence of this run (your answer, 2026-11-16).
+- **Ollama on the NVIDIA GPU permanently:** setting the user environment variable `HIP_VISIBLE_DEVICES=-1` (and restarting Ollama) makes the tray app use the RTX 5070. That is your setting to make. The two models take about 37 GB (`ollama rm qwen3.6:35b-a3b` / `gpt-oss:20b` frees it).
+- **Smart App Control** blocked `electron.exe` again this afternoon (it allowed it this morning); `npm start` and `npm run smoke` cannot run while it does.
+- Not verified with a real provider: the lesson-test, mock-exam and mind-map jobs (tested with the fake model only), and an API-key provider.
+
+### Later the same day
+- **Fixed: the Mock exam page went black.** An import of the writing-job components was missing in `ui/src/tabs/Mock.jsx` (an automatic edit had not applied). Checked by opening all 17 tabs in a temp-profile window and by `npm run smoke` (passes: 37 sidebar entries, Algorithm 53/53, 0 unexpected console errors). The smoke test had not been run during E3 because Smart App Control blocked Electron at that time.
+- **Browser preview** (`node scripts/bridge-preview.cjs --persist`, or the `kartotek-preview` entry in `.claude/launch.json`): now runs the model layer, the prompt files and the writing jobs too, with keys encrypted by Windows DPAPI in its own profile (`%APPDATA%Kartotek-preview`), a Windows file picker and a token on every bridge call. For days when Smart App Control blocks `electron.exe`.
+- **Anthropic API key** added by you in the desktop app (dev profile); the connection test passed (Opus 5.5, $0.0014). Slots set: strong and vision `claude-sonnet-5-5`, fast `claude-haiku-5-5`. No monthly budget is set yet (Settings, Models, Usage and budget).
+- **Please delete the API key that was pasted in the chat** (Console, API keys) if you have not yet; use only the one you pasted into Kartotek.
+- The Ollama server started for this session with only the NVIDIA GPU visible stops when this session ends; afterwards the tray app uses the AMD GPU again (see the open question above).

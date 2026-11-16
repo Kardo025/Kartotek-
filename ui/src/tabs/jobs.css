@@ -1,0 +1,50 @@
+/* Writing jobs (task E3): job cards with steps, the estimate, the result; the "new … from my files" form */
+.jb-panel .k-sec-head { gap: 12px; flex-wrap: wrap; }
+.jb-list { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 10px; }
+.jb-card { padding: 12px 14px; border: 1px solid var(--k-line); border-radius: 12px; background: var(--k-panel); overflow: hidden; }
+.jb-card[data-status="running"] { border-color: color-mix(in srgb, var(--k-accent) 45%, var(--k-line)); }
+.jb-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.jb-toggle { display: inline-flex; align-items: center; gap: 8px; background: none; border: 0; padding: 0; color: var(--k-text); font: inherit; font-weight: 600; cursor: pointer; text-align: left; min-width: 0; flex: 1 1 260px; }
+.jb-toggle:focus-visible { outline: 2px solid var(--k-accent); outline-offset: 3px; border-radius: 6px; }
+.jb-caret { transition: transform 240ms cubic-bezier(0.23, 1, 0.32, 1); color: var(--k-muted); flex: none; }
+.jb-caret[data-open="true"] { transform: rotate(90deg); }
+.jb-title { overflow-wrap: anywhere; }
+.jb-meter { height: 3px; border-radius: 999px; background: var(--k-line); margin: 10px 0 8px; overflow: hidden; }
+.jb-meter > span { display: block; height: 100%; background: var(--k-accent); border-radius: inherit; }
+.jb-totals { margin: 0; color: var(--k-text-2); }
+.jb-error { color: var(--k-again); display: flex; gap: 6px; align-items: flex-start; margin: 6px 0 0; }
+.jb-warn { color: var(--k-hard); display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.jb-body { overflow: hidden; }
+.jb-steps { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 6px; }
+.jb-step { display: flex; align-items: center; gap: 8px; font-size: 13.5px; }
+.jb-steps li[data-status="pending"] .jb-step { color: var(--k-muted); }
+.jb-ic-done { color: var(--k-good); flex: none; }
+.jb-ic-wait { color: var(--k-text-3); flex: none; }
+.jb-ic-run { color: var(--k-accent); flex: none; animation: jb-spin 900ms linear infinite; }
+@keyframes jb-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .jb-ic-run { animation: none; } }
+.jb-detail { margin: 2px 0 0 24px; }
+.jb-tasks { list-style: none; margin: 4px 0 0 24px; padding: 0; display: grid; gap: 2px; }
+.jb-probs summary { cursor: pointer; color: var(--k-hard); }
+.jb-probs ul { margin: 4px 0 6px; padding-left: 18px; }
+.jb-log { margin-top: 10px; }
+.jb-log summary { cursor: pointer; color: var(--k-muted); }
+.jb-log ul { list-style: none; margin: 6px 0 0; padding: 0; max-height: 220px; overflow: auto; }
+.jb-log li[data-level="warn"] { color: var(--k-hard); }
+.jb-log li[data-level="error"] { color: var(--k-again); }
+.jb-actions { margin-top: 10px; }
+.jb-est { margin-top: 12px; padding: 10px 12px; border-radius: 10px; background: var(--k-tile); }
+.jb-est p { margin: 0 0 6px; }
+.jb-est-table { width: 100%; border-collapse: collapse; margin: 4px 0 6px; }
+.jb-est-table th, .jb-est-table td { text-align: left; padding: 3px 8px 3px 0; border-bottom: 1px solid var(--k-line); }
+.jb-est-table th { color: var(--k-muted); font-weight: 500; }
+.jb-result { margin-top: 12px; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--k-line); }
+.jb-result p { margin: 0 0 6px; }
+.jb-new { display: grid; gap: 10px; }
+.jb-files { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.jb-picked { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.jb-choices { display: flex; flex-wrap: wrap; gap: 10px 16px; }
+.jb-choice { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; }
+.jb-choice .k-field { min-width: 220px; }
+.jb-link, .jb-new .k-link { background: none; border: 0; padding: 0; color: var(--k-accent); font: inherit; cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+.jb-chip { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--k-line-strong); color: var(--k-text-2); }

@@ -6,6 +6,7 @@ import { Timer, Play, ArrowRight, ArrowLeft, Flag, ArrowCounterClockwise, FileAr
 import { PageHead, Panel, Btn, Kpi, TableWrap, ConfirmBtn } from "./kit.jsx";
 import { Md } from "./study/common.jsx";
 import { AskPair } from "./Cents.jsx";
+import { NewJob, JobsPanel, jobsAvailable } from "./Jobs.jsx";
 import "./mock.css";
 
 const App = () => window.App;
@@ -49,6 +50,34 @@ export default function Mock({ exam }) {
   return <Library exam={exam} list={list} open={(id, mode, idx) => setView({ id, mode, idx })} />;
 }
 
+// A mock exam written in the app (task E3, MOCK-RULES.md): the sections, counts, minutes, options and scoring of the real exam,
+// the syllabus topics per section with their page extracts (when they are in the content folder), and the earlier mocks' stems to avoid
+function mockRequest(exam, n, list, past) {
+  const C = K(), secs = C.EXAMS[exam].sections;
+  return {
+    exam, examLabel: C.EXAMS[exam].long, id: C.mockId(exam, n), title: C.EXAMS[exam].name + " mock " + n + (past ? " (past paper)" : ""), past: !!past,
+    options: exam === "cents" ? 5 : 4, scoring: { correct: 1, wrong: exam === "cents" ? -0.25 : 0, blank: 0 },
+    sections: secs.map((s) => ({ section_id: s.id, name: s.name, minutes: s.min, questions: s.q,
+      topics: (s.syl || []).reduce((a, bl) => a.concat(bl.rows.filter((r) => r.x[3] !== "opt").map((r) => ({ id: r.x[0], name: r.x[2], extract: r.x[4] && r.x[4].length ? C.etutId(r.x[0]) + ".pdf" : undefined }))), []) })),
+    avoid: list.reduce((a, m) => a.concat(((m.package && m.package.sections) || []).reduce((b, sec) => b.concat(sec.questions.map((q) => q.stem)), [])), []).slice(0, 80),
+  };
+}
+function MockJob({ exam, n, list }) {
+  const [past, setPast] = useState(false);
+  return (
+    <>
+      <details className="k-panel k-sec" id="mock-job">
+        <summary className="k-sec-head"><h2>Write mock {n} in the app</h2></summary>
+        <div className="k-row-btns"><button type="button" className="k-btn sm" aria-pressed={!past} onClick={() => setPast(false)}>New questions</button><button type="button" className="k-btn sm" aria-pressed={past} onClick={() => setPast(true)}>From a past paper</button></div>
+        <NewJob key={past ? "past" : "new"} kind="mock" needsFiles={past} request={mockRequest(exam, n, list, past)}
+          intro={past ? "Choose the official past or sample paper (PDF). It is transcribed into the real format; questions without a key are solved and marked." : "The model you choose writes " + K().EXAMS[exam].sections.reduce((a, s) => a + s.q, 0) + " questions in the real format, section by section, from your syllabus topics and the page extracts in your content folder; every question is then solved again without its key."}
+          onCreated={() => App().toast("Prepared. Check the estimate below, then press Start.")} />
+      </details>
+      <JobsPanel kinds={["mock"]} title="Mock exams being written" />
+    </>
+  );
+}
+
 function Library({ exam, list, open }) {
   const A = App(), C = K(), n = nextNumber(exam);
   const prev = list.map((x) => x.mock_id);
@@ -69,6 +98,7 @@ function Library({ exam, list, open }) {
   return (
     <div className="k-page mock">
       <PageHead title={"Mock exam · " + NAME[exam]} sub={<p className="k-sub">The real format: {secs.length} timed sections, {q} questions, {mins} minutes. Sections run in order; when a section's time is up the next one starts and you cannot go back.{exam === "cents" ? " Scoring +1 / 0 / −0.25, 5 options." : ""}</p>} />
+      {jobsAvailable() && <MockJob exam={exam} n={n} list={list} />}
       <Panel title="Mock exams" actions={
         <>
           <AskPair what="writing a mock exam" prompt={C.mockPrompt(exam, n, prev, false)} primary icon={<Exam size={14} aria-hidden="true" />} label={"Write mock " + n + " with Claude"} copyLabel="Copy the mock exam prompt"

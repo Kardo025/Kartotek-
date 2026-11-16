@@ -7,6 +7,7 @@ import {
 } from "@phosphor-icons/react";
 import { EASE, PageHead, Panel, Btn, ConfirmBtn, Lvl, Tag, Kpi, Bar } from "./kit.jsx";
 import "./lesson.css";
+import { NewJob, JobsPanel, jobsAvailable } from "./Jobs.jsx";
 
 const LETTERS = ["A", "B", "C", "D"];
 const TONE = { mastered: "ok", learned: "mid", partly: "warn", not: "bad" };
@@ -208,6 +209,14 @@ function Library() {
         </label>
       </PageHead>
       <p className="k-ls-lede">Right after a lesson, measure every objective once: what you have fully learned and what you have not. Each objective then gets its own review calendar from the DSR algorithm, and you review it on the Review tab or re-test it here with new questions.</p>
+      {jobsAvailable() && (
+        <details className="k-panel k-sec" id="new-lesson-test">
+          <summary className="k-sec-head"><h2>New test from my files</h2></summary>
+          <NewJob kind="lesson" intro="Send the lesson's transcript, notes or slides. The model you choose writes the objectives, the write-from-memory items, the test items and the re-test pool (LESSON-TEST-RULES.md); every question is then solved again without its key. The test is saved as a draft in your content folder."
+            fields={[{ key: "title", label: "Title", optional: true, placeholder: "e.g. Digital systems · lecture 4" }]} onCreated={() => App.toast("Files read. Check the estimate below, then press Start.")} />
+        </details>
+      )}
+      <JobsPanel kinds={["lesson"]} title="Tests being written" />
       {errors && (
         <motion.div className="k-panel k-ls-errors" id="lesson-errors" role="alert" initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25, ease: EASE }}>
           <p><Lvl level="bad"><X size={12} weight="bold" aria-hidden="true" />{errors.title}</Lvl> {errors.text}</p>

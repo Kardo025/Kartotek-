@@ -15,11 +15,15 @@ files:
   - src/**
   - samples/**
   - prompts/**
+  # the mind-map writing jobs (task E3) give the model the rules file's schema sections
+  - MINDMAP-RULES.md
   - "!**/*.map"
 asar: true
 # The samples are read as plain files (the content service lists folders), so they stay outside the archive
 asarUnpack:
   - samples/**
+  # the canvas renderer pdf.js uses for page images is a native module, which cannot load from inside the archive
+  - node_modules/@napi-rs/**
 
 # Electron fuses (ARCHITECTURE.md section 2.4): the packaged app cannot be run as plain Node, ignores NODE_OPTIONS and the Node
 # inspector flags, loads code only from the checked app.asar, and gives file:// pages no extra rights (the app uses app://).

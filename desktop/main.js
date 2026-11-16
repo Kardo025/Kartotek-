@@ -398,6 +398,80 @@ handleModel('prompts:saveOverride', (e, id, text) => { if (!isStr(id, 80) || !is
 handleModel('prompts:resetOverride', (e, id) => { if (!isStr(id, 80)) throw new Error('Invalid prompt.'); return prompts().resetOverride(id); });
 handleModel('prompts:render', (e, id, vars) => { if (!isStr(id, 80) || (vars && typeof vars !== 'object')) throw new Error('Invalid prompt.'); return prompts().render(id, vars || {}); });
 
+// ---- writing jobs (task E3): background jobs in <userData>\jobs\ that write studies, lesson tests, mock exams and mind-map files
+// into the content folder through the model layer. The window never sends a file path: source files come from the main process's
+// file picker (the window gets tokens), and named files are only looked up inside the content folder.
+const { createJobService } = require('./jobs/service');
+const { createChecks } = require('./jobs/engine');
+const jobExtract = require('./jobs/extract');
+let jobService = null;
+const pickedFiles = new Map();   // token -> absolute path chosen in the picker
+function jobs() {
+  if (!jobService) {
+    jobService = createJobService({
+      dir: app.getPath('userData'), models: models(), prompts: prompts(), checks: createChecks(SRC), extract: jobExtract,
+      pipelines: { study: require('./jobs/study'), lesson: require('./jobs/lesson'), mock: require('./jobs/mock'), 'mind-read': require('./jobs/mind').read, 'mind-coach': require('./jobs/mind').coach },
+      content: { dir: () => currentContent().dir },
+      files: { rules: (name) => fs.readFileSync(path.join(ROOT, path.basename(name)), 'utf8') },
+      emit: (ev) => { if (win && !win.isDestroyed()) win.webContents.send('jobs:event', ev); },
+    });
+  }
+  return jobService;
+}
+const SOURCE_FILTERS = [{ name: 'Sources', extensions: ['pdf', 'pptx', 'docx', 'txt', 'md', 'srt', 'vtt'] }];
+const PHOTO_FILTERS = [{ name: 'Photos', extensions: ['jpg', 'jpeg', 'png', 'webp'] }];
+handleModel('jobs:pickFiles', async (e, which) => {
+  const r = await dialog.showOpenDialog(win, { title: which === 'photos' ? 'Choose the photos of the map' : 'Choose the source files', properties: ['openFile', 'multiSelections'], filters: which === 'photos' ? PHOTO_FILTERS : SOURCE_FILTERS });
+  if (r.canceled) return [];
+  return r.filePaths.slice(0, 40).map((p) => {
+    const token = require('crypto').randomBytes(12).toString('hex');
+    pickedFiles.set(token, p);
+    let size = 0; try { size = fs.statSync(p).size; } catch (x) { /* listed anyway */ }
+    return { token, name: path.basename(p), size };
+  });
+});
+// Tests drive the window without the native picker: in development only, and only when asked for, a file can be "picked" here
+if (DEV && process.env.KARTOTEK_TEST_PICK === '1') {
+  global.__kartotekTestPick = (file) => { const token = require('crypto').randomBytes(12).toString('hex'); pickedFiles.set(token, path.resolve(file)); return token; };
+}
+function inside(base, rel) {
+  const full = path.resolve(base, rel);
+  return full.startsWith(path.resolve(base) + path.sep) ? full : null;
+}
+// Turns the window's request into one the job service can run: tokens -> picked paths, names -> files inside the content folder
+function resolveJobRequest(kind, req) {
+  if (!req || typeof req !== 'object') throw new Error('Invalid request.');
+  const out = JSON.parse(JSON.stringify(req));
+  const contentDir = currentContent().dir;
+  const byToken = (t) => { const p = pickedFiles.get(String(t)); if (!p) throw new Error('A chosen file is no longer available; choose it again.'); return p; };
+  out.files = (req.files || []).map(byToken);
+  (req.sourceNames || []).forEach((n) => {
+    const p = contentDir && inside(path.join(contentDir, 'sources'), path.basename(String(n)));
+    if (!p || !fs.existsSync(p)) throw new Error('The source file ' + path.basename(String(n)) + ' is not in the content folder\'s sources folder.');
+    out.files.push(p);
+  });
+  delete out.sourceNames;
+  if (kind === 'mock') (out.sections || []).forEach((s) => (s.topics || []).forEach((t) => {
+    const p = t.extract && contentDir && inside(path.join(contentDir, 'sources'), path.basename(String(t.extract)));
+    t.extract = p && fs.existsSync(p) ? p : undefined;
+  }));
+  if (kind === 'mind-read') out.views = (req.views || []).map((v) => Object.assign({}, v, { file: byToken(v.token), token: undefined }));
+  if (kind === 'mind-coach') out.views = (req.views || []).map((v) => {
+    const p = contentDir && inside(path.join(contentDir, 'mindmaps', String(req.mapId || '')), String(v.file || '').replace(/\\/g, '/'));
+    return { id: v.id, file: p };
+  }).filter((v) => v.file && fs.existsSync(v.file));
+  return out;
+}
+const checkTarget = (t) => (t == null ? null : (t && typeof t.providerId === 'string' && t.providerId.length < 60 ? { providerId: t.providerId, model: String(t.model || '').slice(0, 120) } : null));
+handleModel('jobs:list', () => jobs().list());
+handleModel('jobs:get', (e, id) => jobs().get(String(id)));
+handleModel('jobs:create', (e, kind, req, choice) => jobs().create(String(kind), resolveJobRequest(String(kind), req), { target: checkTarget(choice && choice.target), visionTarget: checkTarget(choice && choice.visionTarget) }));
+handleModel('jobs:start', (e, id, choice) => jobs().start(String(id), choice ? { target: checkTarget(choice.target), visionTarget: checkTarget(choice.visionTarget) } : undefined));
+handleModel('jobs:pause', (e, id) => jobs().pause(String(id)));
+handleModel('jobs:skipFixes', (e, id) => jobs().skipFixes(String(id)));
+handleModel('jobs:remove', (e, id) => jobs().remove(String(id)));
+handleModel('jobs:openFolder', async (e, id) => { const err = await shell.openPath(path.join(app.getPath('userData'), 'jobs', path.basename(String(id)))); if (err) throw new Error(err); return null; });
+
 ipcMain.handle('app:info', (event) => {
   if (!isOwnFrame(event)) return { ok: false, error: 'forbidden' };
   return { ok: true, value: { version: app.getVersion(), platform: process.platform, dev: DEV, electron: process.versions.electron } };
