@@ -56,7 +56,7 @@ Each finding has a rank, what is wrong, where, and how to reproduce it. Paths ar
   git branch -r --contains 2fa5786
   ```
   The reviewer's history scan (Appendix A.3) reports it as the only personal-term hit in 652 blobs.
-- **Fix needs the owner:** rewrite the history and force-push (as in C4), or accept that the trace is public. Either way, decide before tagging 1.0.
+- **Owner decision (2026-11-17):** rewrite the history in G2 (as in C4) so that no commit holds the trace, then force-push. G2 still asks for the explicit OK before the force push itself, as `CLAUDE.md:11` requires.
 
 ### Should fix
 

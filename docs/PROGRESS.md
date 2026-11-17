@@ -914,7 +914,7 @@ I did not spend your Claude Code subscription or an API key on a real call. To c
 3. Data safety: set `KARTOTEK_BACKUP` to a copy of your export, then run `npm test` and read the "REAL BACKUP REPORT" lines.
 
 ### Open questions (your decisions)
-- **B1:** rewrite the public history and force-push (as in C4), or accept the trace? This needs your OK either way.
+- **B1 (decided 2026-11-17):** rewrite the history in G2, as in C4. G2 asks for your OK again right before the force push.
 - **S2:** build the "Generated questions" calibration view in G2, or drop it from the protocol?
 - **M13:** may a model grading that you confirm unchanged go to your reviews (today's behaviour)?
 - **Still open from earlier:** the C4 draft release, the placeholder author e-mail, and the Anthropic key you pasted in chat.
