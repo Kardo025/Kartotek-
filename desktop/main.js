@@ -394,9 +394,9 @@ handleModel('dictation:start', () => dictation.start());
 let whisperService = null;
 const whisper = () => whisperService || (whisperService = require('./whisper').createWhisper({ dir: path.join(app.getPath('userData'), 'dictation') }));
 handleModel('dictation:local', () => whisper().status());
-handleModel('dictation:install', (event) => whisper().install((ev) => { if (!event.sender.isDestroyed()) event.sender.send('dictation:event', ev); }));
-handleModel('dictation:remove', () => whisper().remove());
-handleModel('dictation:transcribe', (e, wav) => { if (!(wav instanceof ArrayBuffer || ArrayBuffer.isView(wav))) throw new Error('Invalid recording.'); return whisper().transcribe(wav instanceof ArrayBuffer ? Buffer.from(wav) : Buffer.from(wav.buffer, wav.byteOffset, wav.byteLength)); });
+handleModel('dictation:install', (event, which) => whisper().install((ev) => { if (!event.sender.isDestroyed()) event.sender.send('dictation:event', ev); }, which === 'multi' ? 'multi' : 'en'));
+handleModel('dictation:remove', (e, which) => whisper().remove(which === 'multi' ? 'multi' : undefined));
+handleModel('dictation:transcribe', (e, wav, lang) => { if (!(wav instanceof ArrayBuffer || ArrayBuffer.isView(wav))) throw new Error('Invalid recording.'); return whisper().transcribe(wav instanceof ArrayBuffer ? Buffer.from(wav) : Buffer.from(wav.buffer, wav.byteOffset, wav.byteLength), typeof lang === 'string' ? lang : 'en'); });
 // Streaming calls: events go to the window as 'models:event' with the call id
 function sendModelEvent(event, callId, ev) { if (!event.sender.isDestroyed()) event.sender.send('models:event', { callId, event: ev }); }
 handleModel('models:run', (event, callId, request) => {

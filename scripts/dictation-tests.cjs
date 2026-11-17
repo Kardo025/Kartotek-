@@ -72,9 +72,10 @@ async function localTests() {
   const zipBytes = Buffer.from('fake zip'), modelBytes = Buffer.from('fake model bytes');
   // swap the pins for the stand-in files during the test
   const saved = JSON.parse(JSON.stringify(PINS));
-  Object.assign(PINS.program, pinned(zipBytes)); Object.assign(PINS.model, pinned(modelBytes));
+  const multiBytes = Buffer.from('fake multilingual model');
+  Object.assign(PINS.program, pinned(zipBytes)); Object.assign(PINS.model, pinned(modelBytes)); Object.assign(PINS.multi, pinned(multiBytes));
   const fakeFetch = (bodies) => async (url) => {
-    const b = bodies[url.includes('huggingface') ? 'model' : 'program'];
+    const b = bodies[url.includes('small-q5_1') ? 'multi' : url.includes('huggingface') ? 'model' : 'program'];
     if (!b) return { ok: false, status: 404 };
     return { ok: true, status: 200, body: (async function* () { yield b.slice(0, 3); yield b.slice(3); })() };
   };
@@ -124,7 +125,43 @@ async function localTests() {
       assert.strictEqual(createWhisper({ dir: mk(), platform: 'linux' }).status().available, false);
       assert.strictEqual(cleanText('(wind) Hello  [MUSIC] world '), 'Hello world');
     });
-  } finally { Object.assign(PINS.program, saved.program); Object.assign(PINS.model, saved.model); dirs.forEach((d) => fs.rmSync(d, { recursive: true, force: true })); }
+    await t(ok, 'Turkish and Italian: refused until the multilingual model is added; then they use it with -l tr / -l it, English keeps small.en; Turkish letters survive split output; removing it keeps English', async () => {
+      const d = mk(), calls = [];
+      const spawn = (cmd, args) => {
+        calls.push(args);
+        const p = new EventEmitter(); p.stdout = new EventEmitter(); p.stderr = new EventEmitter(); p.kill = () => {};
+        const bytes = Buffer.from('Doğru cevap ikidir. Çünkü ışık şöyle.', 'utf8');
+        setImmediate(() => { p.stdout.emit('data', bytes.slice(0, 3)); p.stdout.emit('data', bytes.slice(3)); p.emit('exit', 0); });
+        return p;
+      };
+      const w = createWhisper({ dir: d, platform: 'win32', fetch: fakeFetch({ program: zipBytes, model: modelBytes, multi: multiBytes }), expand, spawn });
+      await w.install();
+      assert.deepStrictEqual(w.status().languages.map((x) => x.code), ['en']);
+      await assert.rejects(w.transcribe(wav(3200), 'tr'), /multilingual model/);
+      const events = [];
+      await w.install((ev) => events.push(ev.which + ':' + ev.step), 'multi');
+      assert.ok(events.every((e) => e.startsWith('multi:')) && !events.some((e) => e === 'multi:program'));
+      assert.deepStrictEqual(w.status().languages.map((x) => x.code), ['en', 'tr', 'it']);
+      const r = await w.transcribe(wav(3200), 'tr');
+      assert.strictEqual(r.text, 'Doğru cevap ikidir. Çünkü ışık şöyle.'); assert.strictEqual(r.language, 'tr');
+      let a = calls[calls.length - 1];
+      assert.ok(/ggml-small-q5_1\.bin$/.test(a[a.indexOf('-m') + 1]) && a[a.indexOf('-l') + 1] === 'tr');
+      await w.transcribe(wav(3200), 'it'); a = calls[calls.length - 1]; assert.strictEqual(a[a.indexOf('-l') + 1], 'it');
+      await w.transcribe(wav(3200), 'en'); a = calls[calls.length - 1];
+      assert.ok(/ggml-small\.en-q5_1\.bin$/.test(a[a.indexOf('-m') + 1]) && a[a.indexOf('-l') + 1] === 'en');
+      await w.transcribe(wav(3200), 'xx'); a = calls[calls.length - 1]; assert.strictEqual(a[a.indexOf('-l') + 1], 'en');
+      w.remove('multi');
+      const st = w.status();
+      assert.ok(st.installed && !st.multi); assert.deepStrictEqual(st.languages.map((x) => x.code), ['en']);
+    });
+    await t(ok, 'adding Turkish and Italian first also brings the program, without the English model', async () => {
+      const d = mk();
+      const w = createWhisper({ dir: d, platform: 'win32', fetch: fakeFetch({ program: zipBytes, multi: multiBytes }), expand });
+      await w.install(null, 'multi');
+      const st = w.status();
+      assert.ok(st.multi && !st.installed); assert.deepStrictEqual(st.languages.map((x) => x.code), ['tr', 'it']);
+    });
+  } finally { Object.assign(PINS.program, saved.program); Object.assign(PINS.model, saved.model); Object.assign(PINS.multi, saved.multi); dirs.forEach((d) => fs.rmSync(d, { recursive: true, force: true })); }
   // the real pins stay fixed values (a change of version must be a code change)
   assert.ok(/^[0-9a-f]{64}$/.test(PINS.program.sha256) && /^[0-9a-f]{64}$/.test(PINS.model.sha256) && /^https:\/\/github\.com\/ggml-org\//.test(PINS.program.url) && /^https:\/\/huggingface\.co\/ggerganov\//.test(PINS.model.url));
   return ok;

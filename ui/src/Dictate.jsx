@@ -27,6 +27,16 @@ function useDictationMode() {
   return m;
 }
 
+// The dictation language (English, Turkish, Italian), one choice for every button, remembered on this PC
+const LANG_PREF = "kartotek-dictation-lang";
+let langNow = (() => { try { return window.App.pref(LANG_PREF) || "en"; } catch (e) { return "en"; } })(), langWaiters = [];
+function useDictationLang() {
+  const [l, setL] = useState(langNow);
+  useEffect(() => { langWaiters.push(setL); return () => { langWaiters = langWaiters.filter((f) => f !== setL); }; }, []);
+  const set = (v) => { langNow = v; try { window.App.setPref(LANG_PREF, v); } catch (e) { /* ignore */ } langWaiters.forEach((f) => f(v)); };
+  return [l, set];
+}
+
 // Writes the new value through the native setter so React's onChange sees it, then puts the cursor after the dictated text
 function putText(el, text) {
   const r = insertAt(el.value, el.selectionStart, el.selectionEnd, text, el.maxLength > 0 ? el.maxLength : 0);
@@ -55,6 +65,9 @@ async function toWav(blob) {
 // targetRef: the textarea; onBeforeStart: e.g. unfold the box that holds it
 export default function Dictate({ targetRef, onBeforeStart, disabled, label }) {
   const st = useDictationMode();
+  const [lang0, setLang] = useDictationLang();
+  const langs = (st.local && st.local.languages) || [];
+  const lang = langs.some((x) => x.code === lang0) ? lang0 : "en";
   const [msg, setMsg] = useState(null);         // { kind: "on" | "hint" | "error" | "done", text }
   const [rec, setRec] = useState(null);          // "recording" | "transcribing" | null
   const [secs, setSecs] = useState(0);
@@ -80,7 +93,7 @@ export default function Dictate({ targetRef, onBeforeStart, disabled, label }) {
       setRec("transcribing"); setMsg(null);
       try {
         const wav = await toWav(new Blob(chunks, { type: mr.mimeType }));
-        const res = await D().transcribe(wav);
+        const res = await D().transcribe(wav, lang);
         if (!res || !res.ok) throw new Error((res && res.error) || "Transcribing failed.");
         const text = res.value.text;
         const el = box();
@@ -127,7 +140,12 @@ export default function Dictate({ targetRef, onBeforeStart, disabled, label }) {
         {recording ? <Stop size={14} weight="fill" aria-hidden="true" /> : busy ? <CircleNotch size={14} className="mc-spin" aria-hidden="true" /> : <Microphone size={14} aria-hidden="true" />}
         {recording ? "Stop (" + Math.floor(secs / 60) + ":" + String(secs % 60).padStart(2, "0") + ")" : busy ? "Writing…" : label || "Dictate"}
       </button>
-      {recording && <span className="k-small k-muted" role="status">Listening. Speak, then press Stop.</span>}
+      {st.mode === "local" && langs.length > 1 && (
+        <select className="k-input dc-lang" value={lang} disabled={!!rec} onChange={(e) => setLang(e.target.value)} aria-label="Dictation language" title="The language you will speak">
+          {langs.map((x) => <option key={x.code} value={x.code}>{x.label}</option>)}
+        </select>
+      )}
+      {recording && <span className="k-small k-muted" role="status">Listening{lang !== "en" ? " (" + (langs.find((x) => x.code === lang) || {}).label + ")" : ""}. Speak, then press Stop.</span>}
       {msg && (msg.kind === "on" || msg.kind === "done" || msg.kind === "error") && <span className="k-small k-muted" role="status">{msg.text}</span>}
       {msg && msg.kind === "hint" && <span className="k-small k-muted" role="status">Press <kbd>Win</kbd> + <kbd>H</kbd> and speak.</span>}
     </>
@@ -141,14 +159,14 @@ export function DictationPanel() {
   const [err, setErr] = useState("");
   if (!D() || !D().local) return null;
   const local = st.local;
-  const install = async () => {
-    setErr(""); setProg({ done: 0, total: 1 });
-    const res = await D().install((ev) => { if (ev && ev.total) setProg(ev); });
+  const install = async (which) => {
+    setErr(""); setProg({ which, done: 0, total: 1 });
+    const res = await D().install((ev) => { if (ev && ev.total) setProg(Object.assign({ which }, ev)); }, which);
     setProg(null);
     if (!res || !res.ok) setErr((res && res.error) || "The download failed.");
     readDictationMode(true);
   };
-  const remove = async () => { await D().remove(); readDictationMode(true); };
+  const remove = async (which) => { await D().remove(which); readDictationMode(true); };
   const pct = prog && prog.total ? Math.floor((100 * prog.done) / prog.total) : 0;
   return (
     <section className="k-panel k-sec dc-panel">
@@ -159,11 +177,18 @@ export function DictationPanel() {
             ? "Ready: " + local.model + " turns your voice into text on this PC with " + local.program + ". Nothing you say leaves the PC."
             : "The Dictate buttons use Windows voice typing (Win + H) until you download the local model: " + local.model + " and " + local.program + ", about " + local.downloadMB + " MB, from GitHub and Hugging Face, each checked against a fixed checksum."}</p>
           <div className="cy-actions">
-            {!local.installed && <button type="button" className="k-btn sm primary" disabled={!!prog} onClick={install}>{prog ? "Downloading… " + pct + "%" : "Download the local model (" + local.downloadMB + " MB)"}</button>}
-            {local.installed && <button type="button" className="k-btn sm" onClick={remove}>Remove the local model</button>}
+            {!local.installed && <button type="button" className="k-btn sm primary" disabled={!!prog} onClick={() => install("en")}>{prog && prog.which === "en" ? "Downloading… " + pct + "%" : "Download the local model (" + local.downloadMB + " MB)"}</button>}
+            {local.installed && <button type="button" className="k-btn sm" disabled={!!prog} onClick={() => remove()}>Remove the local model</button>}
+          </div>
+          <p className="k-small"><b>Turkish and Italian:</b> {local.multi
+            ? "ready (" + local.multiModel + "). Choose the language next to any Dictate button."
+            : "they need a second model, " + local.multiModel + ", about " + local.multiMB + " MB from Hugging Face, checked the same way. English keeps using the English model."}</p>
+          <div className="cy-actions">
+            {!local.multi && <button type="button" className="k-btn sm" disabled={!!prog} onClick={() => install("multi")}>{prog && prog.which === "multi" ? "Downloading… " + pct + "%" : "Add Turkish and Italian (" + local.multiMB + " MB)"}</button>}
+            {local.multi && <button type="button" className="k-btn sm" disabled={!!prog} onClick={() => remove("multi")}>Remove Turkish and Italian</button>}
             {err && <span className="k-small k-muted">{err}</span>}
           </div>
-          <p className="k-small k-muted">English only for now. Transcribing runs only after you press Stop, on 4 processor threads at low priority, so the PC stays cool. Turkish and Italian need a multilingual model (for example small, about 190 MB as q5_1), which is not set up yet.</p>
+          <p className="k-small k-muted">Transcribing runs only after you press Stop, on at most 4 processor threads at low priority, so the PC stays cool. The multilingual model is a little less accurate than the English one, so English stays on the English model.</p>
         </>
       )}
     </section>
