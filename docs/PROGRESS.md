@@ -870,7 +870,7 @@ I did not spend your Claude Code subscription or an API key on a real call. To c
 - **Language choice in Settings too:** Settings → Models → Dictation → "I dictate in: English | Turkish | Italian" (the same choice as beside the buttons).
 - **Dictate on the answer boxes too** (you looked for it there): written answers ("Write it from memory", "Your answer", the produce-first box), Priming notes, the live prediction, the legacy study's explanation and teach boxes, the legacy runner's reasoning box and the end-of-lesson recall box. The button finds the text box just above it.
 - **A try-out box in Settings:** Settings → Models → Dictation has "Try it here (nothing is saved)" with its own Dictate button, so dictation can be tried where it is set up.
-- **Not verified yet:** a real Turkish or Italian dictation by you. small is less accurate in Turkish than in English; if it is not good enough, large-v3-turbo (q5_0, 574 MB) is the stronger, heavier option.
+- **Verified:** you dictated Turkish in the Settings try-out box on 2026-11-21 and the text appeared. small is less accurate in Turkish than in English; if that becomes a problem, large-v3-turbo (q5_0, 574 MB) is the stronger, heavier option.
 
 ### Open questions
 - **The installed app:** the local model is downloaded per Windows profile (the development app and an installed Kartotek each need it once).
