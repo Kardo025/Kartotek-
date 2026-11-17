@@ -1,7 +1,8 @@
 'use strict';
 // `npm run hygiene`: fails when the repository tracks something private (task A3's check, ARCHITECTURE.md section 9).
-// Checks every tracked file (git ls-files) for course-material folders, documents and photos, build output and personal traces.
-// It reads the index only; it never prints the contents of a file.
+// Checks every tracked file (git ls-files) for course-material folders, documents and photos, build output and personal traces,
+// and (G2, review finding S1) every blob and commit message reachable from any ref, so a trace that was committed and later
+// removed still fails. It never prints the contents of a file.
 const { execFileSync } = require('child_process');
 const fs = require('fs');
 const os = require('os');
@@ -60,6 +61,39 @@ for (const [what, pattern] of TRACES) {
   for (const f of out.split('\n').filter(Boolean)) problems.push(what + ' in ' + f);
 }
 
+// History: every blob reachable from any ref (local and remote branches, tags), and every commit message
+const SKIP_HISTORY_PATH = /(^|\/)(THIRD-PARTY-NOTICES\.md|package-lock\.json)$/;
+const compiled = TRACES.map(([what, pattern]) => [what, new RegExp(pattern, 'i')]);
+let historyBlobs = 0;
+try {
+  const listing = git(['rev-list', '--objects', '--all']).split('\n').filter(Boolean);
+  const paths = new Map();
+  for (const line of listing) { const i = line.indexOf(' '); if (i > 0) paths.set(line.slice(0, i), line.slice(i + 1)); else paths.set(line, ''); }
+  const ids = [...paths.keys()];
+  const batch = execFileSync('git', ['cat-file', '--batch'], { cwd: root, input: ids.join('\n') + '\n', maxBuffer: 1024 * 1024 * 1024 });
+  let pos = 0;
+  const seen = new Set();
+  while (pos < batch.length) {
+    const nl = batch.indexOf(10, pos);
+    const [id, type, sizeText] = batch.slice(pos, nl).toString('latin1').split(' ');
+    const size = Number(sizeText);
+    const body = batch.slice(nl + 1, nl + 1 + size);
+    pos = nl + 1 + size + 1;
+    if (type !== 'blob') continue;
+    historyBlobs++;
+    const p = paths.get(id) || '';
+    if (SKIP_HISTORY_PATH.test(p) || body.includes(0)) continue; // binary files are not searched
+    const text = body.toString('utf8');
+    for (const [what, re] of compiled) {
+      const key = what + '|' + p;
+      if (re.test(text) && !seen.has(key)) { seen.add(key); problems.push(what + ' in the history of ' + (p || id.slice(0, 8)) + ' (blob ' + id.slice(0, 8) + ')'); }
+    }
+  }
+  const messages = git(['log', '--all', '--format=%H%x00%an%x00%B%x01']).split('\x01');
+  for (const m of messages) for (const [what, re] of compiled) if (re.test(m)) problems.push(what + ' in the commit message or author of ' + m.slice(0, 8));
+} catch (e) { problems.push('the history could not be scanned: ' + e.message.split('\n')[0]); }
+console.log('History: ' + historyBlobs + ' blobs scanned.');
+
 // Summary by top-level folder
 const groups = {};
 for (const f of files) { const top = f.includes('/') ? f.split('/')[0] + '/' : '(root)'; groups[top] = (groups[top] || 0) + 1; }
@@ -68,4 +102,4 @@ if (problems.length) {
   console.log('FAILED, private content may be tracked:\n - ' + problems.join('\n - '));
   process.exit(1);
 }
-console.log('No private paths, documents, photos or personal traces are tracked.');
+console.log('No private paths, documents, photos or personal traces are tracked, in the tree or in the history.');
