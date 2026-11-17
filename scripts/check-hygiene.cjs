@@ -27,6 +27,7 @@ const PRIVATE_PATH = [
 ];
 // Images are allowed only where the app needs them
 const IMAGE_ALLOWED = new Set(['build/icon.png']);
+const IMAGE_ALLOWED_DIR = /^docs\/screenshots\/[a-z0-9-]+\.png$/; // README screenshots of the synthetic samples (scripts/screenshots.cjs)
 
 // Personal traces in the text of tracked files (case-insensitive). Third-party notice texts and lock files are not searched.
 // No personal term is written in this file, because the file is public. Two sources add them at run time: the Windows user name of
@@ -52,7 +53,7 @@ const SKIP_TEXT = [':!THIRD-PARTY-NOTICES.md', ':!package-lock.json', ':!ui/pack
 
 const problems = [];
 for (const f of files) {
-  if (/\.png$/i.test(f) && !IMAGE_ALLOWED.has(f)) problems.push('tracked image: ' + f);
+  if (/\.png$/i.test(f) && !IMAGE_ALLOWED.has(f) && !IMAGE_ALLOWED_DIR.test(f)) problems.push('tracked image: ' + f);
   else if (PRIVATE_PATH.some((re) => re.test(f))) problems.push('tracked private or generated path: ' + f);
 }
 for (const [what, pattern] of TRACES) {
