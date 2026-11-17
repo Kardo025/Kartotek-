@@ -862,7 +862,13 @@ I did not spend your Claude Code subscription or an API key on a real call. To c
 2. Open an Applying question, press **Dictate** under "Your thinking", speak, press **Stop**. Do the same in Learn & digest → **Explain it** (the Feynman box).
 3. Put the cursor in the middle of some text and dictate: the words go there.
 
+### Turkish and Italian (added the same day, at your request)
+- **Model:** the multilingual `small` (q5_1, 190 MB), chosen for speed and a cool PC like the English one; English keeps the more accurate English model. Settings → Models → Dictation → **Add Turkish and Italian** downloads it (checked the same way); **Remove Turkish and Italian** deletes only it.
+- **Choosing the language:** with it installed, every Dictate button has **English | Turkish | Italian** beside it; the choice applies to all buttons and is remembered.
+- **What went wrong first:** the choice was a small drop-down that only showed "English", so it did not look like a language option (you reported "there is no such option"). It is now three visible buttons.
+- **Tests:** dictation tests 14/14 (new: Turkish and Italian refused until the model is added, then `-l tr` / `-l it` with the multilingual model while English keeps small.en, Turkish letters intact when the output arrives in pieces, removing only the multilingual model, adding it first brings the program but not the English model).
+- **Not verified yet:** a real Turkish or Italian dictation by you. small is less accurate in Turkish than in English; if it is not good enough, large-v3-turbo (q5_0, 574 MB) is the stronger, heavier option.
+
 ### Open questions
-- **Turkish and Italian:** small.en is English only. They need a multilingual model (small q5_1 about 190 MB, or large-v3-turbo q5_0 about 574 MB, better for Turkish but heavier) and a language choice next to the button. Shall I add that?
 - **The installed app:** the local model is downloaded per Windows profile (the development app and an installed Kartotek each need it once).
 - **Still open from earlier:** the "Generated questions" calibration view, photos in practice, the C4 draft release, the placeholder author email, and the Anthropic key you pasted in chat.

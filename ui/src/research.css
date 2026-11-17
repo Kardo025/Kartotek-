@@ -34,4 +34,8 @@
 .dc-btn.is-rec svg { animation: dc-pulse 1.2s ease-in-out infinite; }
 @keyframes dc-pulse { 50% { opacity: .35; } }
 @media (prefers-reduced-motion: reduce) { .dc-btn.is-rec svg { animation: none; } }
-.dc-lang { width: auto; flex: 0 0 auto; padding-top: 3px; padding-bottom: 3px; font-size: 12.5px; }
+.dc-langs { display: inline-flex; border: 1px solid var(--k-line-strong); border-radius: 8px; overflow: hidden; }
+.dc-lang { padding: 4px 10px; font-size: 12.5px; background: transparent; color: var(--k-text-2); border: 0; border-left: 1px solid var(--k-line); cursor: pointer; }
+.dc-lang:first-child { border-left: 0; }
+.dc-lang.on { background: var(--k-accent); color: var(--k-on-accent, #fff); font-weight: 600; }
+.dc-lang:disabled { opacity: .5; cursor: default; }

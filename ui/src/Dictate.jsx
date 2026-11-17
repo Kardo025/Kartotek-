@@ -141,9 +141,12 @@ export default function Dictate({ targetRef, onBeforeStart, disabled, label }) {
         {recording ? "Stop (" + Math.floor(secs / 60) + ":" + String(secs % 60).padStart(2, "0") + ")" : busy ? "Writing…" : label || "Dictate"}
       </button>
       {st.mode === "local" && langs.length > 1 && (
-        <select className="k-input dc-lang" value={lang} disabled={!!rec} onChange={(e) => setLang(e.target.value)} aria-label="Dictation language" title="The language you will speak">
-          {langs.map((x) => <option key={x.code} value={x.code}>{x.label}</option>)}
-        </select>
+        <span className="dc-langs" role="radiogroup" aria-label="Dictation language" title="The language you will speak">
+          {langs.map((x) => (
+            <button key={x.code} type="button" role="radio" aria-checked={lang === x.code} className={"dc-lang" + (lang === x.code ? " on" : "")} disabled={!!rec}
+              onMouseDown={(e) => e.preventDefault()} onClick={() => setLang(x.code)}>{x.label}</button>
+          ))}
+        </span>
       )}
       {recording && <span className="k-small k-muted" role="status">Listening{lang !== "en" ? " (" + (langs.find((x) => x.code === lang) || {}).label + ")" : ""}. Speak, then press Stop.</span>}
       {msg && (msg.kind === "on" || msg.kind === "done" || msg.kind === "error") && <span className="k-small k-muted" role="status">{msg.text}</span>}
