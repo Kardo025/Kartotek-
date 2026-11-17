@@ -11,6 +11,7 @@ import SidePanel from "../../../SidePanel.jsx";
 import { CheckThis } from "../../../research.jsx";
 import ConfidenceSlider from "../ConfidenceSlider.jsx";
 import Thinking from "../Thinking.jsx";
+import Dictate from "../../../Dictate.jsx";
 import { A, KC, KE, EU, extrasOf, save, sendAttempt, refsText, criterionText, LETTERS, RATINGS } from "./lib.js";
 
 export function ItemHead({ item, attempt, index, total, pkg }) {
@@ -84,6 +85,7 @@ export default function Item({ et, item, attempt, held, onNext, nextLabel, part 
             <label className="k-field">
               <span className="k-field-label">First write your answer and how you got it; the options open after that</span>
               <textarea className="k-input" rows={3} value={f.produced} onChange={(e) => set("produced", e.target.value)} />
+              <div className="th-foot"><Dictate /></div>
             </label>
           )}
           {(fmt === "mcq_single" || fmt === "mcq_multi") && (!item.produce_first || f.produced.trim().length >= 5) && (
@@ -112,6 +114,7 @@ export default function Item({ et, item, attempt, held, onNext, nextLabel, part 
             <label className="k-field">
               <span className="k-field-label">{fmt === "recall" ? "Write it from memory" : "Your answer"}</span>
               <textarea className="k-input" rows={fmt === "recall" ? 4 : 5} value={f.text} onChange={(e) => set("text", e.target.value)} />
+              <div className="th-foot"><Dictate /></div>
             </label>
           )}
           <Thinking value={f.thinking} onChange={(v) => set("thinking", v)} label="Your thinking (optional; it also helps an explanation later)" />

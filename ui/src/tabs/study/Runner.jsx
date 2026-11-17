@@ -10,6 +10,7 @@ import {
 import { PrimingScreen, QuestionsDock } from "./QList.jsx";
 import ConfidenceSlider from "./ConfidenceSlider.jsx";
 import { A, KE, KM, EU, DSR, recallLoc, viewKey, currentQuestion, progressLabel, phaseKey } from "./util.js";
+import Dictate from "../../Dictate.jsx";
 
 // ------------------------------------------------------------------ header: phase timer (Rule 19)
 function PhaseTimer({ et }) {
@@ -204,6 +205,7 @@ function QuestionScreen(p) {
           <label className="k-field">
             <span className="k-field-label">Your answer, and how you got it</span>
             <textarea rows={4} value={f.reason || ""} onChange={(e) => set("reason", e.target.value)} placeholder="Work it out before you see the options (at least 5 characters)" />
+            <div className="th-foot"><Dictate /></div>
           </label>
           <ReqAction req="reason@5" form={f} onClick={() => act("q-attempt")}>Show the options</ReqAction>
         </>

@@ -8,6 +8,7 @@ import { CaretLeft, ArrowRight, ArrowsIn, ArrowsOut, ShieldCheck, Graph, NotePen
 import { EASE, Btn } from "../kit.jsx";
 import ModelHint from "../ModelHint.jsx";
 import Thinking from "./Thinking.jsx";
+import Dictate from "../../Dictate.jsx";
 import { useModelReady, useModelCall, CallStatus, CopyPromptBtn, RequestPreview, byLine } from "../../model-call.jsx";
 import { Md, Html, Chip, Blocks, Scale } from "./common.jsx";
 import { QuestionsList } from "./QList.jsx";
@@ -260,6 +261,7 @@ function Priming({ et }) {
         <label className="k-field">
           <span className="k-field-label">Your thinking: first guesses and connections (optional)</span>
           <textarea className="k-input" rows={3} value={notes} placeholder="What do you expect? What does it remind you of? What is unclear?" onChange={(e) => setNotes(e.target.value)} onBlur={() => { keep(); EU().commit(et); }} />
+          <div className="th-foot"><Dictate /></div>
           <span className="k-field-hint">Kept as your assumptions, never graded.</span>
         </label>
         {ti === 0 && pr.notes[part.part_id] && <p className="k-small k-muted">Your earlier note for the whole part: {pr.notes[part.part_id]}</p>}
@@ -339,6 +341,7 @@ function EmbeddedCheck({ q }) {
 function Feynman({ et, part, k }) {
   const pr = et.progress, kid = k.kazanim_id, list = pr.feynman[kid] || [], pkg = et.package, older = pr.feynman[part.part_id] || [];
   const [text, setText] = useState(list.length ? list[list.length - 1].text : "");
+  const boxRef = useRef(null);
   const fy = k.feynman || {}, pf = part.feynman || {};
   const prompt = fy.prompt || "Explain \u201c" + k.title + "\u201d to a classmate who missed it: the ideas, how they connect and the conditions.";
   const crit = fy.criteria || [];
@@ -354,7 +357,8 @@ function Feynman({ et, part, k }) {
       <h3 className="cy-h3">Explain it in your own words</h3>
       <p className="k-small">{prompt}</p>
       {!fy.prompt && pf.prompt && <p className="k-small k-muted">For the whole part: {pf.prompt}</p>}
-      <textarea className="k-input" rows={9} value={text} onChange={(e) => setText(e.target.value)} placeholder="Write freely; keep the technical terms." />
+      <textarea ref={boxRef} data-f="feynman" className="k-input" rows={9} value={text} onChange={(e) => setText(e.target.value)} placeholder="Write freely; keep the technical terms." />
+      <div className="th-foot"><Dictate targetRef={boxRef} /></div>
       <div className="cy-actions">
         <Btn size="sm" kind="primary" disabled={!text.trim() || (list.length && list[list.length - 1].text === text)} onClick={add}>Save as version {list.length + 1}</Btn>
         <Btn size="sm" aria-pressed={!!satisfied} onClick={() => { pr.satisfied[kid] = satisfied ? null : Date.now(); save(et); }}>{satisfied ? "Marked: I'm satisfied" : "I'm satisfied"}</Btn>

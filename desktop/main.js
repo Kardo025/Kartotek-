@@ -386,6 +386,17 @@ handleModel('models:cancel', (e, callId) => models().cancel(String(callId)));
 handleModel('research:status', () => models().searchStatus());
 handleModel('research:setKey', (e, key) => { if (!isStr(key, 400)) throw new Error('Invalid key.'); return models().setSearchKey(key); });
 handleModel('research:clearKey', () => models().clearSearchKey());
+// Dictation (task F8): Windows voice typing, opened for the learner in the focused field (desktop\dictation.js)
+const dictation = require('./dictation').createDictation({ isFocused: () => !!(win && !win.isDestroyed() && win.isFocused()) });
+handleModel('dictation:status', () => { dictation.warm(); return dictation.status(); });
+handleModel('dictation:start', () => dictation.start());
+// The local model (owner's choice, 2026-11-17): whisper.cpp + small.en in <userData>\dictation (desktop\whisper.js)
+let whisperService = null;
+const whisper = () => whisperService || (whisperService = require('./whisper').createWhisper({ dir: path.join(app.getPath('userData'), 'dictation') }));
+handleModel('dictation:local', () => whisper().status());
+handleModel('dictation:install', (event, which) => whisper().install((ev) => { if (!event.sender.isDestroyed()) event.sender.send('dictation:event', ev); }, which === 'multi' ? 'multi' : 'en'));
+handleModel('dictation:remove', (e, which) => whisper().remove(which === 'multi' ? 'multi' : undefined));
+handleModel('dictation:transcribe', (e, wav, lang) => { if (!(wav instanceof ArrayBuffer || ArrayBuffer.isView(wav))) throw new Error('Invalid recording.'); return whisper().transcribe(wav instanceof ArrayBuffer ? Buffer.from(wav) : Buffer.from(wav.buffer, wav.byteOffset, wav.byteLength), typeof lang === 'string' ? lang : 'en'); });
 // Streaming calls: events go to the window as 'models:event' with the call id
 function sendModelEvent(event, callId, ev) { if (!event.sender.isDestroyed()) event.sender.send('models:event', { callId, event: ev }); }
 handleModel('models:run', (event, callId, request) => {
@@ -496,14 +507,17 @@ app.on('second-instance', () => {
   if (win) { if (win.isMinimized()) win.restore(); win.focus(); }
 });
 app.on('window-all-closed', () => app.quit());
-app.on('will-quit', () => { if (dataStore) dataStore.unlock(); });
+app.on('will-quit', () => { if (dataStore) dataStore.unlock(); dictation.stop(); if (whisperService) whisperService.stop(); });
 
 app.whenReady().then(() => {
   protocol.handle('app', serveApp);
   protocol.handle('kcontent', servePhoto);
-  // The window asks for no device or notification permissions
-  session.defaultSession.setPermissionRequestHandler((wc, permission, callback) => callback(false));
-  session.defaultSession.setPermissionCheckHandler(() => false);
+  // The window asks for no device or notification permissions, except the microphone (audio only) for dictation (task F8), and only
+  // for Kartotek's own page in the main window
+  const micOk = (wc, permission, origin, details) => permission === 'media' && !!win && !win.isDestroyed() && wc === win.webContents &&
+    String(origin || '').startsWith(ORIGIN) && !((details && details.mediaTypes) || []).some((t) => t !== 'audio');
+  session.defaultSession.setPermissionRequestHandler((wc, permission, callback, details) => callback(micOk(wc, permission, details && (details.securityOrigin || details.requestingUrl), details)));
+  session.defaultSession.setPermissionCheckHandler((wc, permission, origin, details) => micOk(wc, permission, origin, details && details.mediaType ? { mediaTypes: [details.mediaType] } : null));
   buildMenu();
   createWindow();
   if (WATCH) watchSources();

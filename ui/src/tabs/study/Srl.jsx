@@ -8,6 +8,7 @@ import {
   Md, Inl, Html, Verdict, Chip, LevelChip, Scale, ReqAction, Actions, Callout, KzHead, RecallCard, Compare, UserText, CheckList, TraceLine, GapBox, Blocks,
 } from "./common.jsx";
 import { A, KE, KM, EU, DSR, LETTERS, YN, YN_TR, signed } from "./util.js";
+import Dictate from "../../Dictate.jsx";
 
 const PRIOR = [{ v: 0, label: "0 · None" }, { v: 1, label: "1 · Heard of it" }, { v: 2, label: "2 · Can explain a bit" }, { v: 3, label: "3 · Confidently" }];
 const DURATIONS = [{ v: 30, label: "30 min" }, { v: 45, label: "45 min" }, { v: 60, label: "60 min" }, { v: 90, label: "90 min" }];
@@ -161,6 +162,7 @@ export function ExplainBlock({ et, k, f, set, act, lv }) {
           <h3>{title}</h3>
           <p className="st-explain-q"><Inl src={item.prompt} /></p>
           <textarea className="k-input" rows={4} value={f.explain || ""} onChange={(e) => set("explain", e.target.value)} placeholder="Explain it in your own words, without looking at the notes." aria-label="Your explanation" />
+          <div className="th-foot"><Dictate /></div>
           <p className="k-small k-muted">Questions: Why is this true? What does it connect to? When does it not hold? How would I apply it to a new example?</p>
         </div>
         <ReqAction req={lv.level === "minimal" ? "" : "explain@10"} form={f} onClick={() => act("explain-reveal")}
@@ -354,6 +356,7 @@ export function TeachScreen({ et, f, set, act }) {
         {head}
         <textarea className="k-input" rows={8} value={f.teach || ""} onChange={(e) => set("teach", e.target.value)} aria-label="Your explanation"
           placeholder="Start from the main ideas, then add cause–effect relations and an example." />
+        <div className="th-foot"><Dictate /></div>
         <ReqAction req="teach@40" form={f} onClick={() => act("teach-check")} note="Lesson texts are hidden at this step.">Assess against the rubric</ReqAction>
       </>
     );
