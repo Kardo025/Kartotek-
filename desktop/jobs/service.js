@@ -99,12 +99,18 @@ function createJobService(opts) {
       parts.push(Object.assign({}, row, price || {}));
     }
     const sum = (k) => parts.reduce((s, r) => s + (r[k] || 0), 0);
+    // G2 (review finding S5): a job that needs the model to read images says so before it starts, not at the first image
+    let visionProblem = null;
+    if (models.imageSupport && parts.some((r) => r.slot === 'vision' && r.calls > 0)) {
+      const sup = await models.imageSupport(job.visionTarget || { slot: 'vision' });
+      if (sup && sup.ok === false) visionProblem = sup.reason;
+    }
     const priced = parts.filter((r) => typeof r.costUsd === 'number');
     return {
       rows: parts, calls: sum('calls'), input: sum('input'), output: sum('output'),
       costUsd: priced.length === parts.length ? sum('costUsd') : null, costKind: parts.length ? parts[0].costKind || null : null,
       provider: parts.length ? parts[0].providerLabel || null : null, model: parts.length ? parts[0].model || null : null,
-      range: [0.6, 1.8], note: e.note || null,
+      range: [0.6, 1.8], note: e.note || null, visionProblem,
     };
   }
 
@@ -112,6 +118,7 @@ function createJobService(opts) {
   function start(id, choice) {
     const job = get(id);
     if (['ready', 'paused', 'failed', 'stopped'].indexOf(job.status) < 0) throw new Error('This job cannot be started now.');
+    if (job.estimate && job.estimate.visionProblem) throw new Error(job.estimate.visionProblem);
     if (choice && choice.target !== undefined) job.target = choice.target;
     if (choice && choice.visionTarget !== undefined) job.visionTarget = choice.visionTarget;
     job.status = 'queued'; job.error = null; job.note = null;

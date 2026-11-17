@@ -422,6 +422,20 @@ async function main() {
     assert.ok(fs.existsSync(path.join(content, 'mindmaps', 'my-map', 'turns', '001.json')));
   });
 
+  await t('S5: a job that needs images is not startable when the vision slot cannot read them; the estimate says why', async () => {
+    const dir = tmp('nv'), content = tmp('c2');
+    const photo = path.join(dir, 'A.png');
+    fs.writeFileSync(photo, tinyPng());
+    const models = fakeModels({ answer: mindAnswers });
+    models.imageSupport = async () => ({ ok: false, reason: 'Fake (text-only) cannot read images.' });
+    const svc = service(dir, models, content);
+    const job = await svc.create('mind-read', { mapId: 'my-map', title: 'My map', language: 'en', views: [{ id: 'A', role: 'overview', file: photo, name: 'A.png' }], prompt: 'Read my map.', rq: 'rq-1' }, null);
+    assert.strictEqual(job.status, 'ready');
+    assert.strictEqual(job.estimate.visionProblem, 'Fake (text-only) cannot read images.');
+    assert.throws(() => svc.start(job.id), /cannot read images/);
+    assert.strictEqual(models.calls.length, 0, 'nothing was sent');
+  });
+
   let ok = 0;
   results.forEach(([pass, name, e]) => { if (pass) ok++; else console.log('  FAIL ' + name + ': ' + (e && e.stack || e)); });
   console.log('Writing jobs (fake model): ' + ok + '/' + results.length + ' passed');

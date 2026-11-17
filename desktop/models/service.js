@@ -271,6 +271,26 @@ function createModelService(opts) {
     return { provider, model: target.model || '' };
   }
 
+  const hasImages = (req) => req.messages.some((m) => Array.isArray(m.content) && m.content.some((c) => c.type === 'image'));
+  // true / false / null (not known). A command-line client never reads images; Ollama is asked which capabilities the model has.
+  async function imageSupportOf(adapter, caps, model) {
+    if (!caps.images) return false;
+    if (typeof adapter.supportsImages === 'function') return adapter.supportsImages(model);
+    return true;
+  }
+  const noImagesText = (t) => t.provider.label + (t.model ? ' (' + t.model + ')' : '') + ' cannot read images. Set up a vision model (Settings, Models, Vision slot) that can, for example a hosted model or a local one with vision such as a llava or qwen-vl model.';
+  // G2 (S5): can the slot or target read images? { ok: true | false | null, reason? }. null = the provider does not say.
+  async function imageSupport(targetOrSlot) {
+    const c = readConfig();
+    let t;
+    try { t = resolveTarget(targetOrSlot && targetOrSlot.providerId ? { target: targetOrSlot } : { slot: targetOrSlot && targetOrSlot.slot || 'vision' }, c); } catch (e) { return { ok: false, reason: 'No model is set up for reading images (Settings, Models).' }; }
+    try {
+      const adapter = await adapterFor(t.provider);
+      const sees = await imageSupportOf(adapter, adapter.capabilities(t.model), t.model);
+      return sees === false ? { ok: false, reason: noImagesText(t) } : { ok: sees };
+    } catch (e) { return { ok: null }; }
+  }
+
   function checkRequest(req) {
     if (!req || typeof req !== 'object') throw new ModelError('invalid', 'Invalid request.');
     if (!Array.isArray(req.messages) || !req.messages.length) throw new ModelError('invalid', 'The request has no messages.');
@@ -308,6 +328,10 @@ function createModelService(opts) {
       }
       const adapter = await adapterFor(target.provider);
       const caps = adapter.capabilities(target.model);
+      if (hasImages(req)) {
+        const sees = await imageSupportOf(adapter, caps, target.model);
+        if (sees === false) throw new ModelError('invalid', noImagesText(target));
+      }
       if (req.webSearch && !caps.webSearch) throw new ModelError('invalid', 'Web search is not available with ' + target.provider.label + '.');
       const call = Object.assign({}, req, { model: target.model, webSearch: !!req.webSearch && caps.webSearch });
       // Without a native schema mode, ask for JSON in the system text (the result is validated below either way)
@@ -470,7 +494,7 @@ function createModelService(opts) {
       .filter((r) => /^https?:\/\//.test(r.url));
   }
 
-  return { publicConfig, saveProvider, setKey, clearKey, removeProvider, setSlot, setBudget, allowOverBudget, setPrice, run, test, cancel, listModels, usageSummary, status, estimate,
+  return { publicConfig, saveProvider, setKey, clearKey, removeProvider, setSlot, setBudget, allowOverBudget, setPrice, run, test, cancel, listModels, usageSummary, status, estimate, imageSupport,
     setSearchKey, clearSearchKey, searchStatus, search,
     _dir: dir, _readKeysRaw: () => { try { return fs.readFileSync(keysFile); } catch (e) { return null; } } };
 }
