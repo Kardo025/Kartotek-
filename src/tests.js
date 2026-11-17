@@ -870,6 +870,18 @@
         && fine.n === 4 && bin90.n === 2 && bin90.correct === 1 && bin30.n === 1 && bin80.n === 1 && Math.abs(fine.brier - brier) < 1e-9 && Math.abs(fine.accuracy - 0.75) < 1e-9 && Math.abs(fine.mean_conf - (90 + 90 + 30 + 82) / 4) < 1e-9,
         detail: 'records ' + rec.length + ' (study 5 incl. assisted and a word-only one, lesson 2) · banded: sure ' + band.sure.correct + '/' + band.sure.n + ', guess ' + band.guess.correct + '/' + band.guess.n + ' · fine view n=' + fine.n + ', Brier ' + (fine.brier == null ? '-' : fine.brier.toFixed(3)) };
     }],
+    ['Generated questions calibration (G2, S2): probe, live and practice answers are counted apart and never reach the main calibration', function () {
+      var st = KStore.emptyState();
+      var pq = function (pct, correct, extra) { return Object.assign({ strand: 's', level: 'l', answer: { choice: 'a', confidence_pct: pct }, correct: correct }, extra || {}); };
+      st.etuts.e1 = { etut_id: 'e1', progress: { probes: [{ goal: { questions: [] }, questions: [pq(90, true), pq(90, false), pq(30, true, { disputed: true }), pq(50, false, { answer: { dont_know: true } }), pq(20, false)] }] } };
+      st.sessions.s1 = { id: 's1', kind: 'live', steps: [{ predict: { answer: { confidence_pct: 70 }, correct: true }, check: [{ answer: { confidence_pct: 80 }, correct: false }] }] };
+      st.sessions.s2 = { id: 's2', kind: 'practice', problems: [{ submissions: [{ confidence_pct: 60, verdict: { result: 'solved' } }] }] };
+      var rec = KMeta.generatedRecords(st), cur = KMeta.generatedCurve(st), main = KMeta.confidenceRecords(st);
+      var brier = (0.01 + 0.81 + 0.04 + 0.09 + 0.64 + 0.16) / 6;
+      return { pass: rec.length === 6 && cur.n === 6 && cur.kinds.probe === 3 && cur.kinds.predict === 1 && cur.kinds.check === 1 && cur.kinds.practice === 1 && main.length === 0
+        && cur.bins[9].n === 2 && cur.bins[9].correct === 1 && Math.abs(cur.brier - brier) < 1e-9 && Math.abs(cur.accuracy - 0.5) < 1e-9,
+        detail: 'records ' + rec.length + ' (probe 3, predict 1, check 1, practice 1; the disputed and the "I do not know" one left out) · main calibration records ' + main.length + ' · Brier ' + (cur.brier == null ? '-' : cur.brier.toFixed(3)) };
+    }],
     ['Thinking while reading: versions per topic, an unchanged or empty text saves nothing, 4000 characters at most', function () {
       var K = global.KCycle, st = KStore.emptyState(), et = KEtut.importPackage(st, miniV2(), { now: NOW }).etut;
       var r1 = K.saveReadingThinking(et, 'k1', 'first note', NOW), same = K.saveReadingThinking(et, 'k1', 'first note', NOW + 1), blank = K.saveReadingThinking(et, 'k1', '   ', NOW + 2);
