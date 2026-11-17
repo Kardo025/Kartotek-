@@ -125,6 +125,25 @@ foreach ($d in $mindDirs) {
 }
 $bundled += "`n" + '<script type="application/json" id="bundled-mindmaps">[' + ($minds -join ',') + ']</script>'
 
+# The browser page looks for photos at mindmaps/<id>/views/ next to Kartotek-DSR.html (review finding S4): copy them there.
+# That folder is build output (git-ignored). Skipped when the content folder is this folder, because the files are already there.
+$photoMirror = Join-Path $root 'mindmaps'
+if ((Join-Path $contentRoot 'mindmaps') -ne $photoMirror) {
+  $mirrored = 0
+  foreach ($d in $mindDirs) {
+    $views = Join-Path $d.FullName 'views'
+    if ($d.Name -notmatch '^[a-z0-9][a-z0-9-]*$' -or -not (Test-Path $views)) { continue }
+    $dest = Join-Path (Join-Path $photoMirror $d.Name) 'views'
+    foreach ($f in @(Get-ChildItem $views -File -Recurse | Where-Object { $_.Extension -match '^\.(jpe?g|png|webp|gif)$' })) {
+      $rel = $f.FullName.Substring($views.Length).TrimStart('\', '/')
+      $target = Join-Path $dest $rel
+      New-Item -ItemType Directory -Force -Path (Split-Path $target) | Out-Null
+      Copy-Item $f.FullName $target -Force; $mirrored++
+    }
+  }
+  if ($mirrored) { Write-Host ("  photos: {0} copied to {1} for the browser page" -f $mirrored, $photoMirror) }
+}
+
 # ---------------------------------------------------------------- inline the app
 $html = Read-Utf8 (Join-Path $src 'index.html')
 $css = Read-Utf8 (Join-Path $src 'styles.css')
