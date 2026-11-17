@@ -869,6 +869,7 @@ I did not spend your Claude Code subscription or an API key on a real call. To c
 - **Tests:** dictation tests 14/14 (new: Turkish and Italian refused until the model is added, then `-l tr` / `-l it` with the multilingual model while English keeps small.en, Turkish letters intact when the output arrives in pieces, removing only the multilingual model, adding it first brings the program but not the English model).
 - **Language choice in Settings too:** Settings → Models → Dictation → "I dictate in: English | Turkish | Italian" (the same choice as beside the buttons).
 - **Dictate on the answer boxes too** (you looked for it there): written answers ("Write it from memory", "Your answer", the produce-first box), Priming notes, the live prediction, the legacy study's explanation and teach boxes, the legacy runner's reasoning box and the end-of-lesson recall box. The button finds the text box just above it.
+- **A try-out box in Settings:** Settings → Models → Dictation has "Try it here (nothing is saved)" with its own Dictate button, so dictation can be tried where it is set up.
 - **Not verified yet:** a real Turkish or Italian dictation by you. small is less accurate in Turkish than in English; if it is not good enough, large-v3-turbo (q5_0, 574 MB) is the stronger, heavier option.
 
 ### Open questions

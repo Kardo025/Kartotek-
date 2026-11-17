@@ -40,3 +40,4 @@
 .dc-lang.on { background: var(--k-accent); color: var(--k-on-accent, #fff); font-weight: 600; }
 .dc-lang:disabled { opacity: .5; cursor: default; }
 .dc { display: contents; }
+.dc-try { margin: 8px 0; }

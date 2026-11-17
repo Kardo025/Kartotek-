@@ -177,6 +177,7 @@ function LangButtons({ langs, lang, setLang, disabled }) {
 export function DictationPanel() {
   const st = useDictationMode();
   const [lang0, setLang] = useDictationLang();
+  const [tryText, setTryText] = useState("");
   const [prog, setProg] = useState(null);
   const [err, setErr] = useState("");
   if (!D() || !D().local) return null;
@@ -206,6 +207,16 @@ export function DictationPanel() {
             <div className="cy-actions"><span className="k-small"><b>I dictate in:</b></span>
               <LangButtons langs={local.languages} lang={local.languages.some((x) => x.code === lang0) ? lang0 : "en"} setLang={setLang} />
               <span className="k-small k-muted">The same choice shows beside every Dictate button.</span>
+            </div>
+          )}
+          {local.installed && (
+            <div className="dc-try">
+              <label className="k-field">
+                <span className="k-field-label">Try it here (nothing is saved)</span>
+                <textarea className="k-input" rows={3} value={tryText} maxLength={4000} onChange={(e) => setTryText(e.target.value)}
+                  placeholder="Press Dictate, speak a sentence or two, then press Stop. In your study screens the same button sits under every answer, thinking and Feynman box." />
+              </label>
+              <div className="th-foot"><Dictate /></div>
             </div>
           )}
           <p className="k-small"><b>Turkish and Italian:</b> {local.multi
