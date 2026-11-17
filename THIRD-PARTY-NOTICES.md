@@ -55,6 +55,10 @@ The writing jobs (task E3) read PDF files in the desktop app's main process with
 
 Kartotek adapts teaching method, agent instructions and design ideas from LearnHarness 0.6.0 (https://github.com/amosblomqvist/learnharness), Copyright (c) Amos Blomqvist, licensed under the GNU Affero General Public License v3.0 only. The adapted files are the agent prompts in `prompts\` and `prompts\shared\` that name LearnHarness in their front matter (`adapted_from`), and the design notes in `docs\LEARNING-PROTOCOL.md` section 12. The licence text is Kartotek's own `LICENSE` (the same AGPL v3 text). No LearnHarness program code is included.
 
+## whisper.cpp and the Whisper model (downloaded on request, not shipped)
+
+Local dictation (task F8) downloads, only when the user asks, whisper.cpp's Windows build (https://github.com/ggml-org/whisper.cpp, release b5454, MIT License, Copyright (c) 2023-2026 The ggml authors) and the converted Whisper model `ggml-small.en-q5_1.bin` (https://huggingface.co/ggerganov/whisper.cpp; OpenAI Whisper weights, MIT License, Copyright (c) 2022 OpenAI). Neither is part of Kartotek's repository or installer; they are stored in the user's Kartotek data folder and can be removed in Settings.
+
 ## stageshow
 
 `ui/src/stageshow/` is a trimmed copy of the stageshow animation kit by Benji Taylor: only the 18 files the welcome screen uses, plus its licence file. Licence:

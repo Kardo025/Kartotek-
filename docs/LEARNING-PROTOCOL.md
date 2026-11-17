@@ -388,7 +388,7 @@ Every task keeps: `npm test`, `npm run smoke` where Electron runs, a migration t
 | D6 | Target success rate of adaptive practice | **About 85 % per retrieval event** (per decision point, not per problem), as in LearnHarness: a several-step problem then succeeds as a whole less often, and hints rescue stalls. Changed from the first draft's "80 % per problem". |
 | D7 | Confidence after a hint | Asking confidence **before** "Ask for a hint" can be pressed is too strict; **record confidence when the answer is committed, plus the highest hint rung**; assisted answers stay out of the fine calibration chart. |
 | D8 | Researcher's search | **Only the configured provider's web search** (Anthropic) at first; no separate search key until you need it. |
-| D9 | Dictation | **Windows voice typing (`Win + H`) now**, with a button that focuses the field and shows the shortcut; a local model in F8 only if you dictate daily. |
+| D9 | Dictation | **Windows voice typing (`Win + H`) now**, with a button that focuses the field and shows the shortcut; a local model in F8 only if you dictate daily. **Changed 2026-11-21 (F8): the local model** (whisper.cpp, English small.en, downloaded on request); Windows voice typing stays as the fallback. |
 | D10 | Where the graph lives in the sidebar | **Study mode, next to Mind maps** in the "AI Mind Mapping Assistant" group, renamed "Maps" with two entries (Mind maps, Knowledge graph). |
 | D11 | Live session cost guard | Show an estimate before a session and **stop at the monthly budget** like other API calls (already built); a per-session cap only if you want one. |
 | D12 | Live sessions for exam topics (CEnT-S, TU Delft) | **Allowed only attached to the topic's study** (grounded in its extract); free sessions on exam topics would lose the source check. |
@@ -430,6 +430,10 @@ Read: LearnHarness 0.6.0 from the owner's zip: `docs/teaching-methodology.md`, t
 What LearnHarness does not have and Kartotek keeps: the audited package and source ledger, verified items, strict DSR eligibility, the delayed final test and the outcome report, exam preparation, lesson tests and mock exams, mind maps from photos, and the evidence shown on graph nodes.
 
 ## 13. As built
+
+### F8: dictation (2026-11-21)
+
+Built as 3.13 says, with option (b): the owner chose the local model after the comparison (D9 changed, 2026-11-21). A microphone button on every thinking field (answers, reading notes, live steps, practice work, the probe) and on the Feynman box records, whisper.cpp with the English small.en model turns the recording into text on the PC, and the text is put at the cursor as ordinary, editable text. The model is downloaded only on request, checked against fixed checksums; without it the button opens Windows voice typing (option (a)). Effects: none; dictated text is ordinary text, with no record of having been dictated. Details: `docs\ARCHITECTURE.md` 10.0o.
 
 ### F7: side questions and the researcher (2026-11-20)
 

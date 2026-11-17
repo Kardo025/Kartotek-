@@ -832,3 +832,37 @@ I did not spend your Claude Code subscription or an API key on a real call. To c
 
 ### Open questions
 - **Still open from earlier:** the "Generated questions" calibration view, photos in practice, the C4 draft release, the placeholder author email, and the Anthropic key you pasted in chat.
+
+## 2026-11-21 · Task F8: dictation (branch `task/f8-dictation`)
+
+### What changed
+- **Before starting:** merged `task/f7-side-research` into `main` (your prompt is the OK); branched from `main`.
+- **The comparison (as you asked, before building):**
+  - (a) **Windows voice typing:** free, no key, writes at the cursor itself; the audio goes to Microsoft's online service; the language follows the Windows input language.
+  - (b) **A local model:** offline and private; a model download and a helper program; costs some processor time while it transcribes.
+  - (c) **A service with a key:** very accurate; paid per use; the audio leaves the PC.
+  - **Your decision (2026-11-21, changes D9):** (b), English first, as fast as possible and light on the PC. I first built (a), the protocol's choice; it stays as the fallback.
+- **The microphone button** ("Dictate") is on every thinking field (answers, reading notes, live steps, practice work, the probe) and on the Feynman box.
+  - **With the local model:** press Dictate, speak, press Stop (at most 3 minutes). A few seconds of "Writing…", then the text appears at the cursor (or replaces a selection), with spaces where words would run together, as ordinary editable text. Nothing you say leaves the PC.
+  - **Without it:** the button opens Windows voice typing in the box (Kartotek presses Win + H for you, only while its window is in front). In the browser page it shows the shortcut.
+- **The local model:** whisper.cpp (b5454, Windows CPU build, 8.9 MB) with `small.en` (q5_1, 190 MB).
+  - **Download:** only when you press **Download the local model** in Settings → Models → **Dictation**, from GitHub and Hugging Face. Each file is checked against a size and SHA-256 fixed in the code; a file that does not match is not kept.
+  - **Where:** `%APPDATA%\Kartotek(-dev)\dictation\`, never in your data or backups. **Remove the local model** deletes it.
+  - **Light on the PC:** it runs only after Stop, on at most 4 threads at below-normal priority. Each recording is deleted once it is written out.
+- **Permissions:** the window still refuses every device permission except the microphone (audio only, Kartotek's own page). No key is involved, so nothing new goes into the key storage.
+
+### Verification
+| Check | Result |
+| --- | --- |
+| `npm test` | Everything passes. **New dictation tests** (no download, no key press): Windows voice typing 6/6 (the helper is reused, never presses while the window is not in front, reports a helper that cannot start, times out); the local model 4/4 (pinned downloads checked, a tampered file refused and not kept, the whisper call with English on ≤4 threads, clean text, the recording deleted, remove); recording and insertion 2/2 (16 kHz WAV; text at the cursor, spaces, selection, the box limit). The real PowerShell helper starts on this PC in 0.55 s. |
+| **Done when: two dictated sentences in a thinking field without touching the keyboard** | Yes, by you in the desktop app (`npm start`) on 2026-11-21: the download finished (both checksums match, installed 01:13), you dictated into a thinking field with the mouse only, and the text appeared. The temporary recording folder was empty afterwards. |
+
+### How you can test it
+1. `npm start` (or the desktop shortcut), Settings → Models → **Dictation**: it says "Ready".
+2. Open an Applying question, press **Dictate** under "Your thinking", speak, press **Stop**. Do the same in Learn & digest → **Explain it** (the Feynman box).
+3. Put the cursor in the middle of some text and dictate: the words go there.
+
+### Open questions
+- **Turkish and Italian:** small.en is English only. They need a multilingual model (small q5_1 about 190 MB, or large-v3-turbo q5_0 about 574 MB, better for Turkish but heavier) and a language choice next to the button. Shall I add that?
+- **The installed app:** the local model is downloaded per Windows profile (the development app and an installed Kartotek each need it once).
+- **Still open from earlier:** the "Generated questions" calibration view, photos in practice, the C4 draft release, the placeholder author email, and the Anthropic key you pasted in chat.
