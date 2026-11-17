@@ -22,6 +22,8 @@ jobs:
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # the hygiene check scans the whole history (G2, S1)
 
       - uses: actions/setup-node@v7
         with:

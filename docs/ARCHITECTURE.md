@@ -560,7 +560,7 @@ Files: `src\live-core.js` (`KLive`: the teaching loop, the teacher's values and 
 - **Material:** attached = the plan nodes' units and the chosen topics' units (16 000 characters at most); own files = the pages most related to the goal and the current node (by shared words, 10 000 characters, in reading order); free = none, and every unsure claim goes to "uncertain".
 - **Research hook (F7):** `teach.uncertain[]` per explanation; "Check this later" calls `KLive.queueResearch`, which adds `{ claim, context, refs, step, status: "queued" }` to `session.research` for the researcher to pick up.
 - **Topic mode:** "Study this topic live" in Learn & digest creates (or reopens) a session attached to that topic (`progress.live[kid]`, `progress.topic_mode[kid] = "live"`); the lesson stays visible, Applying and Evaluating are unchanged, "Back to reading" keeps the session.
-- **Not built here:** side questions during a session (F7; the prompt already reads them from `session.side`), the "Generated questions" calibration view (`KLive.confidenceRecords` provides the records), adaptive practice (F5).
+- **Not built here:** side questions during a session (F7; the prompt already reads them from `session.side`), adaptive practice (F5).
 
 ### 10.0l F5 as built (2026-11-18)
 
@@ -664,3 +664,5 @@ Files: `desktop\whisper.js` (the local model: pinned downloads, install, remove,
 - Ollama OpenAI compatibility: https://docs.ollama.com/api/openai-compatibility
 - Gemini OpenAI compatibility (beta): https://aistudio.google.com/docs/openai
 - Codex non-interactive mode (`codex exec --json`, `--output-schema`): https://developers.openai.com/codex/noninteractive
+
+**As built in G2 (review finding S2):** Stats, Metacognition has a "Generated questions" panel: `KMeta.generatedRecords` / `generatedCurve` collect the confident answers to probe questions (packaged and live), live predictions and checks (`KLive.confidenceRecords`) and generated practice (`KPractice.confidenceRecords`), in the same ten-point bins and Brier score as the main view. They never enter `KMeta.confidenceRecords`, so a wrong model key cannot make the learner look miscalibrated.

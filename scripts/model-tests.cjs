@@ -31,6 +31,7 @@ function fakeAdapterFactory(script) {
   const factory = (cfg) => ({
     kind: 'api', cfg,
     capabilities: () => ({ stream: true, structured: script.structured || 'native', images: true, webSearch: !!script.webSearch }),
+    supportsImages: async (model) => (script.textOnly && script.textOnly.indexOf(model) >= 0 ? false : null),
     listModels: async () => [{ id: 'fake-model', label: 'Fake' }],
     run: async (req, { signal, onEvent }) => {
       calls.push({ req, cfg });
@@ -148,6 +149,19 @@ async function serviceTests() {
       assert.strictEqual(fake.calls[fake.calls.length - 1].req.model, 'claude-opus-5-5');
       await S.run({ feature: 'x', target: { providerId: 'claude', model: 'claude-sonnet-5-5' }, messages: [{ role: 'user', content: 'hi' }] });
       assert.strictEqual(fake.calls[fake.calls.length - 1].req.model, 'claude-sonnet-5-5');
+    });
+
+    await t(ok, 'S5: a model that cannot read images is refused before anything is sent, and imageSupport says so', async () => {
+      script.textOnly = ['claude-opus-5-5'];
+      try {
+        const before = fake.calls.length;
+        const img = { role: 'user', content: [{ type: 'text', text: 'x' }, { type: 'image', mime: 'image/png', data: 'AAAA' }] };
+        await assert.rejects(() => S.run({ feature: 'x', slot: 'vision', messages: [img] }), (e) => e.code === 'invalid' && /cannot read images/.test(e.message));
+        assert.strictEqual(fake.calls.length, before, 'no call reached the provider');
+        const v = await S.imageSupport({ slot: 'vision' });
+        assert.strictEqual(v.ok, false); assert.ok(/Vision slot/.test(v.reason));
+        assert.strictEqual((await S.imageSupport({ providerId: 'claude', model: 'claude-sonnet-5-5' })).ok, null, 'not said by the provider: tried as before');
+      } finally { script.textOnly = null; }
     });
 
     await t(ok, 'structured output: a wrong answer gets one repair call; two wrong answers are a "schema" error', async () => {
@@ -305,6 +319,7 @@ async function openaiTests() {
     let body = ''; for await (const c of req) body += c;
     got.push({ url: req.url, auth: req.headers.authorization || null, body: body ? JSON.parse(body) : null });
     if (req.url === '/api/tags') { res.writeHead(200, { 'content-type': 'application/json' }); res.end(JSON.stringify({ models: [{ name: 'qwen3.6:35b-a3b', details: { parameter_size: '35B' } }] })); return; }
+    if (req.url === '/api/show') { res.writeHead(200, { 'content-type': 'application/json' }); res.end(JSON.stringify({ capabilities: body && JSON.parse(body).model === 'llava' ? ['completion', 'vision'] : ['completion'] })); return; }
     if (req.url === '/api/chat') {
       res.writeHead(200, { 'content-type': 'application/x-ndjson' });
       const line = (o) => JSON.stringify(o) + String.fromCharCode(10);
@@ -362,6 +377,13 @@ async function openaiTests() {
       const g = createOpenAICompat({ preset: 'ollama', baseUrl: base });
       await g.run({ model: 'gpt-oss:20b', effort: 'high', messages: [{ role: 'user', content: 'x' }] }, { signal: new AbortController().signal, onEvent: () => {} });
       assert.strictEqual(got[got.length - 1].body.think, 'high', 'gpt-oss takes a thinking level');
+    });
+    await t(ok, 'S5: Ollama says whether a model has the vision capability (asked once per model)', async () => {
+      const a = createOpenAICompat({ preset: 'ollama', baseUrl: base });
+      assert.strictEqual(await a.supportsImages('llava'), true);
+      assert.strictEqual(await a.supportsImages('gpt-oss:20b'), false);
+      const n = got.filter((g) => g.url === '/api/show').length;
+      await a.supportsImages('llava'); assert.strictEqual(got.filter((g) => g.url === '/api/show').length, n, 'cached');
     });
     await t(ok, 'OpenAI preset: json_schema response format, max_completion_tokens, bearer key, image as data URL', async () => {
       const a = createOpenAICompat({ preset: 'openai', baseUrl: base, apiKey: 'k-1' });

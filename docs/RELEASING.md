@@ -12,17 +12,17 @@ The release process is described in `docs/ARCHITECTURE.md` (sections 1.4 and 9) 
 
 ## Cut the release
 
-1. Choose the version. Kartotek uses `0.x.y` until 1.0: `0.1.0` is the first public release, patches (`0.1.1`) fix bugs, minors (`0.2.0`) add features.
+1. Choose the version. Kartotek uses semantic versions: patches (`1.0.1`) fix bugs, minors (`1.1.0`) add features, a major (`2.0.0`) changes something you must know about. `0.1.0` was the first tag; `1.0.0` adds the models and the learning protocol. Move the `[unreleased]` heading in `CHANGELOG.md` to the new version and date.
 2. Set the version in one place, without creating a tag yet:
    ```
-   npm version 0.1.0 --no-git-tag-version
+   npm version 1.0.0 --no-git-tag-version
    ```
    This edits `package.json` and `package-lock.json`. The installer file name, the app's version and the release title all come from it.
-3. Commit it: `git commit -am "Release 0.1.0"`.
+3. Commit it: `git commit -am "Release 1.0.0"`.
 4. Tag that commit and push both (each push needs your decision; nothing is pushed for you):
    ```
-   git tag -a v0.1.0 -m "Kartotek 0.1.0"
-   git push origin main v0.1.0
+   git tag -a v1.0.0 -m "Kartotek 1.0.0"
+   git push origin main v1.0.0
    ```
 5. Watch **Actions**. The run for the tag does everything the normal CI does, and then, in the `installer` job:
    - checks that the tag equals `v` plus the version in `package.json` (a mismatch stops the release),
@@ -32,14 +32,14 @@ The release process is described in `docs/ARCHITECTURE.md` (sections 1.4 and 9) 
    - creates a **draft** release with the installer and `SHA256SUMS.txt`, using the text in `.github/release-notes.md` (version filled in).
 6. Open **Releases**, open the draft, read the notes, edit them if something changed (for example a known problem), and download the installer once to check it:
    - on a PC: run it (SmartScreen will warn, see below), start the app, check that your data and content are there;
-   - compare the checksum: `certutil -hashfile Kartotek-Setup-0.1.0.exe SHA256` against `SHA256SUMS.txt`.
+   - compare the checksum: `certutil -hashfile Kartotek-Setup-1.0.0.exe SHA256` against `SHA256SUMS.txt`.
 7. Press **Publish release**. Only now can anyone download it.
 
 ## If the run fails
 
-- A failure before the release step leaves no release: fix the problem on a branch, merge, and push a new tag (for an unpublished mistake you can first delete the tag: `git push --delete origin v0.1.0` and `git tag -d v0.1.0`).
+- A failure before the release step leaves no release: fix the problem on a branch, merge, and push a new tag (for an unpublished mistake you can first delete the tag: `git push --delete origin v1.0.0` and `git tag -d v1.0.0`).
 - A draft you do not want: delete the draft on the Releases page, then delete the tag as above.
-- A published release with a problem: do not move the tag. Publish a fix as the next patch version (`0.1.1`) and say so in its notes. You can mark the bad release as a pre-release or delete it.
+- A published release with a problem: do not move the tag. Publish a fix as the next patch version (`1.0.1`) and say so in its notes. You can mark the bad release as a pre-release or delete it.
 
 ## Build the installer on your own PC
 
@@ -54,14 +54,14 @@ The installer appears in `dist-installer\`. Building works anywhere. **Running**
 
 - It installs per user into `%LOCALAPPDATA%\Programs\Kartotek` and needs no administrator rights.
 - Your learner data is in `%APPDATA%\Kartotek` (the `data` folder and `settings.json`). The installer and the uninstaller never touch it; the CI installer check proves that on every release.
-- An update is the same installer run over the old install. There is no automatic updater in 0.1.x.
+- An update is the same installer run over the old install. There is no automatic updater in 1.0.x.
 - Your content folder (default `Documents\Kartotek Content`) is outside both folders.
 
 ## The unsigned installer
 
-0.x releases are **not code-signed** (decision 3). Windows shows a SmartScreen warning for an unknown publisher: "More info", then "Run anyway". On Windows 11 with **Smart App Control** on, Windows may refuse to run the installer at all, and there is no per-file bypass; the only ways around it are to turn Smart App Control off (it can only be turned back on by resetting Windows) or to use a signed build. The README and the release notes say so.
+The 0.x and 1.0.x releases are **not code-signed** (decision 3). Windows shows a SmartScreen warning for an unknown publisher: "More info", then "Run anyway". On Windows 11 with **Smart App Control** on, Windows may refuse to run the installer at all, and there is no per-file bypass; the only ways around it are to turn Smart App Control off (it can only be turned back on by resetting Windows) or to use a signed build. The README and the release notes say so.
 
-Signing comes before 1.0: apply to the SignPath Foundation (free for open-source projects) and fall back to Azure Artifact Signing if that is not accepted. When a certificate exists, add it to the `installer` job only (secrets are never used in the test job) and electron-builder signs the executables, the uninstaller and the installer.
+Signing is still to do: apply to the SignPath Foundation (free for open-source projects) and fall back to Azure Artifact Signing if that is not accepted. When a certificate exists, add it to the `installer` job only (secrets are never used in the test job) and electron-builder signs the executables, the uninstaller and the installer.
 
 ## Things that change a release
 

@@ -128,7 +128,7 @@ function JobCard({ job }) {
         )}
       </AnimatePresence>
       <div className="k-row-btns jb-actions">
-        {(job.status === "ready" || job.status === "paused" || job.status === "failed") && <Btn kind="primary" size="sm" disabled={busy} onClick={() => act(() => J().start(job.id))}><Play size={14} weight="fill" aria-hidden="true" />{job.status === "ready" ? "Start" : "Resume"}</Btn>}
+        {(job.status === "ready" || job.status === "paused" || job.status === "failed") && <Btn kind="primary" size="sm" disabled={busy || !!(job.estimate && job.estimate.visionProblem)} onClick={() => act(() => J().start(job.id))}><Play size={14} weight="fill" aria-hidden="true" />{job.status === "ready" ? "Start" : "Resume"}</Btn>}
         {(job.status === "running" || job.status === "queued") && <Btn size="sm" disabled={busy} onClick={() => act(() => J().pause(job.id))}><Pause size={14} weight="fill" aria-hidden="true" />Pause</Btn>}
         {job.fixRounds > 0 && job.status !== "done" && (job.steps.find((s) => s.id === "verify") || {}).status !== "done" && job.steps.some((s) => s.id === "verify") && <Btn size="sm" disabled={busy} onClick={() => act(() => J().skipFixes(job.id))} title="Disputed items keep their mark (shown, never sent to your reviews) and the job goes on to save">Skip the remaining fixes</Btn>}
         <Btn size="sm" onClick={() => J().openFolder(job.id)} title="The job's working files: extracted pages, the draft, job.json"><FolderOpen size={14} aria-hidden="true" />Job folder</Btn>
@@ -149,6 +149,7 @@ function Estimate({ est }) {
       <p className="k-small"><Sparkle size={14} aria-hidden="true" /> <b>Before you start:</b> {estimateLine(est)}{est.provider ? " with " + est.provider + (est.model ? " · " + est.model : "") : ""}.</p>
       <table className="jb-est-table k-small k-num"><thead><tr><th>Step</th><th>Calls</th><th>Tokens in</th><th>Tokens out</th><th>Model</th></tr></thead>
         <tbody>{est.rows.map((r) => <tr key={r.step}><td>{r.step}</td><td>{r.calls}</td><td>{k(r.input)}</td><td>{k(r.output)}</td><td>{r.providerLabel ? r.providerLabel + (r.model ? " · " + r.model : "") : "not set up"}</td></tr>)}</tbody></table>
+      {est.visionProblem && <p className="k-small" role="alert" data-testid="vision-problem"><b>This job cannot start:</b> {est.visionProblem}</p>}
       {est.note && <p className="k-small k-muted">{est.note} The range is a rough estimate (0.6× to 1.8×).</p>}
     </div>
   );

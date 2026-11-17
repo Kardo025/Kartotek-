@@ -86,8 +86,22 @@ async function readNdjson(body, onData) {
 function ollamaNative(cfg, p, base, label, doFetch, headers) {
   const host = base.replace(/\/v1$/i, '');
   const jsonOnly = cfg.structured === 'json-mode';
+  const visionCache = new Map();
   return {
     kind: 'local',
+    // G2 (review finding S5): does this model read images? Ollama lists "vision" among a model's capabilities. true / false, or null when
+    // the server does not say (older versions) or cannot be asked: then the request is tried, as before.
+    async supportsImages(model) {
+      if (!model) return null;
+      if (visionCache.has(model)) return visionCache.get(model);
+      let answer = null;
+      try {
+        const res = await doFetch(host + '/api/show', { method: 'POST', headers: headers(), body: JSON.stringify({ model }) });
+        if (res.ok) { const j = await res.json(); if (Array.isArray(j.capabilities)) answer = j.capabilities.indexOf('vision') >= 0; }
+      } catch (e) { answer = null; }
+      if (answer !== null) visionCache.set(model, answer);
+      return answer;
+    },
     capabilities() { return { stream: true, structured: jsonOnly ? 'json-mode' : 'native', images: true, webSearch: false }; },
     async listModels() {
       let res;

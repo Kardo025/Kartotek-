@@ -257,8 +257,9 @@ function Metacog({ App }) {
   const lv = KMeta.promptLevel(S);
   const answered = conf.guess.n + conf.unsure.n + conf.sure.n;
   const fine = KMeta.confidenceCurve(S);
+  const gen = KMeta.generatedCurve(S);
 
-  if (!preds.length && !jol.n && !answered) {
+  if (!preds.length && !jol.n && !answered && !gen.n) {
     return (
       <div className="k-metacog">
         <h2 className="k-section-title">Metacognition</h2>
@@ -346,6 +347,18 @@ function Metacog({ App }) {
               <p className="k-small k-muted">Each row is a ten-point range of what you said; a well-calibrated row is right about as often as the number you gave. Only answers with a number, given without help, are shown; verified study items and lesson tests only.</p>
             </>
           ) : <Note>No answers with a number yet. Answer an item with the slider and they appear here.</Note>}
+        </Panel>
+        <Panel title="Generated questions">
+          {gen.n ? (
+            <>
+              <p className="k-small">On questions a model wrote you said <b className="k-num">{Math.round(gen.mean_conf)}%</b> on average and were right <b className="k-num">{pct(gen.accuracy)}</b> of the time ({gen.n} answers: {[["probe", "level checks"], ["predict", "predictions"], ["check", "live checks"], ["practice", "practice problems"]].filter(([k]) => gen.kinds[k]).map(([k, l]) => gen.kinds[k] + " " + l).join(", ")}). Brier score <b className="k-num">{gen.brier.toFixed(2)}</b>.</p>
+              {gen.bins.filter((b) => b.n).map((b) => {
+                const r = b.correct / b.n;
+                return <PartBar key={b.lo} label={b.lo + "–" + b.hi} frac={r} color="var(--k-good)" value={pct(r) + " right · said " + Math.round(b.conf) + "% · " + b.correct + "/" + b.n} />;
+              })}
+              <p className="k-small k-muted">These answers are kept apart from the calibration above because nobody has checked the answer keys: a wrong key would make you look miscalibrated. Reported questions and “I don’t know” are left out. They never change your reviews.</p>
+            </>
+          ) : <Note>No answers to generated questions yet. Find my level, live sessions and generated practice add them here.</Note>}
         </Panel>
         <Panel title="Error types">
           {dist.length ? (

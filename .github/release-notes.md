@@ -1,6 +1,6 @@
 ## Kartotek __VERSION__
 
-A spaced-repetition and study app for Windows. This is an early release.
+A study app for Windows: spaced repetition plus studies you write from your own sources, with optional models (an API key, your Claude Code or Codex subscription, or a local model). See `CHANGELOG.md` for what is in this version. Everything works without a model, and nothing is sent anywhere until you set one up.
 
 ### Install
 

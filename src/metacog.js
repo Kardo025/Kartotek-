@@ -166,8 +166,7 @@
   // Fine view: only records with a number, unassisted (D7). Ten-point bins with numerators and denominators, the mean confidence,
   // the accuracy and the Brier score (mean squared gap between the stated probability and what happened; 0 is perfect, 0.25 is
   // always saying 50 %).
-  function confidenceCurve(state) {
-    var rows = confidenceRecords(state).filter(function (x) { return x.pct != null && !x.assisted; });
+  function binCurve(rows) {
     var bins = [];
     for (var i = 0; i < 10; i++) bins.push({ lo: i * 10, hi: i === 9 ? 100 : i * 10 + 9, n: 0, correct: 0, conf: 0 });
     var brier = 0, conf = 0, ok = 0;
@@ -178,6 +177,44 @@
     });
     bins.forEach(function (b) { if (b.n) b.conf /= b.n; });
     return { n: rows.length, bins: bins, brier: rows.length ? brier / rows.length : null, mean_conf: rows.length ? conf / rows.length : null, accuracy: rows.length ? ok / rows.length : null };
+  }
+  function confidenceCurve(state) {
+    return binCurve(confidenceRecords(state).filter(function (x) { return x.pct != null && !x.assisted; }));
+  }
+
+  // The "Generated questions" calibration (task G2, review finding S2; LEARNING-PROTOCOL 2.3): answers to questions a model wrote and
+  // whose key no code or source verified: Find my level probes (packaged and live), live-session predictions and checks, generated
+  // practice. They are kept apart from confidenceRecords on purpose, so a wrong model key never makes the learner look miscalibrated.
+  // → [{ kind: "probe" | "predict" | "check" | "practice", pct, correct }]; reported or disputed questions and "I don't know" are left out.
+  function generatedRecords(state) {
+    var out = [];
+    function probe(p) {
+      if (!p || !Array.isArray(p.questions)) return;
+      p.questions.forEach(function (q) {
+        var a = q && q.answer;
+        if (!a || q.disputed || a.dont_know || a.confidence_pct == null || q.correct == null) return;
+        out.push({ kind: 'probe', pct: a.confidence_pct, correct: !!q.correct });
+      });
+    }
+    Object.keys(state.etuts || {}).forEach(function (id) {
+      var et = state.etuts[id];
+      if (et && !et.removed && et.progress && Array.isArray(et.progress.probes)) et.progress.probes.forEach(probe);
+    });
+    Object.keys(state.sessions || {}).forEach(function (id) {
+      var s = state.sessions[id];
+      if (!s) return;
+      probe(s.probe);
+      if (global.KLive && Array.isArray(s.steps)) global.KLive.confidenceRecords(s).forEach(function (r) { if (r.pct != null) out.push(r); });
+      if (global.KPractice && s.kind === 'practice') global.KPractice.confidenceRecords(s).forEach(function (r) { if (r.pct != null) out.push(r); });
+    });
+    return out;
+  }
+  // { n, bins, brier, mean_conf, accuracy, kinds: { probe: n, predict: n, check: n, practice: n } }
+  function generatedCurve(state) {
+    var rows = generatedRecords(state), kinds = { probe: 0, predict: 0, check: 0, practice: 0 };
+    rows.forEach(function (r) { kinds[r.kind] = (kinds[r.kind] || 0) + 1; });
+    var c = binCurve(rows); c.kinds = kinds;
+    return c;
   }
 
   function errorLog(state) {
@@ -275,7 +312,7 @@
   global.KMeta = {
     ERROR_TYPES: ERROR_TYPES, ERROR_BY_ID: ERROR_BY_ID, STRATEGY_TR: STRATEGY_TR, LEVEL_TR: LEVEL_TR,
     interpretGap: interpretGap, predictionGap: predictionGap, predictionOutcome: predictionOutcome, predictionsList: predictionsList,
-    jolEntries: jolEntries, jolBins: jolBins, confidenceAccuracy: confidenceAccuracy, confidenceRecords: confidenceRecords, confidenceCurve: confidenceCurve,
+    jolEntries: jolEntries, jolBins: jolBins, confidenceAccuracy: confidenceAccuracy, confidenceRecords: confidenceRecords, confidenceCurve: confidenceCurve, generatedRecords: generatedRecords, generatedCurve: generatedCurve,
     allAnswers: allAnswers, errorLog: errorLog, errorDistribution: errorDistribution,
     strategyEffect: strategyEffect, promptLevel: promptLevel, diagnose13: diagnose13, activeEtuts: activeEtuts
   };

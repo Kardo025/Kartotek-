@@ -23,7 +23,7 @@
 .mock-opts button:hover { background: var(--k-tile); }
 .mock-opts button[aria-checked="true"] { border-color: var(--k-accent); background: var(--k-accent-soft); }
 .mock-letter { display: inline-grid; place-items: center; min-width: 24px; height: 24px; border-radius: 6px; background: var(--k-badge); font-weight: 700; font-size: 13px; }
-.mock-opts button[aria-checked="true"] .mock-letter { background: var(--k-accent-fill); color: #fff; }
+.mock-opts button[aria-checked="true"] .mock-letter { background: var(--k-accent-fill); color: var(--k-accent-text); }
 .mock-q-foot { display: flex; gap: 8px; flex-wrap: wrap; }
 .mock-q-foot .k-btn:last-child { margin-left: auto; }
 .mock-rev { padding: 12px 0; border-top: 1px solid var(--k-line); display: flex; flex-direction: column; gap: 8px; }

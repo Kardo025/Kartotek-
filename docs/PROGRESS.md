@@ -918,3 +918,31 @@ I did not spend your Claude Code subscription or an API key on a real call. To c
 - **S2:** build the "Generated questions" calibration view in G2, or drop it from the protocol?
 - **M13:** may a model grading that you confirm unchanged go to your reviews (today's behaviour)?
 - **Still open from earlier:** the C4 draft release, the placeholder author e-mail, and the Anthropic key you pasted in chat.
+
+## 2026-11-17 · Task G2: review fixes and release 1.0.0 preparation (branch `task/g2-fixes-release`)
+
+### What changed
+- **Before starting:** merged `task/g1-review` into `main` (your G2 prompt is the OK for G1) and branched from `main`. Nothing was pushed or tagged.
+- **One commit per finding** (the number is in each message):
+  - **S1:** `npm run hygiene` now scans every blob and every commit message reachable from any branch or tag (`git rev-list --objects --all`), not only the current tree. CI checks out the full history for it (`fetch-depth: 0`). It fails today on B1, which proves it sees history.
+  - **S2:** (you chose "build it") Stats, Metacognition has a **Generated questions** panel: `KMeta.generatedRecords` / `generatedCurve` count probe, live predict and check, and practice answers in the same ten-point bins and Brier score. They never enter the main calibration. New engine scenario (80 now).
+  - **S3:** text on solid coral uses `--k-accent-text`: the dictation language buttons, the selected option letter in mock exams, and the exam tick (same pattern).
+  - **S4:** `build.ps1` copies the mind-map photos to `mindmaps\<id>\views\` next to `Kartotek-DSR.html` (git-ignored build output), so the browser page shows them. Checked with `python -m http.server`: the photo answers 200.
+  - **S5:** a job that needs images (mind-map reading and coaching, scanned pages) checks the vision slot before it starts. Ollama is asked for the model's capabilities (`/api/show`); a command-line client never reads images. The estimate carries `visionProblem`, the Start button is disabled with the reason, and `ModelService.run` refuses an image request to a text-only model before sending anything. Tests added in `model-tests.cjs` and `job-tests.cjs`.
+  - **B1:** see "Needs your OK" below.
+- **Release 1.0.0 preparation** (one commit, nothing tagged): README rewritten (features, three screenshots, model setup for an API key, a subscription command-line client and a local model, and a privacy section of what is sent when), `CHANGELOG.md`, `scripts\screenshots.cjs` (Edge through `playwright-core`, against the bridge preview with the samples and an empty profile; the Settings picture is cropped to the Models panel because the Content panel shows a folder path), version `1.0.0` in `package.json` and the lock, `docs\RELEASING.md` and the release-notes text updated. `npm test` passes (engine 80/80 and every suite).
+- **Not done:** the minor findings M1 to M13 (not asked in G2). M13 (may a model grading you confirm unchanged go to your reviews) still needs your decision.
+
+### Needs your OK
+- **B1, the history rewrite.** Rewriting every branch is blocked for me without your confirmation, so I only prepared and verified it in a scratch clone: an index filter replaces the Windows path in `docs/PROGRESS.md` with `%USERPROFILE%` (as the next commit already did) in the commits that hold it; every branch tip tree is identical to the original, the commit count is the same, and `npm run hygiene` passes in the rewritten clone. Applying it here changes the hashes of every commit from `66607a5` (the E1 follow-up) onward on all local branches. After that, `origin` needs `git push --force-with-lease` for `main` and the four task branches that hold it (I ask again right before any push).
+- **Signing:** 1.0.0 would be released unsigned like 0.1.0 (the README says so). Say if you want to wait for SignPath.
+
+### Release commands (nothing has been run)
+1. After B1 is applied and `npm run hygiene` passes: merge `task/g2-fixes-release` into `main`.
+2. `git push --force-with-lease origin main task/e2-model-in-study task/f1-thinking-confidence-prompts task/f2-hint-ladder` (your explicit OK first), then `git fetch --prune`.
+3. Move `[1.0.0] - unreleased` in `CHANGELOG.md` to the date, commit `Release 1.0.0`.
+4. `git tag -a v1.0.0 -m "Kartotek 1.0.0"` then `git push origin main v1.0.0` (your explicit OK first).
+5. Watch Actions, open the draft release, check the installer and `SHA256SUMS.txt`, press Publish (`docs/RELEASING.md`).
+
+### Open questions
+- B1 apply (above), signing (above), M13, the C4 draft release for 0.1.0, the placeholder author e-mail, the Anthropic key you pasted in chat.
