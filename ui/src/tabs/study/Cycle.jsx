@@ -261,6 +261,7 @@ function Priming({ et }) {
         <label className="k-field">
           <span className="k-field-label">Your thinking: first guesses and connections (optional)</span>
           <textarea className="k-input" rows={3} value={notes} placeholder="What do you expect? What does it remind you of? What is unclear?" onChange={(e) => setNotes(e.target.value)} onBlur={() => { keep(); EU().commit(et); }} />
+          <div className="th-foot"><Dictate /></div>
           <span className="k-field-hint">Kept as your assumptions, never graded.</span>
         </label>
         {ti === 0 && pr.notes[part.part_id] && <p className="k-small k-muted">Your earlier note for the whole part: {pr.notes[part.part_id]}</p>}

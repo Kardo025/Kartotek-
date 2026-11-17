@@ -62,6 +62,17 @@ async function toWav(blob) {
   } finally { ctx.close().catch(() => {}); }
 }
 
+function nearBox(el) {
+  let n = el;
+  for (let i = 0; n && i < 6; i++) {
+    n = n.parentElement;
+    if (!n) break;
+    const tas = [...n.querySelectorAll("textarea")].filter((t) => t.compareDocumentPosition(el) & Node.DOCUMENT_POSITION_FOLLOWING);
+    if (tas.length) return tas[tas.length - 1];
+  }
+  return null;
+}
+
 // targetRef: the textarea; onBeforeStart: e.g. unfold the box that holds it
 export default function Dictate({ targetRef, onBeforeStart, disabled, label }) {
   const st = useDictationMode();
@@ -74,7 +85,9 @@ export default function Dictate({ targetRef, onBeforeStart, disabled, label }) {
   const r = useRef({});
   useEffect(() => () => { const x = r.current; if (x.timer) clearInterval(x.timer); if (x.stream) x.stream.getTracks().forEach((t) => t.stop()); }, []);
 
-  const box = () => targetRef && targetRef.current;
+  const root = useRef(null);
+  // Without targetRef: the text box just before the button (the nearest one above it in the page)
+  const box = () => (targetRef && targetRef.current) || nearBox(root.current);
   const focusBox = () => {
     const el = box();
     if (el && document.activeElement !== el) { el.focus(); const n = el.value.length; try { el.setSelectionRange(n, n); } catch (e) { /* not a text box */ } }
@@ -132,7 +145,7 @@ export default function Dictate({ targetRef, onBeforeStart, disabled, label }) {
 
   const recording = rec === "recording", busy = rec === "transcribing";
   return (
-    <>
+    <span className="dc" ref={root}>
       {/* mousedown is prevented so the box keeps its cursor position while the button is pressed */}
       <button type="button" className={"k-btn sm dc-btn" + (recording ? " is-rec" : "")} disabled={disabled || busy} onMouseDown={(e) => e.preventDefault()} onClick={go}
         aria-pressed={recording} aria-label={recording ? "Stop dictating" : label || "Dictate"}
@@ -144,7 +157,7 @@ export default function Dictate({ targetRef, onBeforeStart, disabled, label }) {
       {recording && <span className="k-small k-muted" role="status">Listening{lang !== "en" ? " (" + (langs.find((x) => x.code === lang) || {}).label + ")" : ""}. Speak, then press Stop.</span>}
       {msg && (msg.kind === "on" || msg.kind === "done" || msg.kind === "error") && <span className="k-small k-muted" role="status">{msg.text}</span>}
       {msg && msg.kind === "hint" && <span className="k-small k-muted" role="status">Press <kbd>Win</kbd> + <kbd>H</kbd> and speak.</span>}
-    </>
+    </span>
   );
 }
 

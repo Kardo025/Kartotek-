@@ -867,6 +867,8 @@ I did not spend your Claude Code subscription or an API key on a real call. To c
 - **Choosing the language:** with it installed, every Dictate button has **English | Turkish | Italian** beside it; the choice applies to all buttons and is remembered.
 - **What went wrong first:** the choice was a small drop-down that only showed "English", so it did not look like a language option (you reported "there is no such option"). It is now three visible buttons.
 - **Tests:** dictation tests 14/14 (new: Turkish and Italian refused until the model is added, then `-l tr` / `-l it` with the multilingual model while English keeps small.en, Turkish letters intact when the output arrives in pieces, removing only the multilingual model, adding it first brings the program but not the English model).
+- **Language choice in Settings too:** Settings → Models → Dictation → "I dictate in: English | Turkish | Italian" (the same choice as beside the buttons).
+- **Dictate on the answer boxes too** (you looked for it there): written answers ("Write it from memory", "Your answer", the produce-first box), Priming notes, the live prediction, the legacy study's explanation and teach boxes, the legacy runner's reasoning box and the end-of-lesson recall box. The button finds the text box just above it.
 - **Not verified yet:** a real Turkish or Italian dictation by you. small is less accurate in Turkish than in English; if it is not good enough, large-v3-turbo (q5_0, 574 MB) is the stronger, heavier option.
 
 ### Open questions

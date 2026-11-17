@@ -9,6 +9,7 @@ import { EASE, PageHead, Panel, Btn, ConfirmBtn, Lvl, Tag, Kpi, Bar } from "./ki
 import "./lesson.css";
 import ConfidenceSlider from "./study/ConfidenceSlider.jsx";
 import { NewJob, JobsPanel, jobsAvailable } from "./Jobs.jsx";
+import Dictate from "../Dictate.jsx";
 
 const LETTERS = ["A", "B", "C", "D"];
 const TONE = { mastered: "ok", learned: "mid", partly: "warn", not: "bad" };
@@ -322,6 +323,7 @@ function RecallItem({ ls, o, nextLabel }) {
       <label className="k-field">
         <span className="k-field-label">Write from memory, in your own words</span>
         <textarea id="lesson-text" data-f="text" rows={7} autoFocus placeholder="Everything you remember about it" value={text} onChange={(e) => setText(e.target.value)} />
+        <div className="th-foot"><Dictate /></div>
       </label>
       <div className="k-ls-actions">
         <Btn kind="primary" data-act="next" disabled={!ok} onClick={next}>{nextLabel}<ArrowRight size={16} weight="bold" aria-hidden="true" /></Btn>

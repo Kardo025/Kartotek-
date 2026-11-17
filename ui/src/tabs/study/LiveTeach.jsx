@@ -11,6 +11,7 @@ import { Md } from "./common.jsx";
 import GraphView from "../../graph/GraphView.jsx";
 import ConfidenceSlider from "./ConfidenceSlider.jsx";
 import Thinking from "./Thinking.jsx";
+import Dictate from "../../Dictate.jsx";
 import { useModelCall, CallStatus, byLine } from "../../model-call.jsx";
 import { EASE, DUR } from "../../motion.jsx";
 import SidePanel from "../../SidePanel.jsx";
@@ -135,7 +136,7 @@ function AnswerForm({ q, label, onSend, thinkingHint }) {
   const send = () => { try { onSend({ choice, text, confidence_pct: conf, dont_know: dk, thinking }); } catch (e) { window.App.toast(e.message); } };
   return (
     <div className="pb-q">
-      {open ? <textarea className="k-input" rows={3} value={text} disabled={dk} maxLength={4000} placeholder="Your prediction" onChange={(e) => setText(e.target.value)} />
+      {open ? <><textarea className="k-input" rows={3} value={text} disabled={dk} maxLength={4000} placeholder="Your prediction" onChange={(e) => setText(e.target.value)} /><div className="th-foot"><Dictate disabled={dk} /></div></>
         : (
           <div className="pb-opts" role="radiogroup" aria-label="Options">
             {q.options.map((o) => (
