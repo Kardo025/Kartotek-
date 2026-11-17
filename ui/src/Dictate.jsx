@@ -140,14 +140,7 @@ export default function Dictate({ targetRef, onBeforeStart, disabled, label }) {
         {recording ? <Stop size={14} weight="fill" aria-hidden="true" /> : busy ? <CircleNotch size={14} className="mc-spin" aria-hidden="true" /> : <Microphone size={14} aria-hidden="true" />}
         {recording ? "Stop (" + Math.floor(secs / 60) + ":" + String(secs % 60).padStart(2, "0") + ")" : busy ? "Writing…" : label || "Dictate"}
       </button>
-      {st.mode === "local" && langs.length > 1 && (
-        <span className="dc-langs" role="radiogroup" aria-label="Dictation language" title="The language you will speak">
-          {langs.map((x) => (
-            <button key={x.code} type="button" role="radio" aria-checked={lang === x.code} className={"dc-lang" + (lang === x.code ? " on" : "")} disabled={!!rec}
-              onMouseDown={(e) => e.preventDefault()} onClick={() => setLang(x.code)}>{x.label}</button>
-          ))}
-        </span>
-      )}
+      {st.mode === "local" && langs.length > 1 && <LangButtons langs={langs} lang={lang} setLang={setLang} disabled={!!rec} />}
       {recording && <span className="k-small k-muted" role="status">Listening{lang !== "en" ? " (" + (langs.find((x) => x.code === lang) || {}).label + ")" : ""}. Speak, then press Stop.</span>}
       {msg && (msg.kind === "on" || msg.kind === "done" || msg.kind === "error") && <span className="k-small k-muted" role="status">{msg.text}</span>}
       {msg && msg.kind === "hint" && <span className="k-small k-muted" role="status">Press <kbd>Win</kbd> + <kbd>H</kbd> and speak.</span>}
@@ -156,8 +149,21 @@ export default function Dictate({ targetRef, onBeforeStart, disabled, label }) {
 }
 
 // Settings, Models: the local dictation model (download on request, progress, remove)
+// The language buttons (shared by every Dictate button and the Settings panel)
+function LangButtons({ langs, lang, setLang, disabled }) {
+  return (
+    <span className="dc-langs" role="radiogroup" aria-label="Dictation language" title="The language you will speak">
+      {langs.map((x) => (
+        <button key={x.code} type="button" role="radio" aria-checked={lang === x.code} className={"dc-lang" + (lang === x.code ? " on" : "")} disabled={disabled}
+          onMouseDown={(e) => e.preventDefault()} onClick={() => setLang(x.code)}>{x.label}</button>
+      ))}
+    </span>
+  );
+}
+
 export function DictationPanel() {
   const st = useDictationMode();
+  const [lang0, setLang] = useDictationLang();
   const [prog, setProg] = useState(null);
   const [err, setErr] = useState("");
   if (!D() || !D().local) return null;
@@ -183,8 +189,14 @@ export function DictationPanel() {
             {!local.installed && <button type="button" className="k-btn sm primary" disabled={!!prog} onClick={() => install("en")}>{prog && prog.which === "en" ? "Downloading… " + pct + "%" : "Download the local model (" + local.downloadMB + " MB)"}</button>}
             {local.installed && <button type="button" className="k-btn sm" disabled={!!prog} onClick={() => remove()}>Remove the local model</button>}
           </div>
+          {(local.languages || []).length > 1 && (
+            <div className="cy-actions"><span className="k-small"><b>I dictate in:</b></span>
+              <LangButtons langs={local.languages} lang={local.languages.some((x) => x.code === lang0) ? lang0 : "en"} setLang={setLang} />
+              <span className="k-small k-muted">The same choice shows beside every Dictate button.</span>
+            </div>
+          )}
           <p className="k-small"><b>Turkish and Italian:</b> {local.multi
-            ? "ready (" + local.multiModel + "). Choose the language next to any Dictate button."
+            ? "ready (" + local.multiModel + ")."
             : "they need a second model, " + local.multiModel + ", about " + local.multiMB + " MB from Hugging Face, checked the same way. English keeps using the English model."}</p>
           <div className="cy-actions">
             {!local.multi && <button type="button" className="k-btn sm" disabled={!!prog} onClick={() => install("multi")}>{prog && prog.which === "multi" ? "Downloading… " + pct + "%" : "Add Turkish and Italian (" + local.multiMB + " MB)"}</button>}
