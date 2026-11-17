@@ -875,3 +875,46 @@ I did not spend your Claude Code subscription or an API key on a real call. To c
 ### Open questions
 - **The installed app:** the local model is downloaded per Windows profile (the development app and an installed Kartotek each need it once).
 - **Still open from earlier:** the "Generated questions" calibration view, photos in practice, the C4 draft release, the placeholder author email, and the Anthropic key you pasted in chat.
+
+## 2026-11-17 · Task G1: independent review (branch `task/g1-review`)
+
+### What changed
+- **Before starting:** no `CLAUDE.md` change was pending. I merged `task/f8-dictation` into `main` (your G1 prompt is the OK for F8) and branched from `main`. Nothing was pushed.
+- **New `docs\REVIEW.md`:** the review of everything from the baseline (`7409a51`) to F8. No code was changed in this session. It contains 19 findings, each ranked and with steps to reproduce:
+  - **1 blocker:** B1, the Windows user name in a commit that is already on GitHub.
+  - **5 should fix:** S1–S5.
+  - **13 minor:** M1–M13.
+- **Also in `docs\REVIEW.md`:**
+  - the requirements tables: every decision of `03-decisions.md` and every rule of `CLAUDE.md`, with file and line;
+  - data safety, independence, scheduler integrity, publishing and quality results;
+  - the four scripts I used (Appendix A).
+
+### What the checks showed
+- **Data safety, on a copy of your backup** (the original's SHA-256 is unchanged):
+  - The import keeps all 24 record counts, and the whole state reads back identical, also after a restart.
+  - Today's review queue (21 cards: 1 review, 20 new) is identical card for card in three engines: the baseline engine, today's browser engine, and the desktop file store (through the real first-run panel).
+  - `src\engine.js` is byte-identical to the baseline, apart from line endings.
+- **Scheduler integrity:**
+  - On your data, help of any kind, generated follow-up items, disputed items and a model hint never changed a card.
+  - Two positive controls did change a card, which shows the test can see a change.
+  - Probe, live, practice and side-question sessions in the repository suites called the scheduler 0 times. The graph suite called it once, for its own deliberate unassisted answer.
+  - A learner-confirmed model grading does reach the scheduler. That is by design (E2), but please confirm it (M13).
+- **Independence:**
+  - With no model, all 24 screens open and nothing breaks.
+  - With only Ollama `gpt-oss:20b`, the hint ladder and Explain ran in this review (2–3 minutes per call).
+  - The vision steps fail when the vision slot is empty, because they fall back to a text-only model (S5).
+- **Publishing:** no keys and no content files anywhere in the history. One user-name path, in commit `2fa5786` (B1). The hygiene check cannot see history (S1). The adapted prompts resemble LearnHarness (up to 25-word runs), and all name their source.
+- **Quality:**
+  - `npm test` (with the backup) and `npm run smoke` pass (79/79, 0 unexpected console errors).
+  - `audit-study.py --all` certifies all 14 Study v2 studies.
+
+### How you can check it
+1. Read `docs\REVIEW.md`: the summary, then the findings. Every finding has its reproduce steps.
+2. B1: `git show 2fa5786:docs/PROGRESS.md | sed -n 361p` and `git branch -r --contains 2fa5786`.
+3. Data safety: set `KARTOTEK_BACKUP` to a copy of your export, then run `npm test` and read the "REAL BACKUP REPORT" lines.
+
+### Open questions (your decisions)
+- **B1:** rewrite the public history and force-push (as in C4), or accept the trace? This needs your OK either way.
+- **S2:** build the "Generated questions" calibration view in G2, or drop it from the protocol?
+- **M13:** may a model grading that you confirm unchanged go to your reviews (today's behaviour)?
+- **Still open from earlier:** the C4 draft release, the placeholder author e-mail, and the Anthropic key you pasted in chat.
