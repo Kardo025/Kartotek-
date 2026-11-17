@@ -28,3 +28,9 @@
 .sp-uses span { padding: 0 7px; border-radius: 999px; background: var(--k-pill-new); font-size: 11px; color: var(--k-text-2); }
 .rs-brief[data-v="failed"] { border-left-color: var(--k-pill-learning-t); color: var(--k-text-2); }
 .rs-warn { display: flex; align-items: center; gap: 5px; color: var(--k-pill-learning-t); }
+
+/* dictation (task F8) */
+.dc-btn.is-rec { border-color: var(--k-pill-relearning-t); color: var(--k-pill-relearning-t); }
+.dc-btn.is-rec svg { animation: dc-pulse 1.2s ease-in-out infinite; }
+@keyframes dc-pulse { 50% { opacity: .35; } }
+@media (prefers-reduced-motion: reduce) { .dc-btn.is-rec svg { animation: none; } }

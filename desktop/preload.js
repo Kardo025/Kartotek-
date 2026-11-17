@@ -80,6 +80,11 @@ contextBridge.exposeInMainWorld('kartotek', Object.freeze({
   dictation: Object.freeze({
     status: () => ipcRenderer.invoke('dictation:status'),
     start: () => ipcRenderer.invoke('dictation:start'),
+    // the local model: status, download (progress events), remove, and one recording (16 kHz WAV) → text
+    local: () => ipcRenderer.invoke('dictation:local'),
+    install: (onEvent) => { const h = (e, ev) => { try { onEvent && onEvent(ev); } catch (x) { /* ignore */ } }; ipcRenderer.on('dictation:event', h); return ipcRenderer.invoke('dictation:install').finally(() => ipcRenderer.removeListener('dictation:event', h)); },
+    remove: () => ipcRenderer.invoke('dictation:remove'),
+    transcribe: (wav) => ipcRenderer.invoke('dictation:transcribe', wav),
   }),
   // Live sessions on the learner's own files (task F4): read picked files (tokens) for a session; get the cached text back
   live: Object.freeze({

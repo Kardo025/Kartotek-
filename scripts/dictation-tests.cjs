@@ -3,6 +3,8 @@
 const assert = require('assert');
 const { EventEmitter } = require('events');
 const { createDictation, HELPER } = require('../desktop/dictation');
+const fs = require('fs'), os = require('os'), path = require('path'), crypto = require('crypto'), { pathToFileURL } = require('url');
+const { createWhisper, cleanText, PINS } = require('../desktop/whisper');
 
 // A stand-in for the PowerShell helper: answers "ready", then "ok" to each "winh"
 function fakeSpawn(opts) {
@@ -62,9 +64,98 @@ async function dictationTests() {
   return ok;
 }
 
+// ---------------------------------------------------------------- the local model (whisper.cpp), with stand-in downloads and program
+function pinned(content) { return { size: content.length, sha256: crypto.createHash('sha256').update(content).digest('hex') }; }
+async function localTests() {
+  const ok = [], dirs = [];
+  const mk = () => { const d = fs.mkdtempSync(path.join(os.tmpdir(), 'kartotek-f8-')); dirs.push(d); return d; };
+  const zipBytes = Buffer.from('fake zip'), modelBytes = Buffer.from('fake model bytes');
+  // swap the pins for the stand-in files during the test
+  const saved = JSON.parse(JSON.stringify(PINS));
+  Object.assign(PINS.program, pinned(zipBytes)); Object.assign(PINS.model, pinned(modelBytes));
+  const fakeFetch = (bodies) => async (url) => {
+    const b = bodies[url.includes('huggingface') ? 'model' : 'program'];
+    if (!b) return { ok: false, status: 404 };
+    return { ok: true, status: 200, body: (async function* () { yield b.slice(0, 3); yield b.slice(3); })() };
+  };
+  const expand = async (zip, dest) => { fs.mkdirSync(path.join(dest, 'Release'), { recursive: true }); fs.writeFileSync(path.join(dest, 'Release', 'whisper-cli.exe'), 'x'); };
+  const wav = (n) => { const b = Buffer.alloc(44 + n); b.write('RIFF', 0, 'ascii'); b.write('WAVE', 8, 'ascii'); return b; };
+  try {
+    await t(ok, 'download on request: both files checked against their size and SHA-256, the program unpacked, then "installed"', async () => {
+      const d = mk(), events = [];
+      const w = createWhisper({ dir: d, platform: 'win32', fetch: fakeFetch({ program: zipBytes, model: modelBytes }), expand });
+      assert.strictEqual(w.status().installed, false);
+      await w.install((ev) => events.push(ev.step));
+      assert.strictEqual(w.status().installed, true);
+      assert.ok(events.includes('program') && events.includes('model') && events[events.length - 1] === 'done');
+      assert.ok(!fs.existsSync(path.join(d, 'tmp', PINS.program.file)));
+    });
+    await t(ok, 'a download that does not match its checksum is refused and nothing is kept', async () => {
+      const d = mk();
+      const w = createWhisper({ dir: d, platform: 'win32', fetch: fakeFetch({ program: zipBytes, model: Buffer.from('tampered model!!') }), expand });
+      await assert.rejects(w.install(), /checksum/);
+      assert.strictEqual(w.status().installed, false);
+      assert.ok(!fs.existsSync(path.join(d, 'models', PINS.model.file)) && !fs.existsSync(path.join(d, 'models', PINS.model.file + '.part')));
+    });
+    await t(ok, 'transcribing: a WAV goes to whisper-cli with the English model on 4 threads at most, the text comes back clean, the recording is deleted', async () => {
+      const d = mk(); let seen = null;
+      const spawn = (cmd, args) => {
+        seen = { cmd, args, wavExists: fs.existsSync(args[args.indexOf('-f') + 1]) };
+        const p = new EventEmitter(); p.stdout = new EventEmitter(); p.stderr = new EventEmitter(); p.kill = () => {};
+        setImmediate(() => { p.stdout.emit('data', Buffer.from(' [BLANK_AUDIO]\n The answer is two.  It follows from the second law.\n')); p.emit('exit', 0); });
+        return p;
+      };
+      const w = createWhisper({ dir: d, platform: 'win32', fetch: fakeFetch({ program: zipBytes, model: modelBytes }), expand, spawn });
+      await assert.rejects(w.transcribe(wav(100)), /not downloaded/);
+      await w.install();
+      const r = await w.transcribe(wav(3200));
+      assert.strictEqual(r.text, 'The answer is two. It follows from the second law.');
+      assert.ok(/whisper-cli\.exe$/.test(seen.cmd) && seen.wavExists);
+      assert.strictEqual(seen.args[seen.args.indexOf('-l') + 1], 'en');
+      assert.ok(Number(seen.args[seen.args.indexOf('-t') + 1]) <= 4 && seen.args.includes('-nt'));
+      assert.strictEqual(fs.readdirSync(path.join(d, 'tmp')).length, 0);
+      await assert.rejects(w.transcribe(Buffer.from('not a wav file at all, really not a wav file ok')), /not a WAV/);
+    });
+    await t(ok, 'remove deletes the dictation folder; elsewhere than Windows the local model is not offered', async () => {
+      const d = mk();
+      const w = createWhisper({ dir: d, platform: 'win32', fetch: fakeFetch({ program: zipBytes, model: modelBytes }), expand });
+      await w.install(); w.remove();
+      assert.strictEqual(w.status().installed, false); assert.ok(!fs.existsSync(d));
+      assert.strictEqual(createWhisper({ dir: mk(), platform: 'linux' }).status().available, false);
+      assert.strictEqual(cleanText('(wind) Hello  [MUSIC] world '), 'Hello world');
+    });
+  } finally { Object.assign(PINS.program, saved.program); Object.assign(PINS.model, saved.model); dirs.forEach((d) => fs.rmSync(d, { recursive: true, force: true })); }
+  // the real pins stay fixed values (a change of version must be a code change)
+  assert.ok(/^[0-9a-f]{64}$/.test(PINS.program.sha256) && /^[0-9a-f]{64}$/.test(PINS.model.sha256) && /^https:\/\/github\.com\/ggml-org\//.test(PINS.program.url) && /^https:\/\/huggingface\.co\/ggerganov\//.test(PINS.model.url));
+  return ok;
+}
+
+async function libTests() {
+  const ok = [];
+  const lib = await import(pathToFileURL(path.join(__dirname, '..', 'ui', 'src', 'dictation-lib.js')).href);
+  await t(ok, 'a recording becomes 16 kHz mono 16-bit WAV', async () => {
+    const b = Buffer.from(lib.encodeWav(new Float32Array([0, 1, -1, 0.5]), 16000));
+    assert.strictEqual(b.toString('ascii', 0, 4), 'RIFF'); assert.strictEqual(b.toString('ascii', 8, 12), 'WAVE');
+    assert.strictEqual(b.readUInt32LE(24), 16000); assert.strictEqual(b.readUInt16LE(22), 1); assert.strictEqual(b.readUInt16LE(34), 16);
+    assert.strictEqual(b.length, 44 + 8); assert.strictEqual(b.readInt16LE(46), 32767); assert.strictEqual(b.readInt16LE(48), -32768);
+  });
+  await t(ok, 'dictated text goes at the cursor (replacing a selection), with spaces where words would run together, within the box limit', async () => {
+    let r = lib.insertAt('I think so.', 7, 7, 'it is not', 4000);
+    assert.strictEqual(r.value, 'I think it is not so.'); assert.strictEqual(r.caret, 17);
+    r = lib.insertAt('First.', 6, 6, 'Second sentence.', 4000); assert.strictEqual(r.value, 'First. Second sentence.');
+    r = lib.insertAt('', 0, 0, ' Hello there. ', 4000); assert.strictEqual(r.value, 'Hello there.');
+    r = lib.insertAt('keep THIS end', 5, 9, 'that', 4000); assert.strictEqual(r.value, 'keep that end');
+    r = lib.insertAt('abcdefgh', 8, 8, 'more words here', 12); assert.strictEqual(r.value, 'abcdefgh mor'); assert.ok(r.cut);
+  });
+  return ok;
+}
+
 async function run() {
-  const ok = await dictationTests();
-  return ['Dictation (stand-in helper): ' + ok.length + '/' + ok.length + ' passed'];
+  const out = [];
+  for (const [label, fn] of [['Dictation: Windows voice typing (stand-in helper)', dictationTests], ['Dictation: local model (stand-in downloads and program)', localTests], ['Dictation: recording and insertion helpers', libTests]]) {
+    const ok = await fn(); out.push(label + ': ' + ok.length + '/' + ok.length + ' passed');
+  }
+  return out;
 }
 module.exports = { run };
 if (require.main === module) run().then((l) => l.forEach((x) => console.log(x)), (e) => { console.log('FAIL  ' + (e && e.stack || e)); process.exit(1); });
