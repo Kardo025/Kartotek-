@@ -2,7 +2,7 @@
 
 All notable changes to Kartotek. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow [Semantic Versioning](https://semver.org/). Your learner data is never rewritten in place: every release that changes the saved format carries a lossless migration, and `docs/PROGRESS.md` records how each one was tested.
 
-## [1.0.0] - unreleased
+## [1.0.0] - 2026-11-17
 
 The first release with models, live teaching and the knowledge graph. Everything from 0.1.0 keeps working, and the app still needs no model.
 
